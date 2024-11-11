@@ -40,6 +40,7 @@ export default {
     const handleLogin = () => {
       console.log("登录信息：", loginForm.value);
       // 在此执行登录逻辑，例如调用 API 验证用户名和密码
+      // this.$router.push("/dashboard");
     };
 
     return {
