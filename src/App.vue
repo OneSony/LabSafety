@@ -1,19 +1,17 @@
 <template>
   <div id="app">
     <HeaderComponent />
-    <DashboardView />
+    <router-view />
   </div>
 </template>
 
 <script>
 import HeaderComponent from "./components/Header.vue";
-import DashboardView from "./views/Dashboard.vue";
 
 export default {
   name: "App",
   components: {
     HeaderComponent,
-    DashboardView,
   },
 };
 </script>
