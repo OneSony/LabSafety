@@ -1,19 +1,20 @@
 <template>
   <div id="app">
     <HeaderComponent />
-    <DashboardView />
+    <TeacherDashboard />
   </div>
 </template>
 
 <script>
 import HeaderComponent from "./components/Header.vue";
-import DashboardView from "./views/Dashboard.vue";
+import TeacherDashboard from "./views/TeacherDashboard.vue";
+// import DashboardView from "./views/Dashboard.vue";
 
 export default {
   name: "App",
   components: {
     HeaderComponent,
-    DashboardView,
+    TeacherDashboard,
   },
 };
 </script>
