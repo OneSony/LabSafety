@@ -54,6 +54,7 @@
 import axios from "axios";
 
 export default {
+  name: "CourseManagement",
   data() {
     return {
       courses: [],
@@ -66,6 +67,7 @@ export default {
       },
     };
   },
+  /*
   methods: {
     async fetchCourses() {
       const response = await axios.get("/api/teacher/courses");
@@ -97,6 +99,7 @@ export default {
     this.fetchCourses();
     this.fetchLabs();
   },
+  */
 };
 </script>
 
