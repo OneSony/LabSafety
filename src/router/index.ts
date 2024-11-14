@@ -1,23 +1,35 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import HomeView from "../views/HomeView.vue";
-import UserLogin from "../components/Login.vue";
-import DashboardView from "../views/Dashboard.vue";
+import TeacherDashboard from "../views/TeacherDashboard.vue";
+import UserLogin from "../views/UserLogin.vue";
+// import DashboardView/ from "../views/Dashboard.vue";
+import CourseManagement from "../views/CourseManagement.vue";
+import NotificationManagement from "../views/NotificationManagement.vue";
+import CommentManagement from "../views/CommentManagement.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: "/dashboard",
-    name: "Dashboard",
-    component: DashboardView,
-  },
-  {
     path: "/",
-    name: "home",
-    component: HomeView,
+    redirect: "/dashboard",
   },
   {
     path: "/login",
-    name: "Login",
     component: UserLogin,
+  },
+  {
+    path: "/dashboard",
+    component: TeacherDashboard,
+  },
+  {
+    path: "/courses",
+    component: CourseManagement,
+  },
+  {
+    path: "/notifications",
+    component: NotificationManagement,
+  },
+  {
+    path: "/comments",
+    component: CommentManagement,
   },
   {
     path: "/about",
