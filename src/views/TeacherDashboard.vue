@@ -42,7 +42,7 @@
     </el-row>
 
     <!-- 课程进度图表 -->
-    <el-row class="chart-container">
+    <!-- <el-row class="chart-container">
       <el-card>
         <el-row>
           <h3>课程完成情况</h3>
@@ -52,7 +52,7 @@
           :ongoing="ongoingCourses"
         />
       </el-card>
-    </el-row>
+    </el-row> -->
 
     <!-- 最近的学生评论 -->
     <el-row class="recent-comments">
@@ -70,12 +70,12 @@
 
 <script>
 import axios from "axios";
-import CourseCompletionChart from "../components/CourseCompletionChart.vue";
+// import CourseCompletionChart from "../components/CourseCompletionChart.vue";
 
 export default {
   name: "TeacherDashboard",
   components: {
-    CourseCompletionChart,
+    // CourseCompletionChart,
   },
   data() {
     return {

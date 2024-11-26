@@ -5,6 +5,7 @@ import TeacherDashboard from "../views/TeacherDashboard.vue";
 import CourseManagement from "../views/CourseManagement.vue";
 import NotificationManagement from "../views/NotificationManagement.vue";
 import CommentManagement from "../views/CommentManagement.vue";
+import UserProfile from "../views/Profile.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -18,6 +19,10 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/courses",
     component: CourseManagement,
+  },
+  {
+    path: "/profile",
+    component: UserProfile,
   },
   {
     path: "/notifications",
