@@ -6,6 +6,7 @@ import CourseManagement from "../views/CourseManagement.vue";
 import NotificationManagement from "../views/NotificationManagement.vue";
 import CommentManagement from "../views/CommentManagement.vue";
 import UserProfile from "../views/Profile.vue";
+import CreateCourse from "../views/CreateCourse.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -31,6 +32,11 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/comments",
     component: CommentManagement,
+  },
+  {
+    path: "/create-course",
+    name: "CreateCourse",
+    component: CreateCourse,
   },
   {
     path: "/about",

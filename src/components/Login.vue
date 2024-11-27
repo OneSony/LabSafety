@@ -27,26 +27,31 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { login } from "@/api/auth";
 
 export default {
   name: "UserLogin",
-  setup() {
-    const loginForm = ref({
-      username: "",
-      password: "",
-    });
-
-    const handleLogin = () => {
-      console.log("登录信息：", loginForm.value);
-      // 在此执行登录逻辑，例如调用 API 验证用户名和密码
-      // this.$router.push("/dashboard");
-    };
-
+  data() {
     return {
-      loginForm,
-      handleLogin,
+      loginForm: {
+        username: "",
+        password: "",
+      },
     };
+  },
+  methods: {
+    async handleLogin() {
+      try {
+        const response = await login(this.loginForm);
+        // 假设后端返回的Token在response.data.token中
+        const token = response.data.token;
+        localStorage.setItem("token", token);
+        this.$router.push("/dashboard"); // 登录成功后跳转
+      } catch (error) {
+        console.error("登录失败：", error);
+        this.$message.error("登录失败，请检查用户名和密码");
+      }
+    },
   },
 };
 </script>
