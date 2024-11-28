@@ -2,11 +2,12 @@ import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import TeacherDashboard from "../views/TeacherDashboard.vue";
 // import UserLogin from "../components/Login.vue";
 // import DashboardView/ from "../views/Dashboard.vue";
-import CourseManagement from "../views/CourseManagement.vue";
+// import CourseManagement from "../views/CourseManagement.vue";
 import NotificationManagement from "../views/NotificationManagement.vue";
 import CommentManagement from "../views/CommentManagement.vue";
 import UserProfile from "../views/Profile.vue";
-import CreateCourse from "../views/CreateCourse.vue";
+// import CreateCourse from "../views/CreateCourse.vue";
+// import LabManagerDashboard from "../views/LabManagerDashboard.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -14,15 +15,8 @@ const routes: Array<RouteRecordRaw> = [
     redirect: "/dashboard",
   },
   {
-    path: "/dashboard",
-    component: TeacherDashboard,
-  },
-  {
-    path: "/courses",
-    component: CourseManagement,
-  },
-  {
     path: "/profile",
+    name: "Profile",
     component: UserProfile,
   },
   {
@@ -36,7 +30,13 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/create-course",
     name: "CreateCourse",
-    component: CreateCourse,
+    component: () => import("../views/CreateCourse.vue"), // 懒加载组件
+  },
+  {
+    path: "/dashboard",
+    name: "TeacherDashboard",
+    component: TeacherDashboard,
+    // component: LabManagerDashboard,
   },
   {
     path: "/about",

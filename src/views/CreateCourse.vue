@@ -52,6 +52,9 @@
             style="width: 100%"
           ></el-date-picker>
         </el-form-item>
+        <el-form-item label="通知">
+          <el-input v-model="currentClass.notation"></el-input>
+        </el-form-item>
       </el-form>
       <!-- 使用新的插槽语法 -->
       <template #footer>
@@ -161,24 +164,42 @@ export default {
 
     const saveClass = () => {
       if (currentClassIndex.value !== null) {
-        // 更新课时
+        // 编辑课时
         const classId = classes.value[currentClassIndex.value].id;
         axios
-          .put(`/api/v1/classes/${classId}`, currentClass)
+          .put(`http://111.229.210.27/api/v1/classes/${classId}`, {
+            name: currentClass.name,
+            location: currentClass.location,
+            start_time: currentClass.time
+              ? currentClass.time.toISOString()
+              : null,
+            notice: currentClass.notice,
+            course: courseId.value,
+          })
           .then(() => {
             classes.value[currentClassIndex.value] = { ...currentClass };
             ElMessage.success("课时更新成功");
             dialogVisible.value = false;
           })
           .catch((error) => {
-            console.error(error);
+            ElMessage.error("课时更新失败");
+            if (error.response) {
+              console.error("Error Response:", error.response.data);
+            } else {
+              console.error("Error:", error.message);
+            }
           });
       } else {
-        // 创建课时
+        // 添加课时
         axios
-          .post("/api/v1/classes", {
-            ...currentClass,
-            courseId: courseId.value,
+          .post("http://111.229.210.27/api/v1/classes", {
+            name: currentClass.name,
+            location: currentClass.location,
+            start_time: currentClass.time
+              ? currentClass.time.toISOString()
+              : null,
+            notice: currentClass.notice,
+            course: courseId.value,
           })
           .then((response) => {
             classes.value.push(response.data);
@@ -186,7 +207,12 @@ export default {
             dialogVisible.value = false;
           })
           .catch((error) => {
-            console.error(error);
+            ElMessage.error("课时创建失败");
+            if (error.response) {
+              console.error("Error Response:", error.response.data);
+            } else {
+              console.error("Error:", error.message);
+            }
           });
       }
     };

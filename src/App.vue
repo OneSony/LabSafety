@@ -1,12 +1,13 @@
 <template>
   <div id="app">
     <HeaderComponent />
+    <!-- <CreateCourse /> -->
+    <router-view />
     <!-- <Dashboard /> -->
     <!-- <TeacherDashboard /> -->
     <!-- <Login /> -->
     <!-- <LabManagerDashboard /> -->
     <!-- <Profile /> -->
-    <CreateCourse />
     <!-- <NotificationManagement /> -->
     <!-- <SafetyGuidelineManagement /> -->
     <!-- <NotificationForm /> -->
@@ -22,7 +23,7 @@ import HeaderComponent from "./components/Header.vue";
 // import DashboardView from "./views/Dashboard.vue";
 // import Login from "./components/Login.vue";
 // import Profile from "./views/Profile.vue";
-import CreateCourse from "./views/CreateCourse.vue";
+// import CreateCourse from "./views/CreateCourse.vue";
 // import NotificationManagement from "./views/NotificationManagement.vue";
 // import SafetyGuidelineManagement from "./views/SafetyGuidelineManagement.vue";
 
@@ -35,7 +36,7 @@ export default {
     // Dashboard,
     // Login,
     // Profile,
-    CreateCourse,
+    // CreateCourse,
     // NotificationManagement,
     // SafetyGuidelineManagement,
     // NotificationForm,

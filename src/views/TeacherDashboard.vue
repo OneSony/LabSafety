@@ -53,48 +53,16 @@
       </el-card>
     </el-row>
 
-    <!-- 课程管理 -->
-    <el-row class="course-management">
-      <el-card>
-        <h3>课程管理</h3>
-        <el-button type="primary" @click="openCourseDialog">创建课程</el-button>
-        <el-table :data="courses" style="width: 100%">
-          <el-table-column prop="name" label="课程名称" />
-          <el-table-column label="操作">
-            <template #default="scope">
-              <el-button size="small" @click="enrollStudents(scope.row.id)">
-                学生注册
-              </el-button>
-              <el-button size="small" @click="addClassToCourse(scope.row.id)">
-                添加班级
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
-    </el-row>
     <el-row>
       <el-button type="primary" @click="navigateToCreateCourse">
         创建课程
       </el-button>
     </el-row>
-    <!-- 创建课程弹窗 -->
-    <el-dialog v-model="isCourseDialogVisible" title="创建课程">
-      <el-form :model="courseForm">
-        <el-form-item label="课程名称">
-          <el-input v-model="courseForm.name" />
-        </el-form-item>
-      </el-form>
-      <span class="dialog-footer">
-        <el-button @click="isCourseDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="createCourse">创建</el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 
 <script>
-import axios from "axios";
+// import axios from "axios";
 
 export default {
   name: "TeacherDashboard",
@@ -114,82 +82,17 @@ export default {
     };
   },
   methods: {
-    // 获取仪表盘数据
-    async fetchDashboardData() {
-      try {
-        const courseStats = await axios.get("/api/teacher/courses/stats");
-        this.ongoingCourses = courseStats.data.ongoing;
-        this.completedCourses = courseStats.data.completed;
-
-        const notifications = await axios.get(
-          "/api/teacher/notifications/pending"
-        );
-        this.pendingNotifications = notifications.data.count;
-
-        const comments = await axios.get("/api/teacher/comments");
-        this.commentsCount = comments.data.length;
-        this.recentComments = comments.data.slice(0, 5);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+    navigateToCreateCourse() {
+      if (this.$router) {
+        this.$router.push("/create-course");
+      } else {
+        console.error("Router instance is not available.");
       }
     },
-
-    // 获取课程数据
-    async fetchCourses() {
-      try {
-        const response = await axios.get("/api/v1/courses");
-        this.courses = response.data;
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      }
+    created() {
+      this.fetchDashboardData();
+      this.fetchCourses();
     },
-
-    // 创建课程
-    async createCourse() {
-      try {
-        const response = await axios.post("/api/v1/courses", this.courseForm);
-        this.$message.success(response.data.message);
-        this.isCourseDialogVisible = false;
-        this.fetchCourses();
-      } catch (error) {
-        console.error("Error creating course:", error);
-      }
-    },
-
-    // 学生注册
-    async enrollStudents(courseId) {
-      try {
-        const studentIds = ["2021000000", "2021000001"]; // 示例学生ID
-        const response = await axios.post("/api/v1/courses/enroll", {
-          course_id: courseId,
-          student_ids: studentIds,
-        });
-        this.$message.success(response.data.message);
-      } catch (error) {
-        console.error("Error enrolling students:", error);
-      }
-    },
-
-    // 添加班级到课程
-    async addClassToCourse(courseId) {
-      try {
-        const classId = 1; // 示例班级ID
-        const response = await axios.post("/api/v1/courses/classes", {
-          course_id: courseId,
-          class_id: classId,
-        });
-        this.$message.success(response.data.message);
-      } catch (error) {
-        console.error("Error adding class to course:", error);
-      }
-    },
-  },
-  navigateToCreateCourse() {
-    this.$router.push("/create-course");
-  },
-  created() {
-    this.fetchDashboardData();
-    this.fetchCourses();
   },
 };
 </script>

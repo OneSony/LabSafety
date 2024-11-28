@@ -1,6 +1,6 @@
 <template>
   <el-header class="header">
-    <div class="logo-container">
+    <div class="logo-container" @click="navigateToDashboard">
       <img src="@/assets/tlsa.png" alt="Logo" class="logo" />
       <span class="role-text">{{ roleText }}</span>
     </div>
@@ -19,7 +19,7 @@ export default {
       user: {
         name: "张三", // 示例用户数据
         avatar: "https://via.placeholder.com/40", // 默认头像链接
-        role: "student", // 示例角色
+        role: "teacher", // 示例角色
       },
     };
   },
@@ -38,34 +38,17 @@ export default {
     },
   },
   methods: {
+    navigateToDashboard() {
+      this.$router.push("/dashboard"); // 跳转到主页面
+    },
     navigateToProfile() {
-      if (this.$router) {
-        this.$router.push("/profile");
-      } else {
-        console.error("Router instance is not available.");
-      }
+      this.$router.push("/profile"); // 跳转到个人信息页面
     },
   },
 };
 </script>
 
 <style scoped>
-/* 修改 Logo 后面的角色文本 */
-.role-text {
-  font-size: 18px; /* 修改字体大小 */
-  font-weight: bold; /* 加粗字体 */
-  color: #007bff; /* 设置字体颜色为蓝色 */
-  font-family: "Arial", sans-serif; /* 设置字体为 Arial */
-}
-
-/* 修改用户名的样式 */
-.username {
-  font-size: 16px; /* 设置字体大小 */
-  color: #2c3e50; /* 设置字体颜色 */
-  font-family: "Arial", monospace; /* 使用等宽字体 */
-}
-
-/* 顶栏整体样式 */
 .header {
   display: flex;
   align-items: center;
@@ -76,18 +59,23 @@ export default {
   border-bottom: 1px solid #ebeef5;
 }
 
-/* Logo 和角色文字容器 */
 .logo-container {
   display: flex;
   align-items: center;
+  cursor: pointer;
 }
 
 .logo {
   height: 40px;
-  margin-right: 10px;
+  margin-right: 15px;
 }
 
-/* 用户信息区域 */
+.role-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #007bff;
+}
+
 .user-info {
   display: flex;
   align-items: center;
@@ -99,5 +87,10 @@ export default {
   height: 40px;
   border-radius: 50%;
   margin-right: 10px;
+}
+
+.username {
+  font-size: 16px;
+  color: #2c3e50;
 }
 </style>
