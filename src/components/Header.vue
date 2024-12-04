@@ -1,7 +1,7 @@
 <template>
   <el-header class="header">
     <img src="@/assets/tlsa.png" alt="Logo" class="logo" />
-    <div class="user-info" @click="navigateToProfile">
+    <div v-if="isUserInfoVisible" class="user-info" @click="navigateToProfile">
       <img class="avatar" :src="user.avatar" alt="头像" />
       <span class="username">{{ user.name }}</span>
     </div>
@@ -19,7 +19,14 @@ export default {
         name: "张三", // 示例用户数据
         avatar: "https://via.placeholder.com/40", // 默认头像链接
       },
+      isUserInfoVisible: true, // 默认显示用户信息
     };
+  },
+  watch: {
+    // 监听路由变化，判断当前路由是否是需要隐藏 user-info 的页面
+    $route(to, from) {
+      this.isUserInfoVisible = !["/login"].includes(to.path); // 在登录或注册页面隐藏 user-info
+    },
   },
   methods: {
     navigateToProfile() {

@@ -5,7 +5,8 @@
     <!-- <TeacherDashboard /> -->
     <!-- <Login /> -->
     <!-- <LabManagerDashboard /> -->
-    <Profile />
+    <!-- <Profile /> -->
+    <router-view />
   </div>
 </template>
 
@@ -26,7 +27,7 @@ export default {
     // TeacherDashboard,
     // Dashboard,
     // Login,
-    Profile,
+    // Profile,
   },
 };
 </script>
