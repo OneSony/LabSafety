@@ -18,8 +18,17 @@ interface LoginResponseFailure {
   error: string;
 }
 
-// 使用联合类型来合并成功和失败的类型
+interface RegisterResponseSuccess {
+  success: true;
+}
+
+interface RegisterResponseFailure {
+  success: false;
+  error: string;
+}
+
 type LoginResponse = LoginResponseSuccess | LoginResponseFailure;
+type RegisterResponse = RegisterResponseSuccess | RegisterResponseFailure;
 
 // 创建一个包含用户相关 API 请求的对象
 const userAPI = {
@@ -41,7 +50,7 @@ const userAPI = {
           success: false,
           error: response.statusText || "Unknown error",
         } as LoginResponseFailure; // 返回错误信息 //TODO
-      }) // 返回服务器响应数据
+      })
       .catch((error) => {
         console.log(error);
         return {
@@ -51,13 +60,28 @@ const userAPI = {
       });
   },
 
-  register(username: string, password: string) {
+  register(username: string, password: string): Promise<RegisterResponse> {
     const credentials = { username, password };
     return server
       .post("/api/v1/register/", credentials)
-      .then((response) => response)
+      .then((response) => {
+        console.log(response);
+        if (response.status === 201) {
+          return {
+            success: true,
+          } as RegisterResponseSuccess; // 登录成功时返回数据
+        }
+        return {
+          success: false,
+          error: response.statusText || "Unknown error",
+        } as RegisterResponseFailure; // 返回错误信息 //TODO
+      })
       .catch((error) => {
-        throw error;
+        console.log(error);
+        return {
+          success: false,
+          error: error.message || "Unknown error",
+        };
       });
   },
 };

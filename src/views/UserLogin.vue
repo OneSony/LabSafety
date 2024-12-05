@@ -99,39 +99,15 @@ export default {
 
     console.log("login status", useStore().state.isAuthenticated);
 
-    const router = useRouter(); // 使用 useRouter 获取路由实例
-
-    const handleRegister = async () => {
-      try {
-        console.log("注册信息：", registerForm.value);
-        const { username, password } = registerForm.value;
-        const response = await userAPI.register(username, password);
-        if (response.status === 201) {
-          console.log("注册成功");
-          //isDialogVisible = false; //TODO
-          ElMessage.success("注册成功！");
-          loginForm.value = { username, password }; // 注册成功后自动填充登录表单
-          //handleLogin(); // 注册成功后自动登录
-        } else {
-          console.error("注册失败，原因：", response.data.message);
-          ElMessage.error(response.data.message || "注册失败，未知错误！");
-        }
-      } catch (error) {
-        console.error("注册失败：", error);
-        ElMessage.error(`错误：${error.response.statusText || "未知错误！"}`);
-      }
-    };
-
     return {
       loginForm,
       registerForm,
-      handleRegister,
     };
   },
 
   methods: {
     async handleLogin() {
-      const { username, password } = this.loginForm; // 使用 `this.loginForm` 访问表单数据
+      const { username, password } = this.loginForm;
       const result = await this.$store.dispatch("login", {
         username,
         password,
@@ -145,6 +121,26 @@ export default {
         this.$router.push("/dashboard"); // 跳转到 dashboard 或其他页面
       } else {
         // 登录失败
+        this.loginError = result.error || "Login failed"; // 设置错误信息
+        ElMessage.error(`错误：${this.loginError}`);
+      }
+    },
+
+    async handleRegister() {
+      // 直接用api不经过store
+      const { username, password } = this.registerForm; // 使用 `this.loginForm` 访问表单数据
+      const result = await userAPI.register(username, password);
+
+      console.log("rrr status", result);
+      if (result.success) {
+        ElMessage.success("注册成功！");
+        console.log("rrr status");
+
+        this.loginForm.username = this.registerForm.username;
+        this.loginForm.password = this.registerForm.password;
+        this.isDialogVisible = false;
+        this.handleLogin();
+      } else {
         this.loginError = result.error || "Login failed"; // 设置错误信息
         ElMessage.error(`错误：${this.loginError}`);
       }
