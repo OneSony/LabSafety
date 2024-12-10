@@ -11,11 +11,20 @@
       <el-table-column prop="location" label="地点" />
       <el-table-column prop="manager" label="负责人" />
       <el-table-column label="操作">
+        <!-- <template #default="scope">
+          <el-button @click="editLab(scope.row)">编辑</el-button>
+          <el-button type="danger" @click="deleteLab(scope.row.id)"
+            >删除</el-button
+          >
+        </template> -->
         <template #default="scope">
           <el-button @click="editLab(scope.row)">编辑</el-button>
           <el-button type="danger" @click="deleteLab(scope.row.id)"
             >删除</el-button
           >
+          <el-button type="info" @click="openNotificationEditor(scope.row)">
+            通知
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -61,16 +70,6 @@
         </el-form-item>
         <el-form-item label="地点">
           <el-input v-model="labForm.location" />
-        </el-form-item>
-        <el-form-item label="负责人">
-          <el-select v-model="labForm.manager" placeholder="选择负责人">
-            <el-option
-              v-for="user in managers"
-              :key="user.id"
-              :label="user.name"
-              :value="user.id"
-            />
-          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -121,6 +120,20 @@
 
 <script>
 import axios from "axios";
+import { ElMessage } from "element-plus";
+// import store from "./store";
+// axios.interceptors.request.use(
+//   (config) => {
+//     const token = store.state.token;
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`;
+//     }
+//     return config;
+//   },
+//   (error) => {
+//     return Promise.reject(error);
+//   }
+// );
 
 export default {
   data() {
@@ -138,58 +151,89 @@ export default {
     };
   },
   methods: {
+    // 获取实验室列表
     fetchLabs() {
-      axios.get("/api/labs").then((res) => (this.labs = res.data));
-    },
-    fetchManagers() {
       axios
-        .get("/api/users?role=manager")
-        .then((res) => (this.managers = res.data));
+        .get("http://111.229.210.27/api/v1/labs") // 根据实际 API 调整 URL
+        .then((res) => {
+          this.labs = res.data;
+        })
+        .catch((error) => {
+          ElMessage.error("获取实验室列表失败");
+          console.error(error.response ? error.response.data : error.message);
+        });
     },
-    fetchGuidelines() {
-      axios.get("/api/guidelines").then((res) => (this.guidelines = res.data));
-    },
-    fetchNotifications() {
-      axios
-        .get("/api/notifications")
-        .then((res) => (this.notifications = res.data));
-    },
+
+    // 打开创建实验室弹窗
     openCreateLabDialog() {
       this.isLabDialogVisible = true;
-      this.labForm = { name: "", location: "", manager: "" };
+      this.labForm = { class_id: null, name: "", location: "" };
     },
+
+    // 打开编辑实验室弹窗
+    editLab(lab) {
+      this.isLabDialogVisible = true;
+      this.labForm = { ...lab };
+    },
+
+    // 保存实验室（创建或编辑）
     saveLab() {
-      axios.post("/api/labs", this.labForm).then(() => {
-        this.isLabDialogVisible = false;
-        this.fetchLabs();
-      });
+      const data = {
+        name: this.labForm.name,
+        location: this.labForm.location,
+      };
+
+      if (this.labForm.class_id) {
+        // 编辑实验室
+        axios
+          .post(
+            `http://111.229.210.27/api/v1/labs/lab/${this.labForm.class_id}`,
+            data
+          )
+          .then(() => {
+            ElMessage.success("实验室更新成功");
+            this.isLabDialogVisible = false;
+            this.fetchLabs();
+          })
+          .catch((error) => {
+            ElMessage.error("实验室更新失败");
+            console.error(error.response ? error.response.data : error.message);
+          });
+      } else {
+        // 创建实验室
+        axios
+          .post("http://111.229.210.27/api/v1/labs/lab", data)
+          .then((response) => {
+            console.log(response.data);
+            ElMessage.success("实验室创建成功");
+            this.isLabDialogVisible = false;
+            this.fetchLabs();
+          })
+          .catch((error) => {
+            ElMessage.error("实验室创建失败");
+            console.error(error.response ? error.response.data : error.message);
+          });
+      }
     },
-    openGuidelineDialog() {
-      this.isGuidelineDialogVisible = true;
-      this.guidelineForm = { content: "", tag: "" };
+    // 删除实验室
+    deleteLab(classId) {
+      axios
+        .delete(`http://111.229.210.27/api/v1/labs/lab/${classId}`)
+        .then(() => {
+          ElMessage.success("实验室删除成功");
+          this.fetchLabs();
+        })
+        .catch((error) => {
+          ElMessage.error("实验室删除失败");
+          console.error(error.response ? error.response.data : error.message);
+        });
     },
-    saveGuideline() {
-      axios.post("/api/guidelines", this.guidelineForm).then(() => {
-        this.isGuidelineDialogVisible = false;
-        this.fetchGuidelines();
-      });
+    created() {
+      this.fetchLabs();
+      this.fetchManagers();
+      this.fetchGuidelines();
+      this.fetchNotifications();
     },
-    openNotificationDialog() {
-      this.isNotificationDialogVisible = true;
-      this.notificationForm = { content: "", tag: "" };
-    },
-    publishNotification() {
-      axios.post("/api/notifications", this.notificationForm).then(() => {
-        this.isNotificationDialogVisible = false;
-        this.fetchNotifications();
-      });
-    },
-  },
-  created() {
-    this.fetchLabs();
-    this.fetchManagers();
-    this.fetchGuidelines();
-    this.fetchNotifications();
   },
 };
 </script>

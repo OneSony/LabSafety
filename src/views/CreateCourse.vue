@@ -135,6 +135,7 @@ export default {
     };
 
     const addClass = () => {
+      currentClass.value = 1;
       currentClass.name = "";
       currentClass.location = "";
       currentClass.time = null;

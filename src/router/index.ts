@@ -8,6 +8,7 @@ import CommentManagement from "../views/CommentManagement.vue";
 import UserProfile from "../views/Profile.vue";
 // import CreateCourse from "../views/CreateCourse.vue";
 // import LabManagerDashboard from "../views/LabManagerDashboard.vue";
+import NotificationEditor from "../views/NotificationEditor.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -37,6 +38,12 @@ const routes: Array<RouteRecordRaw> = [
     name: "TeacherDashboard",
     component: TeacherDashboard,
     // component: LabManagerDashboard,
+  },
+  {
+    path: "/notifications/:labId",
+    name: "NotificationEditor",
+    component: NotificationEditor,
+    props: true,
   },
   {
     path: "/about",
