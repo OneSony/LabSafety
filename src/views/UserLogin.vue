@@ -57,7 +57,6 @@
 <script>
 import { ref } from "vue";
 import { useRouter } from "vue-router"; // 导入 useRouter
-import { useStore } from "vuex"; // 引入 useStore
 import { onMounted } from "vue"; // 引入 onMounted
 import {
   ElDialog,
@@ -67,7 +66,7 @@ import {
   ElFormItem,
   ElMessage,
 } from "element-plus"; // 导入 Element Plus 组件
-import userAPI from "../utils/api";
+import { userAPI } from "../utils/api";
 
 export default {
   name: "UserLogin",
@@ -90,14 +89,14 @@ export default {
     });
 
     onMounted(() => {
-      if (!useStore().state.isAuthenticated) {
+      if (!userAPI.isLoggedIn()) {
         ElMessage.warning("请登录以查看更多内容"); // 如果未登录，显示 ElMessage 提示
       } else {
         ElMessage.success("已经登陆"); // 如果已登录，显示欢迎信息
       }
     });
 
-    console.log("login status", useStore().state.isAuthenticated);
+    console.log("login status", userAPI.isLoggedIn());
 
     return {
       loginForm,
@@ -108,17 +107,13 @@ export default {
   methods: {
     async handleLogin() {
       const { username, password } = this.loginForm;
-      const result = await this.$store.dispatch("login", {
-        username,
-        password,
-      });
+      const result = await userAPI.login(username, password);
 
       if (result.success) {
         // 登录成功
         ElMessage.success("登录成功！");
-        console.log("login status", this.$store.state.isAuthenticated);
         this.loginError = ""; // 清除错误信息
-        this.$router.push("/dashboard"); // 跳转到 dashboard 或其他页面
+        this.$router.push("/");
       } else {
         // 登录失败
         this.loginError = result.error || "Login failed"; // 设置错误信息
@@ -127,7 +122,6 @@ export default {
     },
 
     async handleRegister() {
-      // 直接用api不经过store
       const { username, password } = this.registerForm; // 使用 `this.loginForm` 访问表单数据
       const result = await userAPI.register(username, password);
 

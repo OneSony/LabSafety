@@ -1,5 +1,6 @@
 import axios from "axios";
 
+// 创建一个axios实例
 const server = axios.create({
   baseURL: "http://111.229.210.27", // 替换为你后端的 URL
   headers: {
@@ -7,10 +8,67 @@ const server = axios.create({
   },
 });
 
+// 设置拦截器
+server.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+server.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true; // 防止无限重试
+
+      // 如果 token 过期，尝试刷新 token
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        try {
+          const refreshResponse = await server.post("/api/v1/refresh-token", {
+            refresh: refreshToken,
+          });
+          if (refreshResponse.status === 200) {
+            const newToken = refreshResponse.data.access;
+            localStorage.setItem("accessToken", newToken); // 更新本地的 token
+            originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
+            return server(originalRequest); // 重试原始请求
+          } else {
+            // 刷新失败，跳转到登录页面
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            window.location.href = "/login";
+          }
+        } catch (refreshError) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          window.location.href = "/login";
+        }
+      } else {
+        // 如果没有 refresh token，直接跳转到登录页面
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 interface LoginResponseSuccess {
   success: true;
-  username: string;
-  jwt: string;
 }
 
 interface LoginResponseFailure {
@@ -32,30 +90,40 @@ type RegisterResponse = RegisterResponseSuccess | RegisterResponseFailure;
 
 // 创建一个包含用户相关 API 请求的对象
 const userAPI = {
+  isLoggedIn(): boolean {
+    const token = localStorage.getItem("accessToken");
+    return !!token; // 如果存在 token，说明已登录
+  },
+
+  getUsername(): string | null {
+    return localStorage.getItem("username");
+  },
+
   // 登录方法
   login(username: string, password: string): Promise<LoginResponse> {
     const credentials = { username, password };
     return server
       .post("/api/v1/login/", credentials)
       .then((response) => {
-        console.log(response);
         if (response.status === 200) {
+          // 登录成功，保存 token 和刷新 token
+          const { access, refresh } = response.data;
+          localStorage.setItem("accessToken", access);
+          localStorage.setItem("refreshToken", refresh);
+          localStorage.setItem("username", username);
           return {
             success: true,
-            username: username,
-            jwt: response.data.access,
           } as LoginResponseSuccess; // 登录成功时返回数据
         }
         return {
           success: false,
-          error: response.statusText || "Unknown error",
-        } as LoginResponseFailure; // 返回错误信息 //TODO
+          error: response.data.detail || "Unknown error",
+        } as LoginResponseFailure; // 返回错误信息
       })
       .catch((error) => {
-        console.log(error);
         return {
           success: false,
-          error: error.message || "Unknown error",
+          error: error.response?.data.detail || "Unknown error",
         };
       });
   },
@@ -65,25 +133,79 @@ const userAPI = {
     return server
       .post("/api/v1/register/", credentials)
       .then((response) => {
-        console.log(response);
         if (response.status === 201) {
           return {
             success: true,
-          } as RegisterResponseSuccess; // 登录成功时返回数据
+          } as RegisterResponseSuccess; // 注册成功
         }
         return {
           success: false,
-          error: response.statusText || "Unknown error",
-        } as RegisterResponseFailure; // 返回错误信息 //TODO
+          error: response.data.detail || "Unknown error",
+        } as RegisterResponseFailure; // 注册失败
       })
       .catch((error) => {
-        console.log(error);
         return {
           success: false,
-          error: error.message || "Unknown error",
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
+  logout(): void {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("username");
+    window.location.href = "/login"; //todo
+  },
+};
+
+const courseAPI = {
+  getCourseList(): Promise<any> {
+    return server
+      .get("/api/v1/courses/course")
+      .then((response) => {
+        if (response.status === 200) {
+          return {
+            success: true,
+            data: response.data,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
+
+  getClassList(coursename: string): Promise<any> {
+    return server
+      .get("/api/v1/classes/class")
+      .then((response) => {
+        if (response.status === 200) {
+          return {
+            success: true,
+            data: response.data,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
         };
       });
   },
 };
 
-export default userAPI;
+export { userAPI, courseAPI };

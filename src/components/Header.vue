@@ -30,22 +30,27 @@
 <script>
 import { useRouter } from "vue-router";
 import { useRoute } from "vue-router";
-import { useStore } from "vuex"; // 引入 useStore
 import { computed } from "vue";
+import { userAPI } from "@/utils/api";
+import { ref, watch } from "vue";
+import { onMounted } from "vue";
 
 export default {
   name: "HeaderComponent",
   setup() {
     const route = useRoute();
-    const isUserInfoVisible = useStore().state.isAuthenticated;
+    const isUserInfoVisible = userAPI.isLoggedIn();
 
     console.log("login status??", isUserInfoVisible);
-    console.log("store??", useStore().state.isAuthenticated);
+    console.log("api??", userAPI.isLoggedIn());
 
-    const store = useStore();
-
-    const userName = computed(() => store.state.user || "未登录");
+    const userName = ref(userAPI.getUsername() || "未登录");
     const userPhoto = "https://via.placeholder.com/40";
+
+    watch(route, () => {
+      userName.value = userAPI.getUsername() || "未登录";
+      console.log("route changed");
+    });
 
     return {
       isUserInfoVisible,
@@ -64,8 +69,7 @@ export default {
     },
     logout() {
       // 退出登录
-      this.$store.dispatch("logout");
-      this.$router.push("/login");
+      userAPI.logout();
     },
   },
 };
