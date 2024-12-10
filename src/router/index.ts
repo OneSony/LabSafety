@@ -14,7 +14,20 @@ import { userAPI } from "@/utils/api";
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    redirect: "/dashboard",
+    redirect: (to) => {
+      const role = userAPI.getRole(); // 获取当前用户角色
+      console.log("role", role);
+
+      if (role === "student") {
+        return { name: "StudentDashboard" };
+      } else if (role === "teacher") {
+        return { name: "TeacherDashboard" };
+      } else if (role === "manager") {
+        return { name: "LabManagerDashboard" };
+      } else {
+        return "/login"; // 如果角色无法识别，跳转到登录页面
+      }
+    },
   },
   {
     path: "/profile",
@@ -131,6 +144,7 @@ router.beforeEach((to, from, next) => {
       next(); // 允许进入目标页面
     }
   } else if (to.path === "/login" && userAPI.isLoggedIn()) {
+    //是可以的，如果是refresh进来的，已经清空了accessToken，是notLoggedIn的
     // 如果用户已经登录，且访问的是登录页面，跳转到上一个页面或主页
     next(from.fullPath || "/"); // 返回上一个页面或首页
   } else {

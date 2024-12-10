@@ -2,87 +2,51 @@
   <div class="dashboard">
     <SidebarMenu />
     <div class="content">
-      <div class="tabs">
-        <el-tabs v-model="activeTab">
-          <el-tab-pane label="全部实验" name="all">
-            <div v-if="allExperiments.length === 0" class="no-data">
-              No data
-            </div>
-            <div v-else>
-              <CourseCard :experiments="allExperiments" />
-            </div>
-          </el-tab-pane>
-          <el-tab-pane label="在学实验" name="ongoing">
-            <div v-if="ongoingExperiments.length === 0" class="no-data">
-              No data
-            </div>
-            <div v-else>
-              <CourseCard :experiments="ongoingExperiments" />
-            </div>
-          </el-tab-pane>
-          <el-tab-pane label="已完成实验" name="completed">
-            <div v-if="completedExperiments.length === 0" class="no-data">
-              No data
-            </div>
-            <div v-else>
-              <CourseCard :experiments="completedExperiments" />
-            </div>
-          </el-tab-pane>
-        </el-tabs>
-      </div>
-      <PaginationComponent
-        :total="totalExperiments"
-        @page-changed="handlePageChange"
+      <!-- 动态加载组件 -->
+      <component
+        :is="currentComponent"
+        :classItem="classItem"
+        @go-back-to-course-panel="backToCoursePanel"
+        @show-class-panel="showClassPanel"
       />
     </div>
   </div>
 </template>
 
 <script>
-import SidebarMenu from "../components/Sidebar.vue";
-import CourseCard from "../components/CourseCard.vue";
-import PaginationComponent from "../components/Pagination.vue";
-import { courseAPI } from "../utils/api";
-import { ElMessage } from "element-plus";
+import { ref } from "vue";
+import CoursePanel from "@/components/CoursePanel.vue";
+import ClassPanel from "@/components/ClassPanel.vue";
+import SidebarMenu from "@/components/Sidebar.vue";
 
 export default {
   name: "StudentDashboard",
-  components: { SidebarMenu, CourseCard, PaginationComponent },
-  data() {
-    return {
-      activeTab: "all",
-      allExperiments: [],
-      ongoingExperiments: [],
-      completedExperiments: [],
-      totalExperiments: 0,
+  components: {
+    SidebarMenu,
+    CoursePanel,
+    ClassPanel,
+  },
+  setup() {
+    const currentComponent = ref(CoursePanel); // 默认显示 CoursePanel
+    const classItem = ref(null); // 存储当前选中的 classItem
+
+    // 切换到 ClassPanel
+    const showClassPanel = (item) => {
+      classItem.value = item; // 存储传递过来的 classItem
+      currentComponent.value = ClassPanel; // 切换到 ClassPanel
     };
-  },
-  mounted() {
-    this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
-  },
-  methods: {
-    async fetchCourses() {
-      const response = await courseAPI.getCourseList(); // 调用 API 获取课程数据
-      console.log("Response:", response);
-      if (response.success === false) {
-        ElMessage.error("获取课程失败：" + response.error);
-        console.error("Error fetching courses:", response.error);
-      } else {
-        const courses = response.data; // 假设 API 返回的数据存储在 `data` 字段中
-        this.totalExperiments = courses.length; // 设置课程数量
-        this.allExperiments = courses;
-        /*this.ongoingExperiments = courses.filter(
-            (course) => course.status === "ongoing"
-          ); // 假设有状态字段，筛选进行中的实验
-          this.completedExperiments = courses.filter(
-            (course) => course.status === "completed"
-          ); // 筛选已完成的实验*/
-      }
-    },
-    handlePageChange(page) {
-      console.log("Page changed to:", page);
-      //TODO
-    },
+
+    // 切换回 CoursePanel
+    const backToCoursePanel = () => {
+      currentComponent.value = CoursePanel; // 切换回 CoursePanel
+    };
+
+    return {
+      currentComponent,
+      showClassPanel,
+      backToCoursePanel,
+      classItem, // classItem 数据
+    };
   },
 };
 </script>
@@ -92,11 +56,6 @@ export default {
   display: flex;
 }
 .content {
-  padding: 20px;
-  flex-grow: 1;
-}
-.tabs {
-  margin-bottom: 20px;
+  flex: 1;
 }
 </style>
-```

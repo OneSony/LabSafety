@@ -1,5 +1,7 @@
 import axios from "axios";
 import { getRowIdentity } from "element-plus/es/components/table/src/util";
+import { pa } from "element-plus/es/locale";
+import { isLeaf } from "element-plus/es/utils";
 
 // 创建一个axios实例
 const server = axios.create({
@@ -13,9 +15,12 @@ const server = axios.create({
 server.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("accessToken");
-    if (token) {
+
+    // 如果不是刷新 token 请求才添加 Authorization 头部
+    if (token && config.url && !config.url.includes("/api/v1/refresh-token/")) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => {
@@ -29,41 +34,52 @@ server.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+
+    // 只处理 401 错误，并且确保原请求没有进行过重试
     if (
       error.response &&
       error.response.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !originalRequest.url.includes("/api/v1/refresh-token/")
     ) {
-      originalRequest._retry = true; // 防止无限重试
+      originalRequest._retry = true; // 防止进入死循环
 
-      // 如果 token 过期，尝试刷新 token
       const refreshToken = localStorage.getItem("refreshToken");
+
       if (refreshToken) {
         try {
-          const refreshResponse = await server.post("/api/v1/refresh-token", {
+          // 尝试通过 refresh token 获取新的 access token
+          const refreshResponse = await server.post("/api/v1/refresh-token/", {
             refresh: refreshToken,
           });
+
           if (refreshResponse.status === 200) {
             const newToken = refreshResponse.data.access;
-            localStorage.setItem("accessToken", newToken); // 更新本地的 token
-            originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
-            return server(originalRequest); // 重试原始请求
+            localStorage.setItem("accessToken", newToken); // 更新本地的 access token
+            originalRequest.headers["Authorization"] = `Bearer ${newToken}`; // 添加新的 token 到原请求头
+
+            // 重试原请求
+            return server(originalRequest);
           } else {
-            // 刷新失败，跳转到登录页面
+            // 刷新失败，清除 token 并跳转到登录页面
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
-            window.location.href = "/login";
+            window.location.href = "/login"; // 跳转到登录页
           }
         } catch (refreshError) {
+          // 捕获刷新 token 错误，清除 token 并跳转到登录页面
+          console.error("Error during refresh token:", refreshError);
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
-          window.location.href = "/login";
+          window.location.href = "/login"; // 跳转到登录页
         }
       } else {
-        // 如果没有 refresh token，直接跳转到登录页面
+        // 没有 refresh token，直接跳转到登录页面
         window.location.href = "/login";
       }
     }
+
+    // 如果其他错误，返回错误信息
     return Promise.reject(error);
   }
 );
@@ -158,6 +174,7 @@ const userAPI = {
         };
       });
   },
+
   logout(): void {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
@@ -165,36 +182,42 @@ const userAPI = {
     localStorage.removeItem("role");
     window.location.href = "/login"; //todo
   },
+
+  getUserInfo(user_id: number): Promise<any> {
+    const params = {
+      user_id: user_id,
+    };
+    return server
+      .get("/api/v1/users/user-info", { params })
+      .then((response) => {
+        if (response.status === 200) {
+          return {
+            success: true,
+            data: response.data,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
 };
 
 const courseAPI = {
   getCourseList(): Promise<any> {
+    const params = {
+      personal: true,
+    };
     return server
-      .get("/api/v1/courses/course")
-      .then((response) => {
-        if (response.status === 200) {
-          return {
-            success: true,
-            data: response.data,
-          };
-        } else {
-          return {
-            success: false,
-            error: response.data.detail || "Unknown error",
-          };
-        }
-      })
-      .catch((error) => {
-        return {
-          success: false,
-          error: error.response?.data.detail || "Unknown error",
-        };
-      });
-  },
-
-  getClassList(coursename: string): Promise<any> {
-    return server
-      .get("/api/v1/classes/class")
+      .get("/api/v1/courses/course", { params })
       .then((response) => {
         if (response.status === 200) {
           return {
@@ -217,4 +240,171 @@ const courseAPI = {
   },
 };
 
-export { userAPI, courseAPI };
+const classAPI = {
+  getClassList(course_id: number): Promise<any> {
+    const params = {
+      course_id: course_id,
+    };
+    console.log(params);
+    return server
+      .get("/api/v1/classes/class", { params })
+      .then((response) => {
+        if (response.status === 200) {
+          return {
+            success: true,
+            data: response.data,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
+
+  getComments(class_id: number): Promise<any> {
+    const params = {
+      class_id: class_id,
+    };
+    return server
+      .get("/api/v1/classes/comments", { params })
+      .then((response) => {
+        if (response.status === 200) {
+          return {
+            success: true,
+            data: response.data,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
+
+  postComment(class_id: number, content: string): Promise<any> {
+    const data = {
+      class_id: class_id,
+      content: content,
+    };
+    return server
+      .post("/api/v1/classes/comments", data)
+      .then((response) => {
+        if (response.status === 201) {
+          return {
+            success: true,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
+
+  getLocations(class_id: number): Promise<any> {
+    const params = {
+      class_id: class_id,
+    };
+    return server
+      .get("/api/v1/classes/locations", { params })
+      .then((response) => {
+        if (response.status === 200) {
+          return {
+            success: true,
+            data: response.data,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
+
+  getTeachers(class_id: number): Promise<any> {
+    const params = {
+      class_id: class_id,
+    };
+    return server
+      .get("/api/v1/classes/teachers", { params })
+      .then((response) => {
+        if (response.status === 200) {
+          return {
+            success: true,
+            data: response.data,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
+};
+
+const labAPI = {
+  getLabs(lab_id: number): Promise<any> {
+    const params = {
+      lab_id: lab_id,
+    };
+    return server
+      .get("/api/v1/labs/lab", { params })
+      .then((response) => {
+        if (response.status === 200) {
+          return {
+            success: true,
+            data: response.data,
+          };
+        } else {
+          return {
+            success: false,
+            error: response.data.detail || "Unknown error",
+          };
+        }
+      })
+      .catch((error) => {
+        return {
+          success: false,
+          error: error.response?.data.detail || "Unknown error",
+        };
+      });
+  },
+};
+
+export { userAPI, courseAPI, classAPI, labAPI };
