@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getRowIdentity } from "element-plus/es/components/table/src/util";
 
 // 创建一个axios实例
 const server = axios.create({
@@ -69,6 +70,7 @@ server.interceptors.response.use(
 
 interface LoginResponseSuccess {
   success: true;
+  role: string;
 }
 
 interface LoginResponseFailure {
@@ -99,20 +101,26 @@ const userAPI = {
     return localStorage.getItem("username");
   },
 
+  getRole(): string | null {
+    return localStorage.getItem("role");
+  },
+
   // 登录方法
   login(username: string, password: string): Promise<LoginResponse> {
     const credentials = { username, password };
     return server
-      .post("/api/v1/login/", credentials)
+      .post("/api/v1/users/login/", credentials)
       .then((response) => {
         if (response.status === 200) {
           // 登录成功，保存 token 和刷新 token
-          const { access, refresh } = response.data;
+          const { access, refresh, role } = response.data;
           localStorage.setItem("accessToken", access);
           localStorage.setItem("refreshToken", refresh);
           localStorage.setItem("username", username);
+          localStorage.setItem("role", role);
           return {
             success: true,
+            role,
           } as LoginResponseSuccess; // 登录成功时返回数据
         }
         return {
@@ -131,7 +139,7 @@ const userAPI = {
   register(username: string, password: string): Promise<RegisterResponse> {
     const credentials = { username, password };
     return server
-      .post("/api/v1/register/", credentials)
+      .post("/api/v1/users/register/", credentials)
       .then((response) => {
         if (response.status === 201) {
           return {
@@ -154,6 +162,7 @@ const userAPI = {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("username");
+    localStorage.removeItem("role");
     window.location.href = "/login"; //todo
   },
 };

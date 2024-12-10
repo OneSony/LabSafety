@@ -139,50 +139,50 @@ export default {
   },
   methods: {
     fetchLabs() {
-      axios.get("/api/labs").then((res) => (this.labs = res.data));
+      //axios.get("/api/labs").then((res) => (this.labs = res.data));
     },
     fetchManagers() {
-      axios
-        .get("/api/users?role=manager")
-        .then((res) => (this.managers = res.data));
+      //axios
+      //  .get("/api/users?role=manager")
+      //  .then((res) => (this.managers = res.data));
     },
     fetchGuidelines() {
-      axios.get("/api/guidelines").then((res) => (this.guidelines = res.data));
+      //axios.get("/api/guidelines").then((res) => (this.guidelines = res.data));
     },
     fetchNotifications() {
-      axios
-        .get("/api/notifications")
-        .then((res) => (this.notifications = res.data));
+      //axios
+      //  .get("/api/notifications")
+      //  .then((res) => (this.notifications = res.data));
     },
     openCreateLabDialog() {
       this.isLabDialogVisible = true;
       this.labForm = { name: "", location: "", manager: "" };
     },
     saveLab() {
-      axios.post("/api/labs", this.labForm).then(() => {
-        this.isLabDialogVisible = false;
-        this.fetchLabs();
-      });
+      //axios.post("/api/labs", this.labForm).then(() => {
+      //  this.isLabDialogVisible = false;
+      //  this.fetchLabs();
+      //});
     },
     openGuidelineDialog() {
       this.isGuidelineDialogVisible = true;
       this.guidelineForm = { content: "", tag: "" };
     },
     saveGuideline() {
-      axios.post("/api/guidelines", this.guidelineForm).then(() => {
-        this.isGuidelineDialogVisible = false;
-        this.fetchGuidelines();
-      });
+      //axios.post("/api/guidelines", this.guidelineForm).then(() => {
+      //  this.isGuidelineDialogVisible = false;
+      //  this.fetchGuidelines();
+      //});
     },
     openNotificationDialog() {
       this.isNotificationDialogVisible = true;
       this.notificationForm = { content: "", tag: "" };
     },
     publishNotification() {
-      axios.post("/api/notifications", this.notificationForm).then(() => {
-        this.isNotificationDialogVisible = false;
-        this.fetchNotifications();
-      });
+      //axios.post("/api/notifications", this.notificationForm).then(() => {
+      //  this.isNotificationDialogVisible = false;
+      //  this.fetchNotifications();
+      //});
     },
   },
   created() {
