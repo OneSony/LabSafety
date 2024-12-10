@@ -1,48 +1,96 @@
 <template>
   <el-header class="header">
-    <div class="logo-container" @click="navigateToDashboard">
+    <router-link to="/" class="logo-link">
       <img src="@/assets/tlsa.png" alt="Logo" class="logo" />
       <span class="role-text">{{ roleText }}</span>
-    </div>
-    <div class="user-info" @click="navigateToProfile">
-      <img class="avatar" :src="user.avatar" alt="头像" />
-      <span class="username">{{ user.name }}</span>
-    </div>
+    </router-link>
+
+    <!-- 用户信息部分，加入下拉菜单 -->
+    <el-dropdown
+      v-model:visible="isDropdownVisible"
+      trigger="hover"
+      class="user-info-dropdown"
+    >
+      <div class="user-info">
+        <img class="avatar" :src="userPhoto" alt="头像" />
+        <span class="username">{{ userName }}</span>
+      </div>
+
+      <template v-slot:dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item @click="navigateToProfile"
+            >个人信息</el-dropdown-item
+          >
+          <el-dropdown-item @click="logout">退出</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
   </el-header>
 </template>
 
 <script>
+import { useRouter } from "vue-router";
+import { useRoute } from "vue-router";
+import { computed } from "vue";
+import { userAPI } from "@/utils/api";
+import { ref, watch } from "vue";
+import { onMounted } from "vue";
+
 export default {
   name: "HeaderComponent",
-  data() {
-    return {
-      user: {
-        name: "张三", // 示例用户数据
-        avatar: "https://via.placeholder.com/40", // 默认头像链接
-        role: "teacher", // 示例角色
-      },
-    };
-  },
-  computed: {
-    roleText() {
-      switch (this.user.role) {
+  setup() {
+    const route = useRoute();
+    const isUserInfoVisible = userAPI.isLoggedIn();
+
+    console.log("login status??", isUserInfoVisible);
+    console.log("api??", userAPI.isLoggedIn());
+
+    const userName = ref(userAPI.getUsername() || "未登录");
+    const roleText = ref("");
+    const userPhoto = "https://via.placeholder.com/40";
+
+    watch(route, () => {
+      userName.value = userAPI.getUsername() || "未登录";
+      const role = userAPI.getRole();
+      switch (role) {
         case "student":
-          return "学生";
+          roleText.value = "学生";
+          break;
         case "teacher":
-          return "教师";
-        case "lab_manager":
-          return "实验室安全员";
+          roleText.value = "教师";
+          break;
+        case "manager":
+          roleText.value = "实验室管理员";
+          break;
         default:
-          return "未知角色";
+          roleText.value = "未知";
       }
-    },
+      console.log("text: ", roleText.value);
+      console.log("route changed");
+    });
+
+    return {
+      isUserInfoVisible,
+      userName,
+      roleText,
+      //userPhoto,
+    };
   },
   methods: {
     navigateToDashboard() {
-      this.$router.push("/dashboard"); // 跳转到主页面
+      this.$router.push("/"); // 跳转到主页面
     },
     navigateToProfile() {
-      this.$router.push("/profile"); // 跳转到个人信息页面
+      // const router = useRouter();
+      if (this.$router) {
+        this.$router.push("/profile"); // 确保路由路径正确
+      } else {
+        console.error("Router instance is not available.");
+      } // 跳转到个人信息页面
+    },
+    logout() {
+      // 退出登录
+      userAPI.logout();
     },
   },
 };

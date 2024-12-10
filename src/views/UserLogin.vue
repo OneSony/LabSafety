@@ -20,68 +20,123 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleLogin">登录</el-button>
+        <el-button @click="isDialogVisible = true">注册</el-button>
+
+        <el-dialog v-model="isDialogVisible" title="注册" width="400px">
+          <!-- 注册表单内容 -->
+          <el-form
+            :model="registerForm"
+            @submit.prevent="handleRegister"
+            label-width="80px"
+          >
+            <el-form-item label="用户名" prop="username">
+              <el-input
+                v-model="registerForm.username"
+                placeholder="请输入用户名"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="password">
+              <el-input
+                v-model="registerForm.password"
+                type="password"
+                placeholder="请输入密码"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+
+          <!-- 弹窗底部按钮 -->
+          <template #footer>
+            <el-button @click="isDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="handleRegister">注册</el-button>
+          </template>
+        </el-dialog>
       </el-form-item>
     </el-form>
   </div>
 </template>
-
 <script>
-<<<<<<< HEAD:src/components/Login.vue
-import { login } from "@/api/auth";
-
-export default {
-  name: "UserLogin",
-  data() {
-=======
 import { ref } from "vue";
 import { useRouter } from "vue-router"; // 导入 useRouter
+import { onMounted } from "vue"; // 引入 onMounted
+import {
+  ElDialog,
+  ElInput,
+  ElButton,
+  ElForm,
+  ElFormItem,
+  ElMessage,
+} from "element-plus"; // 导入 Element Plus 组件
+import { userAPI } from "../utils/api";
 
 export default {
   name: "UserLogin",
+
+  data() {
+    return {
+      isDialogVisible: false,
+    };
+  },
+
   setup() {
     const loginForm = ref({
       username: "",
       password: "",
     });
-    const router = useRouter(); // 使用 useRouter 获取路由实例
 
-    const handleLogin = async () => {
-      try {
-        console.log("登录信息：", loginForm.value);
-        const { username, password } = loginForm.value;
-        const credentials = { username, password };
+    const registerForm = ref({
+      username: "",
+      password: "",
+    });
 
-        // 假设这里进行 API 调用（登录）
-        // const response = await userAPI.login(credentials);
-
-        // 登录成功后跳转到仪表盘
-        console.log("登录成功");
-        router.push("/dashboard"); // 使用 router.push() 跳转
-      } catch (error) {
-        console.error("登录失败：", error);
-        // 这里可以处理错误，比如显示提示框
+    onMounted(() => {
+      if (!userAPI.isLoggedIn()) {
+        ElMessage.warning("请登录以查看更多内容"); // 如果未登录，显示 ElMessage 提示
+      } else {
+        ElMessage.success("已经登陆"); // 如果已登录，显示欢迎信息
       }
-    };
+    });
 
->>>>>>> 0d47dfc5978c345e34529569ee8754adefb37ea1:src/views/UserLogin.vue
+    console.log("login status", userAPI.isLoggedIn());
+
     return {
-      loginForm: {
-        username: "",
-        password: "",
-      },
+      loginForm,
+      registerForm,
     };
   },
+
   methods: {
     async handleLogin() {
-      try {
-        const response = await login(this.loginForm);
-        // 假设后端返回的Token在response.data.token中
-        const token = response.data.token;
-        localStorage.setItem("token", token);
-        this.$router.push("/dashboard"); // 登录成功后跳转
-      } catch (error) {
-        console.error("登录失败：", error);
-        this.$message.error("登录失败，请检查用户名和密码");
+      const { username, password } = this.loginForm;
+      const result = await userAPI.login(username, password);
+
+      if (result.success) {
+        // 登录成功
+        ElMessage.success("登录成功！");
+        this.loginError = ""; // 清除错误信息
+        this.$router.push("/");
+      } else {
+        // 登录失败
+        this.loginError = result.error || "Login failed"; // 设置错误信息
+        ElMessage.error(`错误：${this.loginError}`);
+      }
+    },
+
+    async handleRegister() {
+      const { username, password } = this.registerForm; // 使用 `this.loginForm` 访问表单数据
+      const result = await userAPI.register(username, password);
+
+      console.log("rrr status", result);
+      if (result.success) {
+        ElMessage.success("注册成功！");
+        console.log("rrr status");
+
+        this.loginForm.username = this.registerForm.username;
+        this.loginForm.password = this.registerForm.password;
+        this.isDialogVisible = false;
+        this.handleLogin();
+      } else {
+        this.loginError = result.error || "Login failed"; // 设置错误信息
+        ElMessage.error(`错误：${this.loginError}`);
       }
     },
   },
@@ -96,5 +151,8 @@ export default {
   border: 1px solid #ddd;
   border-radius: 8px;
   background-color: #f9f9f9;
+}
+.el-dialog .el-form-item {
+  margin-bottom: 20px; /* 自定义间距 */
 }
 </style>
