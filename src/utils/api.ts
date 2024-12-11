@@ -218,10 +218,53 @@ const classAPI = {
 };
 
 const labAPI = {
-  getLabs(lab_id: number): Promise<any> {
-    const params = { lab_id };
+  // 获取实验室列表
+  getLabs(): Promise<any> {
     return server
-      .get("/api/v1/labs/lab", { params })
+      .get("/api/v1/labs/lab")
+      .then(handleResponse)
+      .catch(handleError);
+  },
+  getLabById(lab_id: number): Promise<any> {
+    return server
+      .get(`/labs/lab/${lab_id}`)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+  // getLabByName(labName: string): Promise<any> {
+  //   return this.getLabs({ lab_name: labName })
+  //     .then((response) => {
+  //       if (response.success && response.data.length > 0) {
+  //         return { success: true, data: response.data[0] };
+  //       } else {
+  //         return { success: false, error: "实验室未找到" };
+  //       }
+  //     })
+  //     .catch(handleError);
+  // },
+  // 创建实验室
+  createLab(labData: { name: string; location: string }): Promise<any> {
+    return server
+      .post("/api/v1/labs/lab", labData)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  // 编辑实验室
+  editLab(
+    labId: number,
+    labData: { name: string; location: string }
+  ): Promise<any> {
+    return server
+      .put(`/api/v1/labs/lab/${labId}`, labData)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  // 删除实验室
+  deleteLab(labId: number): Promise<any> {
+    return server
+      .delete(`/api/v1/labs/lab/${labId}`)
       .then(handleResponse)
       .catch(handleError);
   },

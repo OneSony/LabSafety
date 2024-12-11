@@ -8,6 +8,7 @@ import CommentManagement from "../views/CommentManagement.vue";
 import UserProfile from "../views/Profile.vue";
 import StudentDashboard from "../views/StudentDashboard.vue";
 import LabManagerDashboard from "../views/LabManagerDashboard.vue";
+import LabDetail from "../views/LabDetail.vue";
 import NotificationEditor from "@/views/NotificationEditor.vue";
 import { userAPI } from "@/utils/api";
 
@@ -125,6 +126,13 @@ const routes: Array<RouteRecordRaw> = [
     // which is lazy-loaded when the route is visited.
     component: () =>
       import(/* webpackChunkName: "about" */ "../views/AboutView.vue"),
+  },
+  {
+    // 使用实验室名称作为路由参数
+    path: "/lab/:labName",
+    name: "LabDetail",
+    component: LabDetail,
+    props: true, // 将路由参数作为 props 传递给组件
   },
 ];
 
