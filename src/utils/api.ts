@@ -77,6 +77,7 @@ const clearTokensAndRedirect = () => {
 // 通用响应处理函数
 const handleResponse = (response: any) => {
   if (response.status === 200 || response.status === 201) {
+    console.log("api", response.data);
     return { success: true, data: response.data };
   } else {
     return { success: false, error: response.data.detail || "Unknown error" };
@@ -173,6 +174,30 @@ const courseAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
+  postCourse(course_name: string): Promise<any> {
+    const data = { name: course_name };
+    return server
+      .post("/api/v1/courses/course", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postClassToCourse(course_id: number, class_id: number): Promise<any> {
+    const data = { class_id: class_id, course_id: course_id };
+    return server
+      .post("/api/v1/courses/classes", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postEnroll(student_ids: number[], course_id: number): Promise<any> {
+    const data = { student_ids: student_ids, course_id: course_id };
+    return server
+      .post("/api/v1/courses/enroll", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
 };
 
 const classAPI = {
@@ -215,11 +240,27 @@ const classAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
+  postClass(class_name: string, date: string): Promise<any> {
+    const params = { name: class_name, start_time: date };
+    return server
+      .post("/api/v1/classes/class", params)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postLocation(class_id: number, lab_id: number): Promise<any> {
+    const data = { class_id: class_id, lab_id: lab_id };
+    return server
+      .post("/api/v1/classes/locations", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
 };
 
 const labAPI = {
-  getLabs(lab_id: number): Promise<any> {
-    const params = { lab_id };
+  getLabs(lab_id?: number): Promise<any> {
+    const params = lab_id ? { lab_id } : {};
     return server
       .get("/api/v1/labs/lab", { params })
       .then(handleResponse)
