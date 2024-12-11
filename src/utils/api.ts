@@ -201,7 +201,7 @@ const courseAPI = {
 
 const classAPI = {
   getClass(class_id: number): Promise<any> {
-    const params = { class_id: class_id }; //TODO personal true
+    const params = { class_id: class_id, personal: true };
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)
@@ -209,7 +209,7 @@ const classAPI = {
   },
 
   getClassList(course_id: number): Promise<any> {
-    const params = { course_id: course_id }; //TODO personal true
+    const params = { course_id: course_id, personal: true };
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)
