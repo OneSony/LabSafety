@@ -82,9 +82,9 @@ export default {
     },
 
     // 处理子组件传递过来的 classItem
-    handelClassClick(classItem) {
-      console.log("Selected class:", classItem);
-      this.$emit("show-class-panel", classItem);
+    handelClassClick(class_id) {
+      console.log("Selected class:", class_id);
+      this.$emit("show-class-panel", class_id);
       // 在这里处理你要对 classItem 进行的操作
       // 比如展示课程详情、打开弹窗等
     },

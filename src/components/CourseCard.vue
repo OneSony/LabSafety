@@ -68,8 +68,9 @@ export default {
 
     // 处理 class card 的点击事件
     handleClassCardClick(classItem, event) {
+      console.log("Class card clicked:", classItem);
       event.stopPropagation(); // 防止触发父级课程卡片点击事件
-      this.$emit("class-clicked", classItem); // 将选中的 class 传递给父组件
+      this.$emit("class-clicked", classItem.id); // 将选中的 class 传递给父组件
     },
   },
 };

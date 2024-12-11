@@ -201,8 +201,16 @@ const courseAPI = {
 };
 
 const classAPI = {
+  getClass(class_id: number): Promise<any> {
+    const params = { class_id: class_id, personal: true };
+    return server
+      .get("/api/v1/classes/class", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getClassList(course_id: number): Promise<any> {
-    const params = { course_id };
+    const params = { course_id: course_id, personal: true };
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)
