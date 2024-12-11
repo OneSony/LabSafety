@@ -263,6 +263,14 @@ const classAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
+  postTeacher(class_id: number, teacher_id: number): Promise<any> {
+    const data = { class_id: class_id, teacher_id: teacher_id };
+    return server
+      .post("/api/v1/classes/teachers", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
 };
 
 const labAPI = {

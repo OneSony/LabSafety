@@ -11,7 +11,7 @@
       <h2>{{ name }}</h2>
       <p><strong>课程ID:</strong> {{ class_id }}</p>
       <p><strong>上课时间:</strong> {{ date }}</p>
-      <p><strong>教师:</strong> {{ teacher }}</p>
+      <p><strong>教师:</strong> {{ teacherNamesStr }}</p>
       <p><strong>地点:</strong> {{ location }}</p>
     </div>
 
@@ -72,7 +72,8 @@ export default {
       name: "",
       date: "",
       newComment: "", // 存储新评论的内容
-      teacher: "", // 存储教师信息
+      teacherNames: [], // 存储教师信息
+      teacherIds: [], // 存储教师ID
       location: "", // 存储课程地点
       userLookup: {}, // 缓存用户信息的对象
       commentList: [], // 存储评论列表
@@ -127,15 +128,19 @@ export default {
           if (response.data.length === 0) {
             this.teacher = "未知";
           } else {
-            this.teacher = response.data[0].teacher_id;
-            userAPI.getUserInfo(this.teacher).then((response) => {
-              if (response.success) {
-                console.log("教师信息:", response.data);
-                this.teacher = response.data.name;
-              } else {
-                ElMessage.error("获取教师信息失败");
-              }
-            });
+            this.teacherIds = response.data.map((item) => item.teacher_id);
+            for (let i = 0; i < this.teacherIds.length; i++) {
+              userAPI.getUserInfo(this.teacherIds[i]).then((response) => {
+                if (response.success) {
+                  console.log("教师信息:", response.data);
+                  this.teacherNames.push(response.data[0].username);
+                } else {
+                  ElMessage.error("获取教师信息失败");
+                }
+              });
+            }
+            console.log("教师们信息:", this.teacherNames);
+            this.teacherNamesStr = this.teacherNames.join(" ");
           }
         } else {
           ElMessage.error("获取教师信息失败");
@@ -231,6 +236,11 @@ export default {
       // TODO
       this.getComments();
       console.log("reget:", this.commentList);
+    },
+  },
+  computed: {
+    teacherNamesStr() {
+      return this.teacherNames.join(", ");
     },
   },
 };
