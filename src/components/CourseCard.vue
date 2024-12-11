@@ -58,7 +58,9 @@ export default {
         console.log("请求数据");
         // 请求课程的 class 列表
         const response = await classAPI.getClassList(course.course_id);
+        console.log("course.course_id", course.course_id);
         if (response.success) {
+          console.log("获取课程列表成功:", response.data);
           course.classList = response.data; // 假设返回的数据是 class 列表
         } else {
           this.$message.error("获取课程列表失败");

@@ -77,7 +77,6 @@ const clearTokensAndRedirect = () => {
 // 通用响应处理函数
 const handleResponse = (response: any) => {
   if (response.status === 200 || response.status === 201) {
-    console.log("api", response.data);
     return { success: true, data: response.data };
   } else {
     return { success: false, error: response.data.detail || "Unknown error" };
@@ -158,7 +157,7 @@ const userAPI = {
   },
 
   getUserInfo(user_id: number): Promise<any> {
-    const params = { user_id };
+    const params = { user_id: user_id };
     return server
       .get("/api/v1/users/user-info", { params })
       .then(handleResponse)
@@ -202,7 +201,7 @@ const courseAPI = {
 
 const classAPI = {
   getClass(class_id: number): Promise<any> {
-    const params = { class_id: class_id, personal: true };
+    const params = { class_id: class_id }; //TODO personal true
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)
@@ -210,7 +209,7 @@ const classAPI = {
   },
 
   getClassList(course_id: number): Promise<any> {
-    const params = { course_id: course_id, personal: true };
+    const params = { course_id: course_id }; //TODO personal true
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)
@@ -218,7 +217,7 @@ const classAPI = {
   },
 
   getComments(class_id: number): Promise<any> {
-    const params = { class_id };
+    const params = { class_id: class_id };
     return server
       .get("/api/v1/classes/comments", { params })
       .then(handleResponse)
@@ -234,7 +233,7 @@ const classAPI = {
   },
 
   getLocations(class_id: number): Promise<any> {
-    const params = { class_id };
+    const params = { class_id: class_id };
     return server
       .get("/api/v1/classes/locations", { params })
       .then(handleResponse)
@@ -242,7 +241,7 @@ const classAPI = {
   },
 
   getTeachers(class_id: number): Promise<any> {
-    const params = { class_id };
+    const params = { class_id: class_id };
     return server
       .get("/api/v1/classes/teachers", { params })
       .then(handleResponse)
@@ -268,7 +267,7 @@ const classAPI = {
 
 const labAPI = {
   getLabs(lab_id?: number): Promise<any> {
-    const params = lab_id ? { lab_id } : {};
+    const params = lab_id ? { lab_id: lab_id } : {};
     return server
       .get("/api/v1/labs/lab", { params })
       .then(handleResponse)

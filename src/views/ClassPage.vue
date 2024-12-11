@@ -103,14 +103,16 @@ export default {
     },
 
     getClassInfo() {
+      console.log("class id:", this.class_id);
       classAPI.getClass(this.class_id).then((response) => {
         if (response.success) {
           if (response.data.length === 0) {
             ElMessage.error("课程不存在");
             this.$router.push("/");
           } else {
-            this.name = response.data.name;
-            this.date = response.data.start_time;
+            console.log("课程信息:", response.data[0]);
+            this.name = response.data[0].name;
+            this.date = response.data[0].start_time;
           }
         } else {
           ElMessage.error("获取课程信息失败");
@@ -143,7 +145,7 @@ export default {
 
     // 获取地点信息
     getLocation() {
-      classAPI.getLocations(this.course_id).then((response) => {
+      classAPI.getLocations(this.class_id).then((response) => {
         console.log("地点信息:", response);
         if (response.success) {
           if (response.data.length === 0) {
@@ -168,7 +170,7 @@ export default {
 
     // 获取评论列表
     getComments() {
-      classAPI.getComments(this.course_id).then((response) => {
+      classAPI.getComments(this.class_id).then((response) => {
         if (response.success) {
           console.log("评论列表:", response.data);
           this.commentList = response.data;
@@ -190,7 +192,7 @@ export default {
           userAPI.getUserInfo(userId).then((response) => {
             console.log("user info:", response);
             if (response.success) {
-              this.userLookup[userId] = response.data.username;
+              this.userLookup[userId] = response.data[0].username;
             } else {
               this.userLookup[userId] = "未知";
             }
@@ -212,9 +214,9 @@ export default {
       }
 
       console.log("提交评论:", this.newComment);
-      console.log("my course_id:", this.course_id);
+      console.log("my class_id:", this.class_id);
 
-      classAPI.postComment(this.course_id, this.newComment).then((response) => {
+      classAPI.postComment(this.class_id, this.newComment).then((response) => {
         if (response.success) {
           ElMessage.success("提交评论成功");
         } else {
