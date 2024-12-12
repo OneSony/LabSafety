@@ -8,6 +8,7 @@ import CommentManagement from "../views/CommentManagement.vue";
 import UserProfile from "../views/Profile.vue";
 import StudentDashboard from "../views/StudentDashboard.vue";
 import LabManagerDashboard from "../views/LabManagerDashboard.vue";
+import ClassPage from "../views/ClassPage.vue";
 import LabDetail from "../views/LabDetail.vue";
 import NotificationEditor from "@/views/NotificationEditor.vue";
 import { userAPI } from "@/utils/api";
@@ -29,6 +30,12 @@ const routes: Array<RouteRecordRaw> = [
         return "/login"; // 如果角色无法识别，跳转到登录页面
       }
     },
+  },
+  {
+    path: "/class/:classId", // 动态路径，classId 作为参数
+    name: "class-page",
+    component: ClassPage,
+    props: true, // 将 classId 作为 prop 传递到组件
   },
   {
     path: "/profile",

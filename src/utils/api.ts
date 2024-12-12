@@ -157,7 +157,7 @@ const userAPI = {
   },
 
   getUserInfo(user_id: number): Promise<any> {
-    const params = { user_id };
+    const params = { user_id: user_id };
     return server
       .get("/api/v1/users/user-info", { params })
       .then(handleResponse)
@@ -173,11 +173,43 @@ const courseAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
+  postCourse(course_name: string): Promise<any> {
+    const data = { name: course_name };
+    return server
+      .post("/api/v1/courses/course", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postClassToCourse(course_id: number, class_id: number): Promise<any> {
+    const data = { class_id: class_id, course_id: course_id };
+    return server
+      .post("/api/v1/courses/classes", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postEnroll(student_ids: number[], course_id: number): Promise<any> {
+    const data = { student_ids: student_ids, course_id: course_id };
+    return server
+      .post("/api/v1/courses/enroll", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
 };
 
 const classAPI = {
+  getClass(class_id: number): Promise<any> {
+    const params = { class_id: class_id, personal: true };
+    return server
+      .get("/api/v1/classes/class", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getClassList(course_id: number): Promise<any> {
-    const params = { course_id };
+    const params = { course_id: course_id, personal: true };
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)
@@ -185,7 +217,7 @@ const classAPI = {
   },
 
   getComments(class_id: number): Promise<any> {
-    const params = { class_id };
+    const params = { class_id: class_id };
     return server
       .get("/api/v1/classes/comments", { params })
       .then(handleResponse)
@@ -201,7 +233,7 @@ const classAPI = {
   },
 
   getLocations(class_id: number): Promise<any> {
-    const params = { class_id };
+    const params = { class_id: class_id };
     return server
       .get("/api/v1/classes/locations", { params })
       .then(handleResponse)
@@ -209,19 +241,43 @@ const classAPI = {
   },
 
   getTeachers(class_id: number): Promise<any> {
-    const params = { class_id };
+    const params = { class_id: class_id };
     return server
       .get("/api/v1/classes/teachers", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postClass(class_name: string, date: string): Promise<any> {
+    const params = { name: class_name, start_time: date };
+    return server
+      .post("/api/v1/classes/class", params)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postLocation(class_id: number, lab_id: number): Promise<any> {
+    const data = { class_id: class_id, lab_id: lab_id };
+    return server
+      .post("/api/v1/classes/locations", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postTeacher(class_id: number, teacher_id: number): Promise<any> {
+    const data = { class_id: class_id, teacher_id: teacher_id };
+    return server
+      .post("/api/v1/classes/teachers", data)
       .then(handleResponse)
       .catch(handleError);
   },
 };
 
 const labAPI = {
-  // 获取实验室列表
-  getLabs(): Promise<any> {
+  getLabs(lab_id?: number): Promise<any> {
+    const params = lab_id ? { lab_id: lab_id } : {};
     return server
-      .get("/api/v1/labs/lab")
+      .get("/api/v1/labs/lab", { params })
       .then(handleResponse)
       .catch(handleError);
   },

@@ -58,7 +58,9 @@ export default {
         console.log("请求数据");
         // 请求课程的 class 列表
         const response = await classAPI.getClassList(course.course_id);
+        console.log("course.course_id", course.course_id);
         if (response.success) {
+          console.log("获取课程列表成功:", response.data);
           course.classList = response.data; // 假设返回的数据是 class 列表
         } else {
           this.$message.error("获取课程列表失败");
@@ -68,8 +70,9 @@ export default {
 
     // 处理 class card 的点击事件
     handleClassCardClick(classItem, event) {
+      console.log("Class card clicked:", classItem);
       event.stopPropagation(); // 防止触发父级课程卡片点击事件
-      this.$emit("class-clicked", classItem); // 将选中的 class 传递给父组件
+      this.$emit("class-clicked", classItem.class_id); // 将选中的 class 传递给父组件
     },
   },
 };
