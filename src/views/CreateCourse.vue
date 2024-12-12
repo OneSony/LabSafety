@@ -266,7 +266,7 @@ export default {
       for (let studentId of studentIds) {
         const result = await userAPI.getUserInfo(studentId); // 假设有一个 API 函数 `getStudentById`
         console.log("result", result);
-        if (result.success) {
+        if (result.success && result.data.length > 0) {
           if (result.data[0].role === "student") {
             students.push({
               student_id: result.data[0].id,
@@ -466,7 +466,7 @@ export default {
     },
     resetClassForm() {
       // 重置课堂表单数据
-      this.classData = {
+      this.classFormData = {
         class_name: "",
         date: "",
         lab_id: "",

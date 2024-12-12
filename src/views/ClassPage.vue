@@ -161,7 +161,8 @@ export default {
               if (response.success) {
                 console.log("地点信息:", response.data);
                 this.location =
-                  response.data[0].name + " " + response.data[0].location;
+                  // response.data[0].name + " " + response.data[0].location;
+                  response.data[0].name;
               } else {
                 ElMessage.error("获取地点信息失败");
               }
@@ -174,10 +175,10 @@ export default {
     },
 
     // 获取评论列表
-    getComments() {
+    /*getComments() {
       classAPI.getComments(this.class_id).then((response) => {
         if (response.success) {
-          console.log("评论列表:", response.data);
+          console.log("评论列表 get comments:", response.data);
           this.commentList = response.data;
           // 获取所有评论者的 user 信息，并存入 userLookup 缓存
           const senderIds = response.data.map((comment) => comment.sender_id);
@@ -186,6 +187,19 @@ export default {
           ElMessage.error("获取评论列表失败");
         }
       });
+    },*/
+
+    async getComments() {
+      const response = await classAPI.getComments(this.class_id);
+      if (response.success) {
+        console.log("评论列表 get comments:", response.data);
+        this.commentList = response.data;
+        // 获取所有评论者的 user 信息，并存入 userLookup 缓存
+        const senderIds = response.data.map((comment) => comment.sender_id);
+        this.fetchUserNames(senderIds);
+      } else {
+        ElMessage.error("获取评论列表失败");
+      }
     },
 
     // 根据用户ID获取用户名，并缓存到 userLookup
@@ -212,7 +226,7 @@ export default {
     },
 
     // 提交评论的方法
-    submitComment() {
+    async submitComment() {
       if (this.newComment.trim() === "") {
         this.$message.warning("评论内容不能为空");
         return;
@@ -221,21 +235,25 @@ export default {
       console.log("提交评论:", this.newComment);
       console.log("my class_id:", this.class_id);
 
-      classAPI.postComment(this.class_id, this.newComment).then((response) => {
-        if (response.success) {
-          ElMessage.success("提交评论成功");
-        } else {
-          ElMessage.error("提交评论失败");
-        }
-      });
+      const response = await classAPI.postComment(
+        this.class_id,
+        this.newComment
+      );
+      if (response.success) {
+        ElMessage.success("提交评论成功");
+      } else {
+        ElMessage.error("提交评论失败");
+      }
 
       // 清空评论输入框
       this.newComment = "";
 
       // 重新获取评论列表
       // TODO
-      this.getComments();
-      console.log("reget:", this.commentList);
+
+      // get comments is a async function, so we need to wait for it to finish
+      await this.getComments();
+      console.log("comments:", this.commentList);
     },
   },
   computed: {
