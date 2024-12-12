@@ -88,6 +88,7 @@ const routes: Array<RouteRecordRaw> = [
         path: "labmanager",
         name: "LabManagerDashboard",
         component: LabManagerDashboard,
+        // component: LabDetail,
       },
     ],
   },
