@@ -312,7 +312,7 @@ export default {
       for (let teacherId of teacherIds) {
         const result = await userAPI.getUserInfo(teacherId); // 假设有一个 API 函数 `getStudentById`
         console.log("result", result);
-        if (result.success) {
+        if (result.success && result.data.length > 0) {
           if (result.data[0].role === "teacher") {
             teachers.push({
               teacher_id: result.data[0].id,
