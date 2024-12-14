@@ -32,12 +32,20 @@
           :key="index"
           class="comment-item"
         >
-          <p>
-            <strong>评论者 {{ getUserName(comment.sender_id) }}:</strong>
-            {{ comment.content }}
-            <br />
-            <span class="comment-time">{{ comment.sent_time }}</span>
-          </p>
+          <div style="display: flex; align-items: center">
+            <UserCard :userId="comment.sender_id" />
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                margin-left: 30px;
+              "
+            >
+              {{ comment.content }}
+              <span class="comment-time">{{ comment.sent_time }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -57,6 +65,7 @@
 import { classAPI, labAPI, userAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
+import UserCard from "@/components/UserCard.vue";
 
 export default {
   name: "ClassPage",
@@ -65,6 +74,9 @@ export default {
       type: Number,
       required: true,
     },
+  },
+  components: {
+    UserCard,
   },
   data() {
     return {
