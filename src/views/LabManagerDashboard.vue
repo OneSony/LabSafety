@@ -128,9 +128,9 @@
 </template>
 
 <script>
-import { ElMessage } from "element-plus";
 import { labAPI } from "../utils/api"; // 正确引入 labAPI
 import { useRouter } from "vue-router"; // 引入 Vue Router
+import { ElMessage, ElMessageBox } from "element-plus";
 
 export default {
   data() {
@@ -231,30 +231,49 @@ export default {
     },
 
     // 删除实验室逻辑
-    deleteLab(labId) {
-      this.$confirm("确定要删除这个实验室吗?", "提示", {
+    confirmDeleteLab(index) {
+      // 根据索引从 labs 中获取要删除的实验室对象
+      const labToDelete = this.labs[index];
+      if (!labToDelete || !labToDelete.lab_id) {
+        ElMessage.error("无法找到要删除的实验室");
+        return;
+      }
+
+      ElMessageBox.confirm("确定要删除这个实验室吗?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
       })
         .then(() => {
-          labAPI
-            .deleteLab(labId)
-            .then((response) => {
-              if (response.success) {
-                ElMessage.success("实验室删除成功！");
-                this.fetchLabs(); // 刷新实验室列表
-              } else {
-                ElMessage.error(response.error || "删除实验室失败");
-              }
-            })
-            .catch((error) => {
-              ElMessage.error("删除实验室失败，请稍后重试！");
-              console.error(error);
-            });
+          this.deleteLab(index);
         })
         .catch(() => {
           // 用户取消删除
+        });
+    },
+
+    // 根据索引删除实验室
+    deleteLab(index) {
+      const labToDelete = this.labs[index];
+      if (!labToDelete || !labToDelete.lab_id) {
+        ElMessage.error("无法找到要删除的实验室");
+        return;
+      }
+
+      labAPI
+        .deleteLab(labToDelete.lab_id)
+        .then((response) => {
+          if (response.success) {
+            ElMessage.success("实验室删除成功！");
+            // 成功删除后台记录后，再更新前端数据
+            this.labs.splice(index, 1);
+          } else {
+            ElMessage.error(response.error || "删除实验室失败");
+          }
+        })
+        .catch((error) => {
+          ElMessage.error("删除实验室失败，请稍后重试！");
+          console.error(error);
         });
     },
 

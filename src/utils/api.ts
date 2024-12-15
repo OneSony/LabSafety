@@ -320,7 +320,7 @@ const labAPI = {
   // 删除实验室
   deleteLab(labId: number): Promise<any> {
     return server
-      .delete(`/api/v1/labs/lab/${labId}`)
+      .delete(`/api/v1/labs/lab`)
       .then(handleResponse)
       .catch(handleError);
   },
