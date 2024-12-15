@@ -4,6 +4,8 @@
       <el-button type="primary" class="go-back-btn" @click="goBack">
         返回
       </el-button>
+      <el-button type="primary"> 复制课堂 </el-button>
+      <el-button type="primary"> 查看学生 </el-button>
     </div>
 
     <div
@@ -12,35 +14,88 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        justify-content: space-between;
+        align-items: stretch;
       "
     >
-      <div>
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          width: 60%;
+        "
+      >
+        <el-button
+          v-if="isTeacher"
+          type="primary"
+          class="card-btn"
+          style="position: absolute; top: 20px; right: 20px"
+        >
+          编辑基本信息
+        </el-button>
         <h2>{{ name }}</h2>
         <p><strong>课程ID:</strong> {{ class_id }}</p>
-        <p><strong>上课时间:</strong> {{ date }}</p>
         <p><strong>教师:</strong> {{ teacherNamesStr }}</p>
+        <p><strong>上课时间:</strong> {{ date }}</p>
         <p><strong>地点:</strong> {{ location }}</p>
+        <p><strong>概览:</strong>很多tag</p>
       </div>
-      <div>
+      <div
+        style="
+          border-left: 1px solid #ccc;
+          padding-left: 20px;
+          padding-right: 20px;
+        "
+      >
         <p>实验室地图</p>
         <img src="https://via.placeholder.com/150" alt="实验室地图" />
       </div>
     </div>
 
     <el-card class="card">
-      <h3>实验概览</h3>
+      <h3>通知</h3>
       <p>这里会有tag的汇总, 显示地图</p>
+
+      <el-button
+        v-if="isTeacher"
+        type="primary"
+        class="card-btn"
+        style="position: absolute; top: 20px; right: 20px"
+      >
+        添加通知
+      </el-button>
     </el-card>
 
-    <el-card class="card" style="width: 100%; margin-bottom: 20px">
+    <el-card class="card">
       <h3>实验内容</h3>
+      <el-button
+        v-if="isTeacher"
+        type="primary"
+        class="card-btn"
+        style="position: absolute; top: 20px; right: 20px"
+      >
+        添加内容
+      </el-button>
       <el-divider></el-divider>
       <div
         v-for="(experiment, index) in experiments"
         :key="index"
         class="experiment-item"
       >
+        <el-button
+          v-if="isTeacher"
+          type="primary"
+          class="edit-btn"
+          style="position: absolute; top: 20px; right: 20px; z-index: 9999"
+          >编辑</el-button
+        >
+        <el-button
+          v-if="isTeacher"
+          type="danger"
+          class="edit-btn"
+          style="position: absolute; top: 70px; right: 20px; z-index: 9999"
+          >删除</el-button
+        >
         <el-row>
           <el-col :span="24">
             <h4>
@@ -124,6 +179,14 @@
 
     <el-card class="card">
       <h3>实验文件</h3>
+      <el-button
+        v-if="isTeacher"
+        type="primary"
+        class="card-btn"
+        style="position: absolute; top: 20px; right: 20px"
+      >
+        添加文件
+      </el-button>
       <p>表格</p>
     </el-card>
 
@@ -180,6 +243,8 @@ export default {
   },
   data() {
     return {
+      isLocationEditing: false,
+      isTeacher: localStorage.getItem("role") === "teacher",
       class_id: this.classId,
       name: "",
       date: "",
@@ -362,6 +427,7 @@ export default {
 .card {
   margin-bottom: 20px;
   padding: 20px;
+  position: relative;
 }
 
 .experiment-item {
@@ -370,6 +436,7 @@ export default {
   gap: 10px;
   margin-bottom: 20px;
   margin-top: 20px;
+  position: relative;
 }
 
 .experiment-item:not(:last-child) {
