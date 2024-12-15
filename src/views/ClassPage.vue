@@ -6,57 +6,157 @@
       </el-button>
     </div>
 
-    <!-- 如果 classItem 存在，显示其详细信息 -->
-    <div class="class-header">
-      <h2>{{ name }}</h2>
-      <p><strong>课程ID:</strong> {{ class_id }}</p>
-      <p><strong>上课时间:</strong> {{ date }}</p>
-      <p><strong>教师:</strong> {{ teacherNamesStr }}</p>
-      <p><strong>地点:</strong> {{ location }}</p>
+    <div
+      class="header"
+      style="
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      "
+    >
+      <div>
+        <h2>{{ name }}</h2>
+        <p><strong>课程ID:</strong> {{ class_id }}</p>
+        <p><strong>上课时间:</strong> {{ date }}</p>
+        <p><strong>教师:</strong> {{ teacherNamesStr }}</p>
+        <p><strong>地点:</strong> {{ location }}</p>
+      </div>
+      <div>
+        <p>实验室地图</p>
+        <img src="https://via.placeholder.com/150" alt="实验室地图" />
+      </div>
     </div>
 
-    <!-- 课程详情部分 -->
-    <div class="class-details">
-      <h3>课程详情</h3>
-      <p>{{ description }}</p>
-    </div>
+    <el-card class="card">
+      <h3>实验概览</h3>
+      <p>这里会有tag的汇总, 显示地图</p>
+    </el-card>
 
-    <!-- 评论区卡片 -->
+    <el-card class="card" style="width: 100%; margin-bottom: 20px">
+      <h3>实验内容</h3>
+      <el-divider></el-divider>
+      <div
+        v-for="(experiment, index) in experiments"
+        :key="index"
+        class="experiment-item"
+      >
+        <el-row>
+          <el-col :span="24">
+            <h4>
+              <span class="experiment-index">{{ index + 1 }}.</span>
+              <!-- 显示数字序号 -->
+              {{ experiment.title }}
+            </h4>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>预估时间：</strong>{{ experiment.estimatedTime }}
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>安全标签：</strong>
+            <el-tag
+              v-for="(tag, i) in experiment.safetyTags"
+              :key="i"
+              type="danger"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>实验方式：</strong>
+            <el-tag
+              v-for="(tag, i) in experiment.experimentTypes"
+              :key="i"
+              type="primary"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>作业上交形式：</strong>
+            <el-tag
+              v-for="(tag, i) in experiment.assignmentTypes"
+              :key="i"
+              type="success"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>其他标签：</strong>
+            <el-tag
+              v-for="(tag, i) in experiment.otherTags"
+              :key="i"
+              type="info"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="24">
+            <strong>实验描述：</strong>
+            <p>{{ experiment.description }}</p>
+          </el-col>
+        </el-row>
+      </div>
+    </el-card>
+
+    <el-card class="card">
+      <h3>实验文件</h3>
+      <p>表格</p>
+    </el-card>
+
     <el-card class="comment-card">
-      <h4>评论区</h4>
+      <h3>评论区</h3>
 
       <div class="comment-list">
-        <!-- 使用 comment.content 来显示评论的内容 -->
         <div
           v-for="(comment, index) in commentList"
           :key="index"
           class="comment-item"
         >
-          <div style="display: flex; align-items: center">
-            <UserCard :userId="comment.sender_id" />
-            <div
-              style="
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                margin-left: 30px;
-              "
-            >
-              {{ comment.content }}
-              <span class="comment-time">{{ comment.sent_time }}</span>
-            </div>
+          <UserCard :userId="comment.sender_id" />
+          <div class="comment-details">
+            {{ comment.content }}
+            <span class="comment-time">{{ comment.sent_time }}</span>
           </div>
         </div>
       </div>
 
-      <!-- 输入评论框 -->
-      <el-input
-        v-model="newComment"
-        placeholder="请输入评论"
-        class="comment-input"
-        @keyup.enter="submitComment"
-      ></el-input>
-      <el-button type="primary" @click="submitComment">提交评论</el-button>
+      <div style="display: flex; flex-direction: row; align-items: center">
+        <el-input
+          v-model="newComment"
+          placeholder="请输入评论"
+          class="comment-input"
+          type="textarea"
+          :autosize="{ minRows: 1, maxRows: 6 }"
+          @keyup.enter="submitComment"
+        ></el-input>
+        <el-button type="primary" @click="submitComment" style="margin: 10px"
+          >提交评论</el-button
+        >
+      </div>
     </el-card>
   </div>
 </template>
@@ -83,12 +183,37 @@ export default {
       class_id: this.classId,
       name: "",
       date: "",
-      newComment: "", // 存储新评论的内容
-      teacherNames: [], // 存储教师信息
-      teacherIds: [], // 存储教师ID
-      location: "", // 存储课程地点
-      userLookup: {}, // 缓存用户信息的对象
-      commentList: [], // 存储评论列表
+      newComment: "",
+      teacherNames: [],
+      teacherIds: [],
+      location: "",
+      userLookup: {},
+      commentList: [],
+      experiments: [
+        {
+          title: "化学实验一",
+          estimatedTime: "2小时",
+          safetyTags: ["明火", "腐蚀性试剂"],
+          experimentTypes: ["个人"],
+          assignmentTypes: ["纸质报告"],
+          otherTags: ["注意通风"],
+          description: "这是一个化学实验，涉及到高温和有毒气体。",
+          photos: [
+            "https://via.placeholder.com/150",
+            "https://via.placeholder.com/150",
+          ],
+        },
+        {
+          title: "生物实验二",
+          estimatedTime: "1小时",
+          safetyTags: ["生物危险"],
+          experimentTypes: ["小组"],
+          assignmentTypes: ["上交产物"],
+          otherTags: ["无特殊要求"],
+          description: "这是一项生物实验，需要小组合作。",
+          photos: [],
+        },
+      ],
     };
   },
   setup() {
@@ -104,10 +229,9 @@ export default {
   },
   mounted() {
     console.log("class id:", this.class_id);
-    this.fetchClassDetails(); // 组件加载后调用 API 获取课程信息
+    this.fetchClassDetails();
   },
   methods: {
-    // 获取课程详情数据
     fetchClassDetails() {
       this.getClassInfo();
       this.getTeacher();
@@ -133,7 +257,6 @@ export default {
       });
     },
 
-    // 获取教师信息
     getTeacher() {
       classAPI.getTeachers(this.class_id).then((response) => {
         if (response.success) {
@@ -160,7 +283,6 @@ export default {
       });
     },
 
-    // 获取地点信息
     getLocation() {
       classAPI.getLocations(this.class_id).then((response) => {
         console.log("地点信息:", response);
@@ -172,9 +294,7 @@ export default {
             labAPI.getLabs(this.location).then((response) => {
               if (response.success) {
                 console.log("地点信息:", response.data);
-                this.location =
-                  // response.data[0].name + " " + response.data[0].location;
-                  response.data[0].name;
+                this.location = response.data[0].name;
               } else {
                 ElMessage.error("获取地点信息失败");
               }
@@ -186,91 +306,38 @@ export default {
       });
     },
 
-    // 获取评论列表
-    /*getComments() {
+    getComments() {
       classAPI.getComments(this.class_id).then((response) => {
+        console.log("评论信息:", response);
         if (response.success) {
-          console.log("评论列表 get comments:", response.data);
-          this.commentList = response.data;
-          // 获取所有评论者的 user 信息，并存入 userLookup 缓存
-          const senderIds = response.data.map((comment) => comment.sender_id);
-          this.fetchUserNames(senderIds);
+          if (response.data.length === 0) {
+            this.commentList = [];
+          } else {
+            this.commentList = response.data;
+            console.log("评论区信息:", this.commentList);
+          }
         } else {
-          ElMessage.error("获取评论列表失败");
+          ElMessage.error("获取评论失败");
         }
       });
-    },*/
-
-    async getComments() {
-      const response = await classAPI.getComments(this.class_id);
-      if (response.success) {
-        console.log("评论列表 get comments:", response.data);
-        this.commentList = response.data;
-        // 获取所有评论者的 user 信息，并存入 userLookup 缓存
-        const senderIds = response.data.map((comment) => comment.sender_id);
-        this.fetchUserNames(senderIds);
-      } else {
-        ElMessage.error("获取评论列表失败");
-      }
     },
 
-    // 根据用户ID获取用户名，并缓存到 userLookup
-    fetchUserNames(senderIds) {
-      const uniqueIds = [...new Set(senderIds)]; // 去重
-      uniqueIds.forEach((userId) => {
-        if (!this.userLookup[userId]) {
-          console.log("fetch user info for:", userId);
-          userAPI.getUserInfo(userId).then((response) => {
-            console.log("user info:", response);
-            if (response.success) {
-              this.userLookup[userId] = response.data[0].username;
-            } else {
-              this.userLookup[userId] = "未知";
-            }
+    submitComment() {
+      if (this.newComment.trim() === "") return;
+
+      classAPI.postComment(this.class_id, this.newComment).then((response) => {
+        if (response.success) {
+          this.commentList.push({
+            sender_id: 1,
+            content: this.newComment,
+            sent_time: "刚刚",
           });
+          this.newComment = "";
+          ElMessage.success("评论成功");
+        } else {
+          ElMessage.error("评论失败");
         }
       });
-    },
-
-    // 获取用户姓名，如果已缓存，则直接返回
-    getUserName(userId) {
-      return this.userLookup[userId] || "加载中...";
-    },
-
-    // 提交评论的方法
-    async submitComment() {
-      if (this.newComment.trim() === "") {
-        this.$message.warning("评论内容不能为空");
-        return;
-      }
-
-      console.log("提交评论:", this.newComment);
-      console.log("my class_id:", this.class_id);
-
-      const response = await classAPI.postComment(
-        this.class_id,
-        this.newComment
-      );
-      if (response.success) {
-        ElMessage.success("提交评论成功");
-      } else {
-        ElMessage.error("提交评论失败");
-      }
-
-      // 清空评论输入框
-      this.newComment = "";
-
-      // 重新获取评论列表
-      // TODO
-
-      // get comments is a async function, so we need to wait for it to finish
-      await this.getComments();
-      console.log("comments:", this.commentList);
-    },
-  },
-  computed: {
-    teacherNamesStr() {
-      return this.teacherNames.join(", ");
     },
   },
 };
@@ -279,74 +346,90 @@ export default {
 <style scoped>
 .class-panel {
   padding: 20px;
+}
+
+.class-buttoms {
+  margin-bottom: 20px;
+}
+
+.header {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.card {
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.experiment-item {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  position: relative;
-}
-
-.go-back-btn {
-  top: 20px;
-  left: 20px;
-  z-index: 10;
-}
-
-.class-header h2 {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.class-header p {
-  font-size: 16px;
-  color: #555;
-}
-
-.class-details {
+  gap: 10px;
+  margin-bottom: 20px;
   margin-top: 20px;
 }
 
-.class-details h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.class-details p {
-  font-size: 16px;
+.experiment-item:not(:last-child) {
+  border-bottom: 1px solid #ccc; /* 给每个实验项添加分割线，除了最后一个 */
 }
 
 .comment-card {
-  margin-top: 30px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  background-color: #f9f9f9;
-}
-
-.comment-card h4 {
-  font-size: 20px;
-  font-weight: bold;
+  background-color: #f3f3f3;
+  padding: 20px;
+  margin-top: 20px;
 }
 
 .comment-list {
-  margin-top: 15px;
-  max-height: 200px;
-  overflow-y: auto;
+  margin-top: 20px;
 }
 
 .comment-item {
-  margin-bottom: 10px;
-  font-size: 14px;
+  display: flex;
+  direction: row;
+  align-items: center;
+  padding-left: 3%;
+  padding-right: 3%;
+}
+
+.comment-item:not(:last-child) {
+  border-bottom: 1px solid #ccc; /* 给每个评论项添加分割线，除了最后一个 */
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.comment-details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 3%;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .comment-time {
   font-size: 12px;
-  color: #888;
+  color: #777;
+  margin-top: 10px;
 }
 
 .comment-input {
-  margin-top: 15px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
-.el-button {
-  margin-top: 10px;
+.tag {
+  margin-right: 5px;
+}
+
+.experiment-photo {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: cover;
 }
 </style>
