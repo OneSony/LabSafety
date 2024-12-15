@@ -137,7 +137,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     // 使用实验室名称作为路由参数
-    path: "/lab/:labName",
+    path: "/lab/:labId",
     name: "LabDetail",
     component: LabDetail,
     props: true, // 将路由参数作为 props 传递给组件
