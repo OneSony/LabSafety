@@ -3,13 +3,7 @@
     <SidebarMenu @updateCurrentComponent="updateComponent" />
     <div class="content">
       <!-- 动态加载组件 -->
-      <div class="quick-look">
-        <el-row>
-          <el-button type="primary" @click="navigateToCreateCourse">
-            创建课程
-          </el-button>
-        </el-row>
-      </div>
+      <div class="quick-look"></div>
 
       <component
         :is="currentComponent"
@@ -24,7 +18,7 @@
 import { ref } from "vue";
 import CoursePanel from "@/components/CoursePanel.vue";
 import NotificationPanel from "@/components/NotificationPanel.vue";
-import FilePanel from "@/components/FilePanel.vue";
+import FilePanel from "@/components/TeacherFilePanel.vue";
 import SidebarMenu from "@/components/Sidebar.vue";
 import { useRouter } from "vue-router";
 

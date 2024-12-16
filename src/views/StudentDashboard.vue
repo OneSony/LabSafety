@@ -16,7 +16,7 @@
 import { ref } from "vue";
 import CoursePanel from "@/components/CoursePanel.vue";
 import NotificationPanel from "@/components/NotificationPanel.vue";
-import FilePanel from "@/components/FilePanel.vue";
+import FilePanel from "@/components/StudentFilePanel.vue";
 import SidebarMenu from "@/components/Sidebar.vue";
 import { useRouter } from "vue-router";
 

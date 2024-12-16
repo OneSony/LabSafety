@@ -1,5 +1,14 @@
 <template>
   <div class="content">
+    <el-row>
+      <el-button
+        type="primary"
+        @click="navigateToCreateCourse"
+        v-if="isTeacher"
+      >
+        创建课程
+      </el-button>
+    </el-row>
     <div class="tabs">
       <el-tabs v-model="activeTab">
         <el-tab-pane label="全部实验" name="all">
@@ -47,10 +56,15 @@ import CourseCard from "../components/CourseCard.vue";
 import PaginationComponent from "../components/Pagination.vue";
 import { courseAPI } from "../utils/api";
 import { ElMessage } from "element-plus";
+import { useRouter } from "vue-router";
+import { userAPI } from "../utils/api";
 
 export default {
   name: "CoursePanel",
   components: { CourseCard, PaginationComponent },
+  setup() {
+    const router = useRouter();
+  },
   data() {
     return {
       activeTab: "all",
@@ -58,12 +72,21 @@ export default {
       ongoingExperiments: [],
       completedExperiments: [],
       totalExperiments: 0,
+      isTeacher: false,
     };
   },
   mounted() {
     this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
+    this.isTeacher = userAPI.getRole() === "teacher";
   },
   methods: {
+    navigateToCreateCourse() {
+      if (this.$router) {
+        this.$router.push("/create-course");
+      } else {
+        console.error("Router instance is not available.");
+      }
+    },
     async fetchCourses() {
       const response = await courseAPI.getCourseList(); // 调用 API 获取课程数据
       console.log("Response:", response);
