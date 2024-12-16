@@ -1,0 +1,3 @@
+<template>
+  <p>通知页面</p>
+</template>

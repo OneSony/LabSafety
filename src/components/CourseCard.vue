@@ -11,6 +11,7 @@
         <div class="info">
           <h3>{{ item.name }}</h3>
           <p>课程号 {{ item.course_id }}</p>
+          <p>开课院系</p>
         </div>
         <el-progress :percentage="item.progress" type="circle"></el-progress>
       </div>

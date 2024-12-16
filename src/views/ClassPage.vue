@@ -4,9 +4,51 @@
       <el-button type="primary" class="go-back-btn" @click="goBack">
         返回
       </el-button>
-      <el-button type="primary" v-if="isTeacher"> 复制课堂 </el-button>
-      <el-button type="primary" v-if="isTeacher"> 查看学生 </el-button>
+      <el-button type="primary" v-if="isTeacher" @click="openCopyDialog">
+        复制课堂
+      </el-button>
+      <el-button type="primary" v-if="isTeacher" @click="openStudentDialog">
+        查看学生
+      </el-button>
     </div>
+
+    <el-dialog title="复制课堂" v-model="copyDialogVisible" width="40%">
+      <el-table :data="copyList" border style="width: 100%">
+        <el-table-column fixed prop="id" label="课程ID"></el-table-column>
+        <el-table-column prop="name" label="课程名"></el-table-column>
+        <el-table-column prop="date" label="开课时间"></el-table-column>
+        <el-table-column fixed="right" label="操作" width="100">
+          <template v-slot="slotProps">
+            <el-button
+              @click="handleRowClickView(slotProps.row)"
+              type="text"
+              size="small"
+              >查看</el-button
+            >
+            <el-button
+              @click="handleRowClickCopy(slotProps.row)"
+              type="text"
+              size="small"
+              >复制</el-button
+            >
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="dialog-footer">
+        <el-button @click="copyDialogVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog title="上课学生" v-model="studentDialogVisible" width="40%">
+      <el-table :data="studentList" border style="width: 100%">
+        <el-table-column fixed prop="id" label="学号"></el-table-column>
+        <el-table-column prop="name" label="姓名"></el-table-column>
+        <el-table-column prop="department" label="院系"></el-table-column>
+      </el-table>
+      <div class="dialog-footer">
+        <el-button @click="studentDialogVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
 
     <div
       class="header"
@@ -514,6 +556,8 @@ export default {
       experimentDialogVisible: false,
       noticeDialogVisible: false,
       basicDialogVisible: false,
+      studentDialogVisible: false,
+      copyDialogVisible: false,
       isLocationEditing: false,
       isTeacher: localStorage.getItem("role") === "teacher",
       class_id: this.classId,
@@ -525,6 +569,8 @@ export default {
       location: "",
       userLookup: {},
       commentList: [],
+      studentList: [],
+      copyList: [],
     };
   },
   setup() {
@@ -546,6 +592,56 @@ export default {
     //TODO
   },
   methods: {
+    handleRowClickView(row) {
+      console.log("查看", row);
+    },
+    handleRowClickCopy(row) {
+      console.log("复制", row);
+    },
+    openCopyDialog() {
+      this.copyDialogVisible = true;
+      this.copyList = [
+        {
+          id: "2021000000",
+          name: "计算机网络",
+          date: "2021-09-01",
+        },
+        {
+          id: "2021000001",
+          name: "软件工程",
+          date: "2021-09-01",
+        },
+        {
+          id: "2021000002",
+          name: "信息安全",
+          date: "2021-09-01",
+        },
+      ];
+      //copyList = [];
+      //TODO
+    },
+    openStudentDialog() {
+      this.studentDialogVisible = true;
+      this.studentList = [
+        {
+          id: "2018000000",
+          name: "张三",
+          department: "计算机科学与技术",
+        },
+        {
+          id: "2018000001",
+          name: "李四",
+          department: "软件工程",
+        },
+        {
+          id: "2018000002",
+          name: "王五",
+          department: "信息安全",
+        },
+      ];
+      //studentList = [];
+      //TODO
+    },
     addTag(tagType) {
       const tagKey = `new${
         tagType.charAt(0).toUpperCase() + tagType.slice(1, -1)
