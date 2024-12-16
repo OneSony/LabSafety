@@ -8,6 +8,8 @@ import CommentManagement from "../views/CommentManagement.vue";
 import UserProfile from "../views/Profile.vue";
 import StudentDashboard from "../views/StudentDashboard.vue";
 import LabManagerDashboard from "../views/LabManagerDashboard.vue";
+import TeachingAffairs from "../views/TeachingAffairs.vue";
+import CreateCourse from "../views/CreateCourse.vue";
 import ClassPage from "../views/ClassPage.vue";
 import LabDetail from "../views/LabDetail.vue";
 import NotificationEditor from "@/views/NotificationEditor.vue";
@@ -94,8 +96,9 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: "labmanager",
         name: "LabManagerDashboard",
-        component: LabManagerDashboard,
+        // component: LabManagerDashboard,
         // component: LabDetail,
+        component: TeachingAffairs,
       },
     ],
   },
@@ -118,7 +121,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/create-course",
     name: "CreateCourse",
-    component: () => import("../views/CreateCourse.vue"), // 懒加载组件
+    component: CreateCourse,
   },
   {
     path: "/notifications/:labId",
