@@ -4,59 +4,470 @@
       <el-button type="primary" class="go-back-btn" @click="goBack">
         返回
       </el-button>
+      <el-button type="primary" v-if="isTeacher" @click="openCopyDialog">
+        复制课堂
+      </el-button>
+      <el-button type="primary" v-if="isTeacher" @click="openStudentDialog">
+        查看学生
+      </el-button>
     </div>
 
-    <!-- 如果 classItem 存在，显示其详细信息 -->
-    <div class="class-header">
-      <h2>{{ name }}</h2>
-      <p><strong>课程ID:</strong> {{ class_id }}</p>
-      <p><strong>上课时间:</strong> {{ date }}</p>
-      <p><strong>教师:</strong> {{ teacherNamesStr }}</p>
-      <p><strong>地点:</strong> {{ location }}</p>
-    </div>
+    <el-dialog title="复制课堂" v-model="copyDialogVisible" width="40%">
+      <el-table :data="copyList" border style="width: 100%">
+        <el-table-column fixed prop="id" label="课程ID"></el-table-column>
+        <el-table-column prop="name" label="课程名"></el-table-column>
+        <el-table-column prop="date" label="开课时间"></el-table-column>
+        <el-table-column fixed="right" label="操作" width="100">
+          <template v-slot="slotProps">
+            <el-button
+              @click="handleRowClickView(slotProps.row)"
+              type="text"
+              size="small"
+              >查看</el-button
+            >
+            <el-button
+              @click="handleRowClickCopy(slotProps.row)"
+              type="text"
+              size="small"
+              >复制</el-button
+            >
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="dialog-footer">
+        <el-button @click="copyDialogVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
 
-    <!-- 课程详情部分 -->
-    <div class="class-details">
-      <h3>课程详情</h3>
-      <p>{{ description }}</p>
-    </div>
+    <el-dialog title="上课学生" v-model="studentDialogVisible" width="40%">
+      <el-table :data="studentList" border style="width: 100%">
+        <el-table-column fixed prop="id" label="学号"></el-table-column>
+        <el-table-column prop="name" label="姓名"></el-table-column>
+        <el-table-column prop="department" label="院系"></el-table-column>
+      </el-table>
+      <div class="dialog-footer">
+        <el-button @click="studentDialogVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
 
-    <!-- 评论区卡片 -->
+    <div
+      class="header"
+      style="
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        align-items: stretch;
+      "
+    >
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          width: 60%;
+        "
+      >
+        <el-button
+          v-if="isTeacher"
+          type="primary"
+          class="card-btn"
+          style="position: absolute; top: 20px; right: 20px"
+          @click="openBasicDialog"
+        >
+          编辑基本信息
+        </el-button>
+        <h2>{{ this.basicInfo.class_name }}</h2>
+        <p><strong>课程ID:</strong> {{ this.basicInfo.class_id }}</p>
+        <p><strong>教师:</strong> {{ this.basicInfo.teachers_str }}</p>
+        <p><strong>上课时间:</strong> {{ this.basicInfo.date }}</p>
+        <p><strong>地点:</strong> {{ this.basicInfo.lab_name }}</p>
+        <p><strong>概览:</strong> 这里是课程的概览</p>
+      </div>
+      <div
+        style="
+          border-left: 1px solid #ccc;
+          padding-left: 20px;
+          padding-right: 20px;
+        "
+      >
+        <p>实验室地图</p>
+        <img src="https://via.placeholder.com/150" alt="实验室地图" />
+      </div>
+    </div>
+    <!-- 编辑对话框 -->
+    <el-dialog title="编辑基本信息" v-model="basicDialogVisible" width="40%">
+      <el-form
+        :model="basicForm"
+        label-width="80px"
+        :rules="basicRules"
+        ref="basicForm"
+      >
+        <el-form-item label="课程名称" prop="name">
+          <el-input v-model="basicForm.class_name"></el-input>
+        </el-form-item>
+        <el-form-item label="课程ID" prop="id">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="不可修改"
+            placement="top"
+          >
+            <el-input v-model="basicForm.class_id" :disabled="true"></el-input>
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item label="教师" prop="teachers">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="联系教务修改"
+            placement="top"
+          >
+            <el-input
+              v-model="basicForm.teachers_str"
+              :disabled="true"
+            ></el-input>
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item label="上课时间" prop="date">
+          <el-date-picker
+            v-model="basicForm.date"
+            type="datetime"
+            placeholder="选择日期时间"
+            style="width: 100%"
+          ></el-date-picker>
+        </el-form-item>
+        <el-form-item label="地点" prop="location">
+          <el-select
+            v-model="basicForm.lab_id"
+            placeholder="选择地点"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="lab in labs"
+              :key="lab.id"
+              :label="lab.name"
+              :value="lab.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签" prop="tags">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="根据实验内容自动生成"
+            placement="top"
+          >
+            <el-input v-model="basicForm.tags" :disabled="true"></el-input>
+          </el-tooltip>
+        </el-form-item>
+      </el-form>
+      <!-- 自定义底部按钮 -->
+      <div class="dialog-footer">
+        <el-button @click="basicDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitBasicForm">保存</el-button>
+      </div>
+    </el-dialog>
+
+    <el-card class="card">
+      <h3>通知</h3>
+      <p>这里会有tag的汇总, 显示地图</p>
+
+      <el-button
+        v-if="isTeacher"
+        type="primary"
+        class="card-btn"
+        style="position: absolute; top: 20px; right: 20px"
+        @click="noticeDialogVisible = true"
+      >
+        添加通知
+      </el-button>
+    </el-card>
+    <el-dialog
+      title="添加通知"
+      v-model="noticeDialogVisible"
+      width="40%"
+      @close="resetNoticeForm"
+    >
+      <!-- 自定义底部按钮 -->
+      <div class="dialog-footer">
+        <el-button @click="noticeDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitNoticeForm">保存</el-button>
+      </div>
+    </el-dialog>
+
+    <el-card class="card">
+      <h3>实验内容</h3>
+      <el-button
+        v-if="isTeacher"
+        type="primary"
+        class="card-btn"
+        style="position: absolute; top: 20px; right: 20px"
+        @click="experimentDialogVisible = true"
+      >
+        添加内容
+      </el-button>
+      <el-divider></el-divider>
+      <div
+        v-for="(experiment, index) in experimentInfos"
+        :key="index"
+        class="experiment-item"
+      >
+        <el-button
+          v-if="isTeacher"
+          type="primary"
+          class="edit-btn"
+          style="position: absolute; top: 20px; right: 20px; z-index: 1000"
+          @click="openExperimentDialog(index, experiment)"
+          >编辑</el-button
+        >
+        <el-button
+          v-if="isTeacher"
+          type="danger"
+          class="edit-btn"
+          style="position: absolute; top: 70px; right: 20px; z-index: 1000"
+          >删除</el-button
+        >
+        <el-row>
+          <el-col :span="24">
+            <h4>
+              <span class="experiment-index">{{ index + 1 }}.</span>
+              <!-- 显示数字序号 -->
+              {{ experiment.title }}
+            </h4>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>预估时间：</strong>{{ experiment.estimatedTime }}
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>安全标签：</strong>
+            <el-tag
+              v-for="(tag, i) in experiment.safetyTags"
+              :key="i"
+              type="danger"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>实验方式：</strong>
+            <el-tag
+              v-for="(tag, i) in experiment.experimentTags"
+              :key="i"
+              type="primary"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>作业形式：</strong>
+            <el-tag
+              v-for="(tag, i) in experiment.assignmentTags"
+              :key="i"
+              type="success"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="12">
+            <strong>其他标签：</strong>
+            <el-tag
+              v-for="(tag, i) in experiment.otherTags"
+              :key="i"
+              type="info"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="24">
+            <strong>实验描述：</strong>
+            <p>{{ experiment.description }}</p>
+          </el-col>
+        </el-row>
+      </div>
+    </el-card>
+    <el-dialog
+      title="添加实验内容"
+      v-model="experimentDialogVisible"
+      width="40%"
+      @close="resetExperimentForm"
+    >
+      <el-form :model="experimentForm" label-width="80px" ref="experimentForm">
+        <el-form-item label="实验名称" prop="title">
+          <el-input v-model="experimentForm.title"></el-input>
+        </el-form-item>
+        <el-form-item label="预估时间" prop="estimatedTime">
+          <el-input v-model="experimentForm.estimatedTime"></el-input>
+        </el-form-item>
+        <el-form-item label="安全标签" prop="safetyTags">
+          <div class="tags-container">
+            <el-tag
+              v-for="(tag, index) in experimentForm.safetyTags"
+              :key="index"
+              closable
+              @close="removeTag('safetyTags', index)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-checkbox-group v-model="experimentForm.safetyTags">
+            <el-checkbox label="明火"></el-checkbox>
+            <el-checkbox label="腐蚀性试剂"></el-checkbox>
+            <el-checkbox label="高温"></el-checkbox>
+            <el-checkbox label="有毒气体"></el-checkbox>
+            <el-checkbox label="易燃"></el-checkbox>
+          </el-checkbox-group>
+          <el-input
+            v-model="newSafetyTag"
+            placeholder="输入新标签"
+            @keyup.enter="addTag('safetyTags')"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="实验方式" prop="experimentTags">
+          <div class="tags-container">
+            <el-tag
+              v-for="(tag, index) in experimentForm.experimentTags"
+              :key="index"
+              closable
+              @close="removeTag('experimentTags', index)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-checkbox-group v-model="experimentForm.experimentTags">
+            <el-checkbox label="个人"></el-checkbox>
+            <el-checkbox label="小组"></el-checkbox>
+            <el-checkbox label="全班"></el-checkbox>
+            <el-checkbox label="其他"></el-checkbox>
+          </el-checkbox-group>
+          <el-input
+            v-model="newExperimentTag"
+            placeholder="输入新标签"
+            @keyup.enter="addTag('experimentTags')"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="作业形式" prop="assignmentTags">
+          <div class="tags-container">
+            <el-tag
+              v-for="(tag, index) in experimentForm.assignmentTags"
+              :key="index"
+              closable
+              @close="removeTag('assignmentTags', index)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-checkbox-group v-model="experimentForm.assignmentTags">
+            <el-checkbox label="纸质报告"></el-checkbox>
+            <el-checkbox label="上交产物"></el-checkbox>
+            <el-checkbox label="口头报告"></el-checkbox>
+          </el-checkbox-group>
+          <el-input
+            v-model="newAssignmentTag"
+            placeholder="输入新标签"
+            @keyup.enter="addTag('assignmentTags')"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="其他标签" prop="otherTags">
+          <div class="tags-container">
+            <el-tag
+              v-for="(tag, index) in experimentForm.otherTags"
+              :key="index"
+              closable
+              @close="removeTag('otherTags', index)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-checkbox-group v-model="experimentForm.otherTags">
+            <el-checkbox label="注意通风"></el-checkbox>
+            <el-checkbox label="无特殊要求"></el-checkbox>
+          </el-checkbox-group>
+          <el-input
+            v-model="newOtherTag"
+            placeholder="输入新标签"
+            @keyup.enter="addTag('otherTags')"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="实验描述" prop="description">
+          <el-input
+            type="textarea"
+            v-model="experimentForm.description"
+            :autosize="{ minRows: 2, maxRows: 6 }"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <!-- 自定义底部按钮 -->
+      <div class="dialog-footer">
+        <el-button @click="experimentDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitExperimentForm">保存</el-button>
+      </div>
+    </el-dialog>
+
+    <el-card class="card">
+      <h3>实验文件</h3>
+      <el-button
+        v-if="isTeacher"
+        type="primary"
+        class="card-btn"
+        style="position: absolute; top: 20px; right: 20px"
+      >
+        添加文件
+      </el-button>
+      <p>表格</p>
+    </el-card>
+
     <el-card class="comment-card">
-      <h4>评论区</h4>
+      <h3>评论区</h3>
 
       <div class="comment-list">
-        <!-- 使用 comment.content 来显示评论的内容 -->
         <div
           v-for="(comment, index) in commentList"
           :key="index"
           class="comment-item"
         >
-          <div style="display: flex; align-items: center">
-            <UserCard :userId="comment.sender_id" />
-            <div
-              style="
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                margin-left: 30px;
-              "
-            >
-              {{ comment.content }}
-              <span class="comment-time">{{ comment.sent_time }}</span>
-            </div>
+          <UserCard :userId="comment.sender_id" />
+          <div class="comment-details">
+            {{ comment.content }}
+            <span class="comment-time">{{ comment.sent_time }}</span>
           </div>
         </div>
       </div>
 
-      <!-- 输入评论框 -->
-      <el-input
-        v-model="newComment"
-        placeholder="请输入评论"
-        class="comment-input"
-        @keyup.enter="submitComment"
-      ></el-input>
-      <el-button type="primary" @click="submitComment">提交评论</el-button>
+      <div style="display: flex; flex-direction: row; align-items: center">
+        <el-input
+          v-model="newComment"
+          placeholder="请输入评论"
+          class="comment-input"
+          type="textarea"
+          :autosize="{ minRows: 1, maxRows: 6 }"
+          @keyup.enter="submitComment"
+        ></el-input>
+        <el-button type="primary" @click="submitComment" style="margin: 10px"
+          >提交评论</el-button
+        >
+      </div>
     </el-card>
   </div>
 </template>
@@ -80,15 +491,86 @@ export default {
   },
   data() {
     return {
+      newSafetyTag: "",
+      newExperimentTag: "",
+      newAssignmentTag: "",
+      newOtherTag: "",
+      labs: [],
+      basicInfo: {
+        class_name: "",
+        class_id: "",
+        teacher_ids: [],
+        teacher_names: [],
+        teachers_str: "",
+        date: "",
+        lab_id: "",
+        lab_name: "",
+        tags: [],
+      },
+
+      basicForm: {
+        class_name: "",
+        class_id: "",
+        teachers_str: "",
+        date: "",
+        lab_name: "",
+        tags: [],
+      },
+
+      experimentForm: {
+        title: "",
+        estimatedTime: "",
+        safetyTags: [],
+        experimentTags: [],
+        assignmentTags: [],
+        otherTags: [],
+        description: "",
+        photos: [],
+      },
+
+      experimentInfos: [
+        {
+          title: "化学实验一",
+          estimatedTime: "2小时",
+          safetyTags: ["明火", "腐蚀性试剂"],
+          experimentTags: ["个人"],
+          assignmentTags: ["纸质报告"],
+          otherTags: ["注意通风"],
+          description: "这是一个化学实验，涉及到高温和有毒气体。",
+          photos: [
+            "https://via.placeholder.com/150",
+            "https://via.placeholder.com/150",
+          ],
+        },
+        {
+          title: "生物实验二",
+          estimatedTime: "1小时",
+          safetyTags: ["生物危险"],
+          experimentTags: ["小组"],
+          assignmentTags: ["上交产物"],
+          otherTags: ["无特殊要求"],
+          description: "这是一项生物实验，需要小组合作。",
+          photos: [],
+        },
+      ],
+      experimentDialogVisible: false,
+      noticeDialogVisible: false,
+      basicDialogVisible: false,
+      studentDialogVisible: false,
+      copyDialogVisible: false,
+      isLocationEditing: false,
+      isTeacher: localStorage.getItem("role") === "teacher",
       class_id: this.classId,
       name: "",
       date: "",
-      newComment: "", // 存储新评论的内容
-      teacherNames: [], // 存储教师信息
-      teacherIds: [], // 存储教师ID
-      location: "", // 存储课程地点
-      userLookup: {}, // 缓存用户信息的对象
-      commentList: [], // 存储评论列表
+      newComment: "",
+      teacherNames: [],
+      teacherIds: [],
+      location: "",
+      userLookup: {},
+      commentList: [],
+      studentList: [],
+      copyList: [],
     };
   },
   setup() {
@@ -104,173 +586,237 @@ export default {
   },
   mounted() {
     console.log("class id:", this.class_id);
-    this.fetchClassDetails(); // 组件加载后调用 API 获取课程信息
+    this.fetchClassBasicInfo();
+    this.fetchComments();
+    console.log("basic:", this.basicInfo);
+    //TODO
   },
   methods: {
-    // 获取课程详情数据
-    fetchClassDetails() {
-      this.getClassInfo();
-      this.getTeacher();
-      this.getLocation();
-      this.getComments();
+    handleRowClickView(row) {
+      console.log("查看", row);
+    },
+    handleRowClickCopy(row) {
+      console.log("复制", row);
+    },
+    openCopyDialog() {
+      this.copyDialogVisible = true;
+      this.copyList = [
+        {
+          id: "2021000000",
+          name: "计算机网络",
+          date: "2021-09-01",
+        },
+        {
+          id: "2021000001",
+          name: "软件工程",
+          date: "2021-09-01",
+        },
+        {
+          id: "2021000002",
+          name: "信息安全",
+          date: "2021-09-01",
+        },
+      ];
+      //copyList = [];
+      //TODO
+    },
+    openStudentDialog() {
+      this.studentDialogVisible = true;
+      this.studentList = [
+        {
+          id: "2018000000",
+          name: "张三",
+          department: "计算机科学与技术",
+        },
+        {
+          id: "2018000001",
+          name: "李四",
+          department: "软件工程",
+        },
+        {
+          id: "2018000002",
+          name: "王五",
+          department: "信息安全",
+        },
+      ];
+      //studentList = [];
+      //TODO
+    },
+    addTag(tagType) {
+      const tagKey = `new${
+        tagType.charAt(0).toUpperCase() + tagType.slice(1, -1)
+      }`;
+      // 根据传入的标签类型判断
+      if (this[tagKey].trim()) {
+        this.experimentForm[tagType].push(this[tagKey].trim()); // 更新相应的标签数组
+        this[tagKey] = ""; // 清空输入框
+      }
     },
 
-    getClassInfo() {
+    // 通用的删除标签函数
+    removeTag(tagType, index) {
+      this.experimentForm[tagType].splice(index, 1); // 删除指定索引的标签
+    },
+    resetExperimentForm() {
+      this.experimentForm = {
+        title: "",
+        estimatedTime: "",
+        safetyTags: [],
+        experimentTags: [],
+        assignmentTags: [],
+        otherTags: [],
+        description: "",
+        photos: [],
+      };
+    },
+    submitExperimentForm() {
+      console.log("submit experiment form");
+      console.log(this.experimentForm);
+      this.experimentDialogVisible = false;
+      //TODO
+    },
+    openExperimentDialog(index, experiment) {
+      console.log("open experiment dialog", index, experiment);
+      this.experimentForm = { ...experiment };
+      this.experimentDialogVisible = true;
+    },
+    async submitBasicForm() {
+      console.log("submit basic form");
+      console.log(this.basicForm);
+      this.basicDialogVisible = false;
+      classAPI
+        .patchClass(
+          this.class_id,
+          this.basicForm.class_name,
+          this.basicForm.date
+        )
+        .then((response) => {
+          if (response.success) {
+            ElMessage.success("修改成功");
+            this.fetchClassBasicInfo();
+          } else {
+            ElMessage.error("修改失败");
+          }
+        });
+      //TODO
+    },
+    async fetchLabs() {
+      const result = await labAPI.getLabs(); // 获取地点的 API
+      if (result.success) {
+        console.log(result.data);
+        this.labs = result.data; // 假设返回的数据结构是 { success: true, data: [...] }
+      } else {
+        ElMessage.error("加载地点失败");
+      }
+    },
+    async openBasicDialog() {
+      console.log("here", this.basicDialogVisible);
+      await this.fetchLabs();
+      this.basicForm = { ...this.basicInfo };
+      this.basicDialogVisible = true;
+      console.log("here", this.basicDialogVisible);
+    },
+
+    async fetchClassBasicInfo() {
       console.log("class id:", this.class_id);
-      classAPI.getClass(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            ElMessage.error("课程不存在");
-            this.$router.push("/");
-          } else {
-            console.log("课程信息:", response.data[0]);
-            this.name = response.data[0].name;
-            this.date = response.data[0].start_time;
-          }
+      this.basicInfo.class_id = Number(this.class_id);
+      const result1 = await classAPI.getClass(this.class_id); // 获取课程信息的 API
+      if (result1.success) {
+        if (result1.data.length === 0) {
+          ElMessage.error("课程不存在");
+          this.$router.push("/");
         } else {
-          ElMessage.error("获取课程信息失败");
+          console.log("课程信息:", result1.data[0]);
+          this.basicInfo.class_name = result1.data[0].name;
+          this.basicInfo.date = result1.data[0].start_time;
         }
-      });
-    },
-
-    // 获取教师信息
-    getTeacher() {
-      classAPI.getTeachers(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.teacher = "未知";
-          } else {
-            this.teacherIds = response.data.map((item) => item.teacher_id);
-            for (let i = 0; i < this.teacherIds.length; i++) {
-              userAPI.getUserInfo(this.teacherIds[i]).then((response) => {
-                if (response.success) {
-                  console.log("教师信息:", response.data);
-                  this.teacherNames.push(response.data[0].username);
-                } else {
-                  ElMessage.error("获取教师信息失败");
-                }
-              });
-            }
-            console.log("教师们信息:", this.teacherNames);
-            this.teacherNamesStr = this.teacherNames.join(" ");
-          }
-        } else {
-          ElMessage.error("获取教师信息失败");
-        }
-      });
-    },
-
-    // 获取地点信息
-    getLocation() {
-      classAPI.getLocations(this.class_id).then((response) => {
-        console.log("地点信息:", response);
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.location = "未知";
-          } else {
-            this.location = response.data[0].lab_id;
-            labAPI.getLabs(this.location).then((response) => {
-              if (response.success) {
-                console.log("地点信息:", response.data);
-                this.location =
-                  // response.data[0].name + " " + response.data[0].location;
-                  response.data[0].name;
-              } else {
-                ElMessage.error("获取地点信息失败");
-              }
-            });
-          }
-        } else {
-          ElMessage.error("获取地点信息失败");
-        }
-      });
-    },
-
-    // 获取评论列表
-    /*getComments() {
-      classAPI.getComments(this.class_id).then((response) => {
-        if (response.success) {
-          console.log("评论列表 get comments:", response.data);
-          this.commentList = response.data;
-          // 获取所有评论者的 user 信息，并存入 userLookup 缓存
-          const senderIds = response.data.map((comment) => comment.sender_id);
-          this.fetchUserNames(senderIds);
-        } else {
-          ElMessage.error("获取评论列表失败");
-        }
-      });
-    },*/
-
-    async getComments() {
-      const response = await classAPI.getComments(this.class_id);
-      if (response.success) {
-        console.log("评论列表 get comments:", response.data);
-        this.commentList = response.data;
-        // 获取所有评论者的 user 信息，并存入 userLookup 缓存
-        const senderIds = response.data.map((comment) => comment.sender_id);
-        this.fetchUserNames(senderIds);
       } else {
-        ElMessage.error("获取评论列表失败");
+        ElMessage.error("获取课程信息失败");
       }
-    },
 
-    // 根据用户ID获取用户名，并缓存到 userLookup
-    fetchUserNames(senderIds) {
-      const uniqueIds = [...new Set(senderIds)]; // 去重
-      uniqueIds.forEach((userId) => {
-        if (!this.userLookup[userId]) {
-          console.log("fetch user info for:", userId);
-          userAPI.getUserInfo(userId).then((response) => {
-            console.log("user info:", response);
-            if (response.success) {
-              this.userLookup[userId] = response.data[0].username;
+      this.basicInfo.teacher_ids = [];
+      this.basicInfo.teacher_names = [];
+      console.log("teacher ids:", this.basicInfo.teacher_names);
+      const result2 = await classAPI.getTeachers(this.class_id); // 获取教师信息的 API
+      if (result2.success) {
+        if (result2.data.length === 0) {
+          this.basicInfo.teachers_str = "未知";
+        } else {
+          this.basicInfo.teacher_ids = result2.data.map(
+            (item) => item.teacher_id
+          );
+          for (let i = 0; i < this.basicInfo.teacher_ids.length; i++) {
+            const result = await userAPI.getUserInfo(
+              this.basicInfo.teacher_ids[i]
+            );
+            if (result.success) {
+              console.log("教师信息:", result.data[0]);
+              this.basicInfo.teacher_names.push(result.data[0].username);
             } else {
-              this.userLookup[userId] = "未知";
+              ElMessage.error("获取教师信息失败");
             }
-          });
+          }
+          console.log("教师们信息:", this.basicInfo.teacher_names);
+          this.basicInfo.teachers_str = this.basicInfo.teacher_names.join(" ");
+        }
+      } else {
+        ElMessage.error("获取教师信息失败");
+      }
+
+      const result3 = await classAPI.getLocations(this.class_id); // 获取地点信息的 API
+      console.log("地点信息:", result3);
+      if (result3.success) {
+        if (result3.data.length === 0) {
+          this.basicInfo.lab_name = "未知";
+        } else {
+          this.basicInfo.lab_id = result3.data[0].lab_id;
+          const result = await labAPI.getLabs(this.basicInfo.location);
+          if (result.success) {
+            console.log("地点信息:", result.data[0]);
+            this.basicInfo.lab_name = result.data[0].name;
+          } else {
+            ElMessage.error("获取地点信息失败");
+          }
+        }
+      } else {
+        ElMessage.error("获取地点信息失败");
+      }
+
+      console.log("basic info:!!", this.basicInfo);
+    },
+
+    fetchComments() {
+      classAPI.getComments(this.class_id).then((response) => {
+        console.log("评论信息:", response);
+        if (response.success) {
+          if (response.data.length === 0) {
+            this.commentList = [];
+          } else {
+            this.commentList = response.data;
+            console.log("评论区信息:", this.commentList);
+          }
+        } else {
+          ElMessage.error("获取评论失败");
         }
       });
     },
 
-    // 获取用户姓名，如果已缓存，则直接返回
-    getUserName(userId) {
-      return this.userLookup[userId] || "加载中...";
-    },
+    submitComment() {
+      if (this.newComment.trim() === "") return;
 
-    // 提交评论的方法
-    async submitComment() {
-      if (this.newComment.trim() === "") {
-        this.$message.warning("评论内容不能为空");
-        return;
-      }
-
-      console.log("提交评论:", this.newComment);
-      console.log("my class_id:", this.class_id);
-
-      const response = await classAPI.postComment(
-        this.class_id,
-        this.newComment
-      );
-      if (response.success) {
-        ElMessage.success("提交评论成功");
-      } else {
-        ElMessage.error("提交评论失败");
-      }
-
-      // 清空评论输入框
-      this.newComment = "";
-
-      // 重新获取评论列表
-      // TODO
-
-      // get comments is a async function, so we need to wait for it to finish
-      await this.getComments();
-      console.log("comments:", this.commentList);
-    },
-  },
-  computed: {
-    teacherNamesStr() {
-      return this.teacherNames.join(", ");
+      classAPI.postComment(this.class_id, this.newComment).then((response) => {
+        if (response.success) {
+          this.commentList.push({
+            sender_id: 1,
+            content: this.newComment,
+            sent_time: "刚刚",
+          });
+          this.newComment = "";
+          ElMessage.success("评论成功");
+        } else {
+          ElMessage.error("评论失败");
+        }
+      });
     },
   },
 };
@@ -279,74 +825,92 @@ export default {
 <style scoped>
 .class-panel {
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+}
+
+.class-buttoms {
+  margin-bottom: 20px;
+}
+
+.header {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.card {
+  margin-bottom: 20px;
+  padding: 20px;
   position: relative;
 }
 
-.go-back-btn {
-  top: 20px;
-  left: 20px;
-  z-index: 10;
-}
-
-.class-header h2 {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.class-header p {
-  font-size: 16px;
-  color: #555;
-}
-
-.class-details {
+.experiment-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
   margin-top: 20px;
+  position: relative;
 }
 
-.class-details h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.class-details p {
-  font-size: 16px;
+.experiment-item:not(:last-child) {
+  border-bottom: 1px solid #ccc; /* 给每个实验项添加分割线，除了最后一个 */
 }
 
 .comment-card {
-  margin-top: 30px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  background-color: #f9f9f9;
-}
-
-.comment-card h4 {
-  font-size: 20px;
-  font-weight: bold;
+  background-color: #f3f3f3;
+  padding: 20px;
+  margin-top: 20px;
 }
 
 .comment-list {
-  margin-top: 15px;
-  max-height: 200px;
-  overflow-y: auto;
+  margin-top: 20px;
 }
 
 .comment-item {
-  margin-bottom: 10px;
-  font-size: 14px;
+  display: flex;
+  direction: row;
+  align-items: center;
+  padding-left: 3%;
+  padding-right: 3%;
+}
+
+.comment-item:not(:last-child) {
+  border-bottom: 1px solid #ccc; /* 给每个评论项添加分割线，除了最后一个 */
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.comment-details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 3%;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .comment-time {
   font-size: 12px;
-  color: #888;
+  color: #777;
+  margin-top: 10px;
 }
 
 .comment-input {
-  margin-top: 15px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
-.el-button {
-  margin-top: 10px;
+.tag {
+  margin-right: 5px;
+}
+
+.experiment-photo {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: cover;
 }
 </style>

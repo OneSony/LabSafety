@@ -208,6 +208,35 @@ const classAPI = {
       .catch(handleError);
   },
 
+  patchClass(
+    class_id: number,
+    class_name?: string,
+    date?: string
+  ): Promise<any> {
+    const params: { id: number; name?: string; start_time?: string } = {
+      id: class_id,
+    };
+
+    // 根据传入的参数构建不同的请求体
+    if (class_name) {
+      params["name"] = class_name;
+      console.log("发送请求：仅更新 class_name", params); // 调试信息
+    }
+    if (date) {
+      params["start_time"] = date;
+      console.log("发送请求：仅更新 start_time", params); // 调试信息
+    }
+    // 如果两个参数都没有传，返回默认的请求
+    if (!class_name && !date) {
+      console.log("发送请求：只包含 class_id", params); // 调试信息
+    }
+
+    return server
+      .patch("/api/v1/classes/class", params)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getClassList(course_id: number): Promise<any> {
     const params = { course_id: course_id, personal: true };
     return server
