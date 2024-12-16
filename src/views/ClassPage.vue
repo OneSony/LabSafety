@@ -4,8 +4,8 @@
       <el-button type="primary" class="go-back-btn" @click="goBack">
         返回
       </el-button>
-      <el-button type="primary"> 复制课堂 </el-button>
-      <el-button type="primary"> 查看学生 </el-button>
+      <el-button type="primary" v-if="isTeacher"> 复制课堂 </el-button>
+      <el-button type="primary" v-if="isTeacher"> 查看学生 </el-button>
     </div>
 
     <div
@@ -30,15 +30,16 @@
           type="primary"
           class="card-btn"
           style="position: absolute; top: 20px; right: 20px"
+          @click="openBasicDialog"
         >
           编辑基本信息
         </el-button>
-        <h2>{{ name }}</h2>
-        <p><strong>课程ID:</strong> {{ class_id }}</p>
-        <p><strong>教师:</strong> {{ teacherNamesStr }}</p>
-        <p><strong>上课时间:</strong> {{ date }}</p>
-        <p><strong>地点:</strong> {{ location }}</p>
-        <p><strong>概览:</strong>很多tag</p>
+        <h2>{{ this.basicInfo.class_name }}</h2>
+        <p><strong>课程ID:</strong> {{ this.basicInfo.class_id }}</p>
+        <p><strong>教师:</strong> {{ this.basicInfo.teachers_str }}</p>
+        <p><strong>上课时间:</strong> {{ this.basicInfo.date }}</p>
+        <p><strong>地点:</strong> {{ this.basicInfo.lab_name }}</p>
+        <p><strong>概览:</strong> 这里是课程的概览</p>
       </div>
       <div
         style="
@@ -51,6 +52,79 @@
         <img src="https://via.placeholder.com/150" alt="实验室地图" />
       </div>
     </div>
+    <!-- 编辑对话框 -->
+    <el-dialog title="编辑基本信息" v-model="basicDialogVisible" width="40%">
+      <el-form
+        :model="basicForm"
+        label-width="80px"
+        :rules="basicRules"
+        ref="basicForm"
+      >
+        <el-form-item label="课程名称" prop="name">
+          <el-input v-model="basicForm.class_name"></el-input>
+        </el-form-item>
+        <el-form-item label="课程ID" prop="id">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="不可修改"
+            placement="top"
+          >
+            <el-input v-model="basicForm.class_id" :disabled="true"></el-input>
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item label="教师" prop="teachers">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="联系教务修改"
+            placement="top"
+          >
+            <el-input
+              v-model="basicForm.teachers_str"
+              :disabled="true"
+            ></el-input>
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item label="上课时间" prop="date">
+          <el-date-picker
+            v-model="basicForm.date"
+            type="datetime"
+            placeholder="选择日期时间"
+            style="width: 100%"
+          ></el-date-picker>
+        </el-form-item>
+        <el-form-item label="地点" prop="location">
+          <el-select
+            v-model="basicForm.lab_id"
+            placeholder="选择地点"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="lab in labs"
+              :key="lab.id"
+              :label="lab.name"
+              :value="lab.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签" prop="tags">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="根据实验内容自动生成"
+            placement="top"
+          >
+            <el-input v-model="basicForm.tags" :disabled="true"></el-input>
+          </el-tooltip>
+        </el-form-item>
+      </el-form>
+      <!-- 自定义底部按钮 -->
+      <div class="dialog-footer">
+        <el-button @click="basicDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitBasicForm">保存</el-button>
+      </div>
+    </el-dialog>
 
     <el-card class="card">
       <h3>通知</h3>
@@ -61,10 +135,23 @@
         type="primary"
         class="card-btn"
         style="position: absolute; top: 20px; right: 20px"
+        @click="noticeDialogVisible = true"
       >
         添加通知
       </el-button>
     </el-card>
+    <el-dialog
+      title="添加通知"
+      v-model="noticeDialogVisible"
+      width="40%"
+      @close="resetNoticeForm"
+    >
+      <!-- 自定义底部按钮 -->
+      <div class="dialog-footer">
+        <el-button @click="noticeDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitNoticeForm">保存</el-button>
+      </div>
+    </el-dialog>
 
     <el-card class="card">
       <h3>实验内容</h3>
@@ -73,12 +160,13 @@
         type="primary"
         class="card-btn"
         style="position: absolute; top: 20px; right: 20px"
+        @click="experimentDialogVisible = true"
       >
         添加内容
       </el-button>
       <el-divider></el-divider>
       <div
-        v-for="(experiment, index) in experiments"
+        v-for="(experiment, index) in experimentInfos"
         :key="index"
         class="experiment-item"
       >
@@ -86,14 +174,15 @@
           v-if="isTeacher"
           type="primary"
           class="edit-btn"
-          style="position: absolute; top: 20px; right: 20px; z-index: 9999"
+          style="position: absolute; top: 20px; right: 20px; z-index: 1000"
+          @click="openExperimentDialog(index, experiment)"
           >编辑</el-button
         >
         <el-button
           v-if="isTeacher"
           type="danger"
           class="edit-btn"
-          style="position: absolute; top: 70px; right: 20px; z-index: 9999"
+          style="position: absolute; top: 70px; right: 20px; z-index: 1000"
           >删除</el-button
         >
         <el-row>
@@ -130,7 +219,7 @@
           <el-col :span="12">
             <strong>实验方式：</strong>
             <el-tag
-              v-for="(tag, i) in experiment.experimentTypes"
+              v-for="(tag, i) in experiment.experimentTags"
               :key="i"
               type="primary"
               class="tag"
@@ -142,9 +231,9 @@
 
         <el-row>
           <el-col :span="12">
-            <strong>作业上交形式：</strong>
+            <strong>作业形式：</strong>
             <el-tag
-              v-for="(tag, i) in experiment.assignmentTypes"
+              v-for="(tag, i) in experiment.assignmentTags"
               :key="i"
               type="success"
               class="tag"
@@ -176,6 +265,123 @@
         </el-row>
       </div>
     </el-card>
+    <el-dialog
+      title="添加实验内容"
+      v-model="experimentDialogVisible"
+      width="40%"
+      @close="resetExperimentForm"
+    >
+      <el-form :model="experimentForm" label-width="80px" ref="experimentForm">
+        <el-form-item label="实验名称" prop="title">
+          <el-input v-model="experimentForm.title"></el-input>
+        </el-form-item>
+        <el-form-item label="预估时间" prop="estimatedTime">
+          <el-input v-model="experimentForm.estimatedTime"></el-input>
+        </el-form-item>
+        <el-form-item label="安全标签" prop="safetyTags">
+          <div class="tags-container">
+            <el-tag
+              v-for="(tag, index) in experimentForm.safetyTags"
+              :key="index"
+              closable
+              @close="removeTag('safetyTags', index)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-checkbox-group v-model="experimentForm.safetyTags">
+            <el-checkbox label="明火"></el-checkbox>
+            <el-checkbox label="腐蚀性试剂"></el-checkbox>
+            <el-checkbox label="高温"></el-checkbox>
+            <el-checkbox label="有毒气体"></el-checkbox>
+            <el-checkbox label="易燃"></el-checkbox>
+          </el-checkbox-group>
+          <el-input
+            v-model="newSafetyTag"
+            placeholder="输入新标签"
+            @keyup.enter="addTag('safetyTags')"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="实验方式" prop="experimentTags">
+          <div class="tags-container">
+            <el-tag
+              v-for="(tag, index) in experimentForm.experimentTags"
+              :key="index"
+              closable
+              @close="removeTag('experimentTags', index)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-checkbox-group v-model="experimentForm.experimentTags">
+            <el-checkbox label="个人"></el-checkbox>
+            <el-checkbox label="小组"></el-checkbox>
+            <el-checkbox label="全班"></el-checkbox>
+            <el-checkbox label="其他"></el-checkbox>
+          </el-checkbox-group>
+          <el-input
+            v-model="newExperimentTag"
+            placeholder="输入新标签"
+            @keyup.enter="addTag('experimentTags')"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="作业形式" prop="assignmentTags">
+          <div class="tags-container">
+            <el-tag
+              v-for="(tag, index) in experimentForm.assignmentTags"
+              :key="index"
+              closable
+              @close="removeTag('assignmentTags', index)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-checkbox-group v-model="experimentForm.assignmentTags">
+            <el-checkbox label="纸质报告"></el-checkbox>
+            <el-checkbox label="上交产物"></el-checkbox>
+            <el-checkbox label="口头报告"></el-checkbox>
+          </el-checkbox-group>
+          <el-input
+            v-model="newAssignmentTag"
+            placeholder="输入新标签"
+            @keyup.enter="addTag('assignmentTags')"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="其他标签" prop="otherTags">
+          <div class="tags-container">
+            <el-tag
+              v-for="(tag, index) in experimentForm.otherTags"
+              :key="index"
+              closable
+              @close="removeTag('otherTags', index)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-checkbox-group v-model="experimentForm.otherTags">
+            <el-checkbox label="注意通风"></el-checkbox>
+            <el-checkbox label="无特殊要求"></el-checkbox>
+          </el-checkbox-group>
+          <el-input
+            v-model="newOtherTag"
+            placeholder="输入新标签"
+            @keyup.enter="addTag('otherTags')"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="实验描述" prop="description">
+          <el-input
+            type="textarea"
+            v-model="experimentForm.description"
+            :autosize="{ minRows: 2, maxRows: 6 }"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <!-- 自定义底部按钮 -->
+      <div class="dialog-footer">
+        <el-button @click="experimentDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitExperimentForm">保存</el-button>
+      </div>
+    </el-dialog>
 
     <el-card class="card">
       <h3>实验文件</h3>
@@ -243,24 +449,50 @@ export default {
   },
   data() {
     return {
-      isLocationEditing: false,
-      isTeacher: localStorage.getItem("role") === "teacher",
-      class_id: this.classId,
-      name: "",
-      date: "",
-      newComment: "",
-      teacherNames: [],
-      teacherIds: [],
-      location: "",
-      userLookup: {},
-      commentList: [],
-      experiments: [
+      newSafetyTag: "",
+      newExperimentTag: "",
+      newAssignmentTag: "",
+      newOtherTag: "",
+      labs: [],
+      basicInfo: {
+        class_name: "",
+        class_id: "",
+        teacher_ids: [],
+        teacher_names: [],
+        teachers_str: "",
+        date: "",
+        lab_id: "",
+        lab_name: "",
+        tags: [],
+      },
+
+      basicForm: {
+        class_name: "",
+        class_id: "",
+        teachers_str: "",
+        date: "",
+        lab_name: "",
+        tags: [],
+      },
+
+      experimentForm: {
+        title: "",
+        estimatedTime: "",
+        safetyTags: [],
+        experimentTags: [],
+        assignmentTags: [],
+        otherTags: [],
+        description: "",
+        photos: [],
+      },
+
+      experimentInfos: [
         {
           title: "化学实验一",
           estimatedTime: "2小时",
           safetyTags: ["明火", "腐蚀性试剂"],
-          experimentTypes: ["个人"],
-          assignmentTypes: ["纸质报告"],
+          experimentTags: ["个人"],
+          assignmentTags: ["纸质报告"],
           otherTags: ["注意通风"],
           description: "这是一个化学实验，涉及到高温和有毒气体。",
           photos: [
@@ -272,13 +504,27 @@ export default {
           title: "生物实验二",
           estimatedTime: "1小时",
           safetyTags: ["生物危险"],
-          experimentTypes: ["小组"],
-          assignmentTypes: ["上交产物"],
+          experimentTags: ["小组"],
+          assignmentTags: ["上交产物"],
           otherTags: ["无特殊要求"],
           description: "这是一项生物实验，需要小组合作。",
           photos: [],
         },
       ],
+      experimentDialogVisible: false,
+      noticeDialogVisible: false,
+      basicDialogVisible: false,
+      isLocationEditing: false,
+      isTeacher: localStorage.getItem("role") === "teacher",
+      class_id: this.classId,
+      name: "",
+      date: "",
+      newComment: "",
+      teacherNames: [],
+      teacherIds: [],
+      location: "",
+      userLookup: {},
+      commentList: [],
     };
   },
   setup() {
@@ -294,84 +540,156 @@ export default {
   },
   mounted() {
     console.log("class id:", this.class_id);
-    this.fetchClassDetails();
+    this.fetchClassBasicInfo();
+    this.fetchComments();
+    console.log("basic:", this.basicInfo);
+    //TODO
   },
   methods: {
-    fetchClassDetails() {
-      this.getClassInfo();
-      this.getTeacher();
-      this.getLocation();
-      this.getComments();
+    addTag(tagType) {
+      const tagKey = `new${
+        tagType.charAt(0).toUpperCase() + tagType.slice(1, -1)
+      }`;
+      // 根据传入的标签类型判断
+      if (this[tagKey].trim()) {
+        this.experimentForm[tagType].push(this[tagKey].trim()); // 更新相应的标签数组
+        this[tagKey] = ""; // 清空输入框
+      }
     },
 
-    getClassInfo() {
+    // 通用的删除标签函数
+    removeTag(tagType, index) {
+      this.experimentForm[tagType].splice(index, 1); // 删除指定索引的标签
+    },
+    resetExperimentForm() {
+      this.experimentForm = {
+        title: "",
+        estimatedTime: "",
+        safetyTags: [],
+        experimentTags: [],
+        assignmentTags: [],
+        otherTags: [],
+        description: "",
+        photos: [],
+      };
+    },
+    submitExperimentForm() {
+      console.log("submit experiment form");
+      console.log(this.experimentForm);
+      this.experimentDialogVisible = false;
+      //TODO
+    },
+    openExperimentDialog(index, experiment) {
+      console.log("open experiment dialog", index, experiment);
+      this.experimentForm = { ...experiment };
+      this.experimentDialogVisible = true;
+    },
+    async submitBasicForm() {
+      console.log("submit basic form");
+      console.log(this.basicForm);
+      this.basicDialogVisible = false;
+      classAPI
+        .patchClass(
+          this.class_id,
+          this.basicForm.class_name,
+          this.basicForm.date
+        )
+        .then((response) => {
+          if (response.success) {
+            ElMessage.success("修改成功");
+            this.fetchClassBasicInfo();
+          } else {
+            ElMessage.error("修改失败");
+          }
+        });
+      //TODO
+    },
+    async fetchLabs() {
+      const result = await labAPI.getLabs(); // 获取地点的 API
+      if (result.success) {
+        console.log(result.data);
+        this.labs = result.data; // 假设返回的数据结构是 { success: true, data: [...] }
+      } else {
+        ElMessage.error("加载地点失败");
+      }
+    },
+    async openBasicDialog() {
+      console.log("here", this.basicDialogVisible);
+      await this.fetchLabs();
+      this.basicForm = { ...this.basicInfo };
+      this.basicDialogVisible = true;
+      console.log("here", this.basicDialogVisible);
+    },
+
+    async fetchClassBasicInfo() {
       console.log("class id:", this.class_id);
-      classAPI.getClass(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            ElMessage.error("课程不存在");
-            this.$router.push("/");
-          } else {
-            console.log("课程信息:", response.data[0]);
-            this.name = response.data[0].name;
-            this.date = response.data[0].start_time;
-          }
+      this.basicInfo.class_id = Number(this.class_id);
+      const result1 = await classAPI.getClass(this.class_id); // 获取课程信息的 API
+      if (result1.success) {
+        if (result1.data.length === 0) {
+          ElMessage.error("课程不存在");
+          this.$router.push("/");
         } else {
-          ElMessage.error("获取课程信息失败");
+          console.log("课程信息:", result1.data[0]);
+          this.basicInfo.class_name = result1.data[0].name;
+          this.basicInfo.date = result1.data[0].start_time;
         }
-      });
-    },
+      } else {
+        ElMessage.error("获取课程信息失败");
+      }
 
-    getTeacher() {
-      classAPI.getTeachers(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.teacher = "未知";
-          } else {
-            this.teacherIds = response.data.map((item) => item.teacher_id);
-            for (let i = 0; i < this.teacherIds.length; i++) {
-              userAPI.getUserInfo(this.teacherIds[i]).then((response) => {
-                if (response.success) {
-                  console.log("教师信息:", response.data);
-                  this.teacherNames.push(response.data[0].username);
-                } else {
-                  ElMessage.error("获取教师信息失败");
-                }
-              });
+      this.basicInfo.teacher_ids = [];
+      this.basicInfo.teacher_names = [];
+      console.log("teacher ids:", this.basicInfo.teacher_names);
+      const result2 = await classAPI.getTeachers(this.class_id); // 获取教师信息的 API
+      if (result2.success) {
+        if (result2.data.length === 0) {
+          this.basicInfo.teachers_str = "未知";
+        } else {
+          this.basicInfo.teacher_ids = result2.data.map(
+            (item) => item.teacher_id
+          );
+          for (let i = 0; i < this.basicInfo.teacher_ids.length; i++) {
+            const result = await userAPI.getUserInfo(
+              this.basicInfo.teacher_ids[i]
+            );
+            if (result.success) {
+              console.log("教师信息:", result.data[0]);
+              this.basicInfo.teacher_names.push(result.data[0].username);
+            } else {
+              ElMessage.error("获取教师信息失败");
             }
-            console.log("教师们信息:", this.teacherNames);
-            this.teacherNamesStr = this.teacherNames.join(" ");
           }
-        } else {
-          ElMessage.error("获取教师信息失败");
+          console.log("教师们信息:", this.basicInfo.teacher_names);
+          this.basicInfo.teachers_str = this.basicInfo.teacher_names.join(" ");
         }
-      });
-    },
+      } else {
+        ElMessage.error("获取教师信息失败");
+      }
 
-    getLocation() {
-      classAPI.getLocations(this.class_id).then((response) => {
-        console.log("地点信息:", response);
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.location = "未知";
+      const result3 = await classAPI.getLocations(this.class_id); // 获取地点信息的 API
+      console.log("地点信息:", result3);
+      if (result3.success) {
+        if (result3.data.length === 0) {
+          this.basicInfo.lab_name = "未知";
+        } else {
+          this.basicInfo.lab_id = result3.data[0].lab_id;
+          const result = await labAPI.getLabs(this.basicInfo.location);
+          if (result.success) {
+            console.log("地点信息:", result.data[0]);
+            this.basicInfo.lab_name = result.data[0].name;
           } else {
-            this.location = response.data[0].lab_id;
-            labAPI.getLabs(this.location).then((response) => {
-              if (response.success) {
-                console.log("地点信息:", response.data);
-                this.location = response.data[0].name;
-              } else {
-                ElMessage.error("获取地点信息失败");
-              }
-            });
+            ElMessage.error("获取地点信息失败");
           }
-        } else {
-          ElMessage.error("获取地点信息失败");
         }
-      });
+      } else {
+        ElMessage.error("获取地点信息失败");
+      }
+
+      console.log("basic info:!!", this.basicInfo);
     },
 
-    getComments() {
+    fetchComments() {
       classAPI.getComments(this.class_id).then((response) => {
         console.log("评论信息:", response);
         if (response.success) {
