@@ -106,6 +106,10 @@ const userAPI = {
     return localStorage.getItem("username");
   },
 
+  getUserId(): number | null {
+    return parseInt(localStorage.getItem("userId") || "");
+  },
+
   getRole(): string | null {
     return localStorage.getItem("role");
   },
@@ -117,11 +121,13 @@ const userAPI = {
       .then((response) => {
         if (response.status === 200) {
           // 登录成功，保存 token 和刷新 token
+          console.log(response.data);
           const { access, refresh, role } = response.data;
           localStorage.setItem("accessToken", access);
           localStorage.setItem("refreshToken", refresh);
           localStorage.setItem("username", username);
           localStorage.setItem("role", role);
+          localStorage.setItem("userId", response.data.id);
           return {
             success: true,
             role,

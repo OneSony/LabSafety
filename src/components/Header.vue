@@ -1,9 +1,11 @@
 <template>
   <el-header class="header">
-    <router-link to="/" class="logo-link">
-      <img src="@/assets/tlsa.png" alt="Logo" class="logo" />
-      <span class="role-text">{{ roleText }}</span>
-    </router-link>
+    <div style="display: flex; align-items: center">
+      <router-link to="/" class="logo-link">
+        <img src="@/assets/tlsa.png" alt="Logo" class="logo" />
+      </router-link>
+      <el-tag type="success">{{ roleText }}</el-tag>
+    </div>
 
     <!-- 用户信息部分，加入下拉菜单 -->
     <el-dropdown
