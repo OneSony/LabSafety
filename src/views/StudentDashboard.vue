@@ -56,10 +56,13 @@ export default {
 
 <style scoped>
 .dashboard {
-  height: 100vh; /* 确保父容器的高度充满视窗 */
+  height: 100vh;
+  /* 确保父容器的高度充满视窗 */
   display: flex;
 }
+
 .content {
+  margin: 20px;
   flex: 1;
 }
 </style>
