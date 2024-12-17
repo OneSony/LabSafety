@@ -1,54 +1,53 @@
 <template>
-  <div class="content">
-    <el-row>
-      <el-button
-        type="primary"
-        @click="navigateToCreateCourse"
-        v-if="isTeacher"
-      >
-        创建课程
-      </el-button>
-    </el-row>
-    <div class="tabs">
-      <el-tabs v-model="activeTab">
-        <el-tab-pane label="全部实验" name="all">
-          <div v-if="allExperiments.length === 0" class="no-data">No data</div>
-          <div v-else>
-            <CourseCard
-              :experiments="allExperiments"
-              @class-clicked="handelClassClick"
-            />
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="在学实验" name="ongoing">
-          <div v-if="ongoingExperiments.length === 0" class="no-data">
-            No data
-          </div>
-          <div v-else>
-            <CourseCard
-              :experiments="ongoingExperiments"
-              @class-clicked="handelClassClick"
-            />
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="已完成实验" name="completed">
-          <div v-if="completedExperiments.length === 0" class="no-data">
-            No data
-          </div>
-          <div v-else>
-            <CourseCard
-              :experiments="completedExperiments"
-              @class-clicked="handelClassClick"
-            />
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-    </div>
-    <PaginationComponent
-      :total="totalExperiments"
-      @page-changed="handlePageChange"
-    />
+  <el-row>
+    <el-button
+      type="primary"
+      @click="navigateToCreateCourse"
+      v-if="isTeacher"
+      style="margin-bottom: 20px"
+    >
+      创建课程
+    </el-button>
+  </el-row>
+  <div class="tabs">
+    <el-tabs v-model="activeTab">
+      <el-tab-pane label="全部实验" name="all">
+        <div v-if="allExperiments.length === 0" class="no-data">No data</div>
+        <div v-else>
+          <CourseCard
+            :experiments="allExperiments"
+            @class-clicked="handelClassClick"
+          />
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="在学实验" name="ongoing">
+        <div v-if="ongoingExperiments.length === 0" class="no-data">
+          No data
+        </div>
+        <div v-else>
+          <CourseCard
+            :experiments="ongoingExperiments"
+            @class-clicked="handelClassClick"
+          />
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="已完成实验" name="completed">
+        <div v-if="completedExperiments.length === 0" class="no-data">
+          No data
+        </div>
+        <div v-else>
+          <CourseCard
+            :experiments="completedExperiments"
+            @class-clicked="handelClassClick"
+          />
+        </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
+  <PaginationComponent
+    :total="totalExperiments"
+    @page-changed="handlePageChange"
+  />
 </template>
 
 <script>
@@ -118,12 +117,5 @@ export default {
 <style scoped>
 .dashboard {
   display: flex;
-}
-.content {
-  padding: 20px;
-  flex-grow: 1;
-}
-.tabs {
-  margin-bottom: 20px;
 }
 </style>
