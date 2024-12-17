@@ -18,7 +18,12 @@
 
       <!-- 显示更多课程卡片，点击切换显示/隐藏 -->
       <div v-if="item.isVisible">
-        <div v-if="!item.classList || item.classList.length === 0">No data</div>
+        <el-skeleton :rows="3" animated v-if="item.isLoaded === false" />
+        <el-empty
+          description="没有课程"
+          :image-size="100"
+          v-if="item.classList.length === 0 && item.isLoaded === true"
+        />
         <div v-else>
           <div
             v-for="(classItem, index) in item.classList"
@@ -65,6 +70,17 @@ export default {
   props: {
     experiments: Array,
   },
+  watch: {
+    // 监听 experiments 的变化，当传递新的数据时重新初始化
+    experiments(newExperiments) {
+      newExperiments.forEach((item) => {
+        item.isVisible = false; // 默认初始化为 false
+        item.isLoaded = false; // 默认初始化为 false
+        item.classList = []; // 默认初始化为空数组
+      });
+      console.log("new exp", newExperiments);
+    },
+  },
   methods: {
     // 处理课程卡片点击事件
     async handleCardClick(course) {
@@ -72,12 +88,8 @@ export default {
       course.isVisible = !course.isVisible;
 
       // 仅在 classList 为空时请求数据
-      if (
-        course.isVisible &&
-        (!course.classList || course.classList.length === 0)
-      ) {
+      if (course.isVisible && course.isLoaded === false) {
         console.log("请求数据");
-        // 请求课程的 class 列表
         const response = await classAPI.getClassList(course.course_id);
         console.log("course.course_id", course.course_id);
         if (response.success) {
@@ -86,6 +98,7 @@ export default {
         } else {
           this.$message.error("获取课程列表失败");
         }
+        course.isLoaded = true; // 设置为 true，避免重复请求
       }
     },
 
