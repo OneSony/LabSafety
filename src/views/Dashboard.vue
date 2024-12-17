@@ -2,9 +2,6 @@
   <div class="dashboard">
     <SidebarMenu @updateCurrentComponent="updateComponent" />
     <div class="content">
-      <!-- 动态加载组件 -->
-      <div class="quick-look"></div>
-
       <component
         :is="currentComponent"
         :classItem="classItem"
@@ -16,34 +13,50 @@
 
 <script>
 import { ref } from "vue";
-import CoursePanel from "@/components/CoursePanel.vue";
+import StudentCoursePanel from "@/components/StudentCoursePanel.vue";
+import TeacherCoursePanel from "@/components/TeacherCoursePanel.vue";
 import NotificationPanel from "@/components/NotificationPanel.vue";
-import FilePanel from "@/components/TeacherFilePanel.vue";
+import TeacherFilePanel from "@/components/TeacherFilePanel.vue";
+import StudentFilePanel from "@/components/StudentFilePanel.vue";
 import SidebarMenu from "@/components/Sidebar.vue";
 import { useRouter } from "vue-router";
+import { userAPI } from "@/utils/api";
 
 export default {
   name: "TeacherDashboard",
   components: {
     SidebarMenu,
-    CoursePanel,
+    StudentCoursePanel,
+    TeacherCoursePanel,
     NotificationPanel,
-    FilePanel,
+    TeacherFilePanel,
+    StudentFilePanel,
   },
   setup() {
     const router = useRouter();
-    const currentComponent = ref(CoursePanel); // 默认显示 CoursePanel
     const classItem = ref(null); // 存储当前选中的 classItem
+    const isTeacher = userAPI.getRole() === "teacher";
+    const currentComponent = ref(
+      isTeacher ? TeacherCoursePanel : StudentCoursePanel
+    );
 
     // 切换到 ClassPanel
     const toClassPage = (class_id) => {
-      console.log("Show class panel:", class_id);
       router.push({ name: "class-page", params: { classId: class_id } });
     };
 
     const updateComponent = (componentName) => {
-      console.log("Update component!!:", componentName);
-      currentComponent.value = componentName;
+      if (componentName === "CoursePanel") {
+        currentComponent.value = isTeacher
+          ? TeacherCoursePanel
+          : StudentCoursePanel;
+      } else if (componentName === "FilePanel") {
+        currentComponent.value = isTeacher
+          ? TeacherFilePanel
+          : StudentFilePanel;
+      } else {
+        currentComponent.value = componentName;
+      }
     };
 
     return {
@@ -51,6 +64,7 @@ export default {
       toClassPage,
       updateComponent,
       classItem,
+      isTeacher,
     };
   },
 
