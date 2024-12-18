@@ -106,6 +106,10 @@ const userAPI = {
     return localStorage.getItem("username");
   },
 
+  getUserId(): number | null {
+    return parseInt(localStorage.getItem("userId") || "");
+  },
+
   getRole(): string | null {
     return localStorage.getItem("role");
   },
@@ -117,11 +121,13 @@ const userAPI = {
       .then((response) => {
         if (response.status === 200) {
           // 登录成功，保存 token 和刷新 token
+          console.log(response.data);
           const { access, refresh, role } = response.data;
           localStorage.setItem("accessToken", access);
           localStorage.setItem("refreshToken", refresh);
           localStorage.setItem("username", username);
           localStorage.setItem("role", role);
+          localStorage.setItem("userId", response.data.id);
           return {
             success: true,
             role,
@@ -204,6 +210,35 @@ const classAPI = {
     const params = { class_id: class_id, personal: true };
     return server
       .get("/api/v1/classes/class", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  patchClass(
+    class_id: number,
+    class_name?: string,
+    date?: string
+  ): Promise<any> {
+    const params: { id: number; name?: string; start_time?: string } = {
+      id: class_id,
+    };
+
+    // 根据传入的参数构建不同的请求体
+    if (class_name) {
+      params["name"] = class_name;
+      console.log("发送请求：仅更新 class_name", params); // 调试信息
+    }
+    if (date) {
+      params["start_time"] = date;
+      console.log("发送请求：仅更新 start_time", params); // 调试信息
+    }
+    // 如果两个参数都没有传，返回默认的请求
+    if (!class_name && !date) {
+      console.log("发送请求：只包含 class_id", params); // 调试信息
+    }
+
+    return server
+      .patch("/api/v1/classes/class", params)
       .then(handleResponse)
       .catch(handleError);
   },

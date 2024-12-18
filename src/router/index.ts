@@ -1,18 +1,17 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import TeacherDashboard from "../views/TeacherDashboard.vue";
 import UserLogin from "../views/UserLogin.vue";
 // import DashboardView/ from "../views/Dashboard.vue";
 // import CourseManagement from "../views/CourseManagement.vue";
 import NotificationManagement from "../views/NotificationManagement.vue";
 import CommentManagement from "../views/CommentManagement.vue";
 import UserProfile from "../views/Profile.vue";
-import StudentDashboard from "../views/StudentDashboard.vue";
 import LabManagerDashboard from "../views/LabManagerDashboard.vue";
 import TeachingAffairs from "../views/TeachingAffairs.vue";
 import CreateCourse from "../views/CreateCourse.vue";
 import ClassPage from "../views/ClassPage.vue";
 import LabDetail from "../views/LabDetail.vue";
 import NotificationEditor from "@/views/NotificationEditor.vue";
+import Dashboard from "@/views/Dashboard.vue";
 import { userAPI } from "@/utils/api";
 
 const routes: Array<RouteRecordRaw> = [
@@ -92,12 +91,12 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: "student",
         name: "StudentDashboard",
-        component: StudentDashboard,
+        component: Dashboard,
       },
       {
         path: "teacher",
         name: "TeacherDashboard",
-        component: TeacherDashboard,
+        component: Dashboard,
       },
       {
         path: "labmanager",
