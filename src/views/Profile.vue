@@ -75,6 +75,9 @@ export default {
       case "manager":
         this.userInfo.role_str = "实验室管理员";
         break;
+      case "teachingAffairs":
+        this.userInfo.role_str = "教务";
+        break;
       default:
         this.userInfo.role_str = "未知";
     }

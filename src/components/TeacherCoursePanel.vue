@@ -1,13 +1,6 @@
 <template>
   <el-row>
     <p>今天有xx门课, 有xx门没有填充</p>
-    <el-button
-      type="primary"
-      @click="navigateToCreateCourse"
-      style="margin-bottom: 20px"
-    >
-      创建课程
-    </el-button>
   </el-row>
   <div class="tabs">
     <el-tabs v-model="activeTab">
@@ -69,9 +62,6 @@ import { userAPI } from "../utils/api";
 export default {
   name: "CoursePanel",
   components: { CourseCard, PaginationComponent },
-  setup() {
-    const router = useRouter();
-  },
   data() {
     return {
       activeTab: "today",
@@ -85,13 +75,6 @@ export default {
     this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
   },
   methods: {
-    navigateToCreateCourse() {
-      if (this.$router) {
-        this.$router.push("/create-course");
-      } else {
-        console.error("Router instance is not available.");
-      }
-    },
     async fetchCourses() {
       const response = await courseAPI.getCourseList(); // 调用 API 获取课程数据
       console.log("Response:", response);

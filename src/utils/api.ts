@@ -173,12 +173,19 @@ const userAPI = {
 };
 
 const courseAPI = {
-  getCourseList(): Promise<any> {
-    const params = { personal: true };
-    return server
-      .get("/api/v1/courses/course", { params })
-      .then(handleResponse)
-      .catch(handleError);
+  getCourseList(personal?: boolean): Promise<any> {
+    if (personal === undefined) {
+      const params = { personal: true };
+      return server
+        .get("/api/v1/courses/course", { params })
+        .then(handleResponse)
+        .catch(handleError);
+    } else {
+      return server
+        .get("/api/v1/courses/course")
+        .then(handleResponse)
+        .catch(handleError);
+    }
   },
 
   postCourse(

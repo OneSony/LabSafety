@@ -18,6 +18,9 @@ import TeacherCoursePanel from "@/components/TeacherCoursePanel.vue";
 import NotificationPanel from "@/components/NotificationPanel.vue";
 import TeacherFilePanel from "@/components/TeacherFilePanel.vue";
 import StudentFilePanel from "@/components/StudentFilePanel.vue";
+import CoursePanelAffair from "@/components/CoursePanelAffair.vue";
+import StudentPanelAffair from "@/components/StudentPanelAffair.vue";
+import TeacherPanelAffair from "@/components/TeacherPanelAffair.vue";
 import SidebarMenu from "@/components/Sidebar.vue";
 import { useRouter } from "vue-router";
 import { userAPI } from "@/utils/api";
@@ -31,13 +34,21 @@ export default {
     NotificationPanel,
     TeacherFilePanel,
     StudentFilePanel,
+    CoursePanelAffair,
+    StudentPanelAffair,
+    TeacherPanelAffair,
   },
   setup() {
     const router = useRouter();
     const classItem = ref(null); // 存储当前选中的 classItem
     const isTeacher = userAPI.getRole() === "teacher";
+    const isAffair = userAPI.getRole() === "teachingAffairs";
     const currentComponent = ref(
-      isTeacher ? TeacherCoursePanel : StudentCoursePanel
+      isTeacher
+        ? TeacherCoursePanel
+        : isAffair
+        ? CoursePanelAffair
+        : StudentCoursePanel
     );
 
     // 切换到 ClassPanel

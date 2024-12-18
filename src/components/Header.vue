@@ -64,6 +64,9 @@ export default {
         case "manager":
           roleText.value = "实验室管理员";
           break;
+        case "teachingAffairs":
+          roleText.value = "教务";
+          break;
         default:
           roleText.value = "未知";
       }
