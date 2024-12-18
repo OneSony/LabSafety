@@ -20,16 +20,33 @@
           :disabled="isCourseSubmitted"
         ></el-input>
       </el-form-item>
+      <el-form-item label="课程号">
+        <el-input
+          v-model="courseData.course_code"
+          placeholder="请输入课程号"
+          :disabled="isCourseSubmitted"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="课序号">
+        <el-input
+          v-model="courseData.course_sequence"
+          placeholder="请输入课序号"
+          :disabled="isCourseSubmitted"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="开课院系">
+        <el-input
+          v-model="courseData.department"
+          placeholder="请输入开课院系"
+          :disabled="isCourseSubmitted"
+        ></el-input>
+      </el-form-item>
     </el-card>
 
     <el-card class="form-block">
       <div class="form-block-title">
         <span>已添加课堂</span>
-        <el-button
-          @click="openClassDialog"
-          type="primary"
-          size="small"
-          :disabled="!isCourseSubmitted"
+        <el-button @click="openClassDialog" type="primary" size="small"
           >添加课堂</el-button
         >
       </div>
@@ -44,7 +61,7 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template v-slot="slotProps">
             <el-button
-              @click="handleRowClick(slotProps.row)"
+              @click="handleClassRowClick(slotProps.row)"
               type="text"
               size="small"
               :disabled="!isCourseSubmitted"
@@ -72,7 +89,7 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template v-slot="slotProps">
             <el-button
-              @click="handleRowClick(slotProps.row)"
+              @click="handleStudentRowClick(slotProps.row)"
               type="text"
               size="small"
               :disabled="!isCourseSubmitted"
@@ -133,7 +150,7 @@
             placeholder="请输入学号，多个学号用逗号分隔"
           ></el-input>
         </el-form-item>
-        <el-table :data="classFormData.teacher_ids" border style="width: 100%">
+        <el-table :data="classFormData.teachers" border style="width: 100%">
           <el-table-column prop="teacher_id" label="学号"></el-table-column>
           <el-table-column prop="teacher_name" label="姓名"></el-table-column>
           <el-table-column fixed="right" label="操作" width="100">
@@ -186,7 +203,6 @@
               @click="handleStudentDialogRowClick(slotProps.row)"
               type="text"
               size="small"
-              :disabled="!isCourseSubmitted"
               >删除</el-button
             >
           </template>
@@ -203,14 +219,17 @@
 
 <script>
 import { courseAPI, labAPI, classAPI, userAPI } from "@/utils/api";
-import { ElMessage } from "element-plus";
+import { ElMessage, rowProps } from "element-plus";
 
 export default {
   data() {
     return {
       courseData: {
         course_name: "",
-        course_id: "",
+        id: "",
+        course_code: "",
+        course_sequence: "",
+        department: "",
       },
       classList: [],
 
@@ -218,7 +237,7 @@ export default {
         class_name: "",
         date: "",
         lab_id: "",
-        teacher_ids: [],
+        teachers: [],
       },
 
       studentFormData: {
@@ -269,7 +288,7 @@ export default {
         if (result.success && result.data.length > 0) {
           if (result.data[0].role === "student") {
             students.push({
-              student_id: result.data[0].id,
+              student_id: result.data[0].user_id,
               student_name: result.data[0].username, // 假设返回数据中有 `username` 字段
             });
           } else {
@@ -315,7 +334,7 @@ export default {
         if (result.success && result.data.length > 0) {
           if (result.data[0].role === "teacher") {
             teachers.push({
-              teacher_id: result.data[0].id,
+              teacher_id: result.data[0].user_id,
               teacher_name: result.data[0].username, // 假设返回数据中有 `username` 字段
             });
           } else {
@@ -332,12 +351,14 @@ export default {
         }
       }
 
+      console.log("teachers??", this.classFormData.teacher_ids);
+
       // 将查询到的学生信息添加到表格中
-      this.classFormData.teacher_ids = [
-        ...this.classFormData.teacher_ids,
+      this.classFormData.teachers = [
+        ...this.classFormData.teachers,
         ...teachers.filter(
           (newTeacher) =>
-            !this.classFormData.teacher_ids.some(
+            !this.classFormData.teachers.some(
               (existingTeacher) =>
                 existingTeacher.teacher_id === newTeacher.teacher_id
             )
@@ -348,12 +369,15 @@ export default {
     },
 
     async submitCourse() {
-      console.log("课程信息：", this.courseData.course_name);
-      const result = await courseAPI.postCourse(this.courseData.course_name);
+      const result = await courseAPI.postCourse(
+        this.courseData.course_name,
+        this.courseData.course_code,
+        this.courseData.course_sequence,
+        this.courseData.department
+      );
       if (result.success === true) {
         ElMessage.success("提交成功");
-        this.courseData.course_id = result.data.course.course_id;
-        this.courseData.course_name = result.data.course.name;
+        this.courseData.id = result.data.course.id;
         console.log("courseData", this.courseData);
       } else {
         ElMessage.error("提交失败");
@@ -368,8 +392,7 @@ export default {
         class_id: "",
         date: this.classFormData.date,
         lab_id: this.classFormData.lab_id,
-        // teacher_ids: [],
-        teacher_names: [],
+        teachers: [],
       };
 
       //创建课堂
@@ -388,8 +411,9 @@ export default {
 
       //绑定课堂到课程
       const result2 = await courseAPI.postClassToCourse(
-        this.courseData.course_id,
-        newClass.class_id
+        newClass.class_id,
+        this.courseData.course_code,
+        this.courseData.course_sequence
       );
       if (result2.success) {
         ElMessage.success("提交成功");
@@ -400,8 +424,8 @@ export default {
       }
 
       //绑定教师到课堂
-      for (let i = 0; i < this.classFormData.teacher_ids.length; i++) {
-        const teacher = this.classFormData.teacher_ids[i];
+      for (let i = 0; i < this.classFormData.teachers.length; i++) {
+        const teacher = this.classFormData.teachers[i];
 
         const result3 = await classAPI.postTeacher(
           newClass.class_id,
@@ -410,12 +434,14 @@ export default {
 
         if (result3.success) {
           ElMessage.success("提交成功");
-          // newClass.teacher_ids.push(teacher.teacher_id); //其实这里可以直接拿到名字
-          newClass.teacher_names.push(teacher.teacher_name);
+          newClass.teachers.push({
+            teacher_id: teacher.teacher_id,
+            teacher_name: teacher.teacher_name,
+          });
         } else {
           ElMessage.error("提交失败");
           // 删除失败的教师
-          this.classFormData.teacher_ids.splice(i, 1);
+          this.classFormData.teachers.splice(i, 1);
           // 由于删除了当前项，i需要减去1来保证索引正确
           // TODO 需要测试
           i--;
@@ -449,8 +475,10 @@ export default {
       );
       const result = await courseAPI.postEnroll(
         studentIds,
-        this.courseData.course_id
+        this.courseData.course_code,
+        this.courseData.course_sequence
       );
+      console.log("result", result);
       if (result.success) {
         ElMessage.success("提交成功");
         this.studentList = this.studentFormList;
@@ -470,21 +498,24 @@ export default {
         class_name: "",
         date: "",
         lab_id: "",
-        teacher_ids: [],
+        teachers: [],
+      };
+      this.teacherFormData = {
+        teacher_ids: "",
       };
     },
     openStudentDialog() {
       // 打开添加学生的对话框
       this.studentDialogVisible = true;
     },
-    handleRowClick(row) {
+    handleClassRowClick(row) {
       console.log("查看课堂", row);
 
       this.classFormData = {
         class_name: row.class_name,
         date: row.date,
         lab_id: row.lab_id,
-        //teacher_id: row.teacher_id,
+        teachers: row.teachers,
       };
       this.openClassDialog();
       //TODO 还不能修改课堂
@@ -497,7 +528,7 @@ export default {
     },
     handleTeacherDialogRowClick(row) {
       console.log("删除教师", row);
-      this.classFormData.teacher_ids = this.classFormData.teacher_ids.filter(
+      this.classFormData.teachers = this.classFormData.teachers.filter(
         (teacher) => teacher.teacher_id !== row.teacher_id
       );
     },
@@ -510,16 +541,9 @@ export default {
     displayClassList() {
       return this.classList.map((item) => {
         const lab = this.labs.find((lab) => lab.id === item.lab_id);
-        const teacherNames = item.teacher_names.join(", ");
-        /*const teacherNames = item.teacher_ids
-          .map((teacherId) => {
-            const teacher = this.teachers.find(
-              (teacher) => teacher.id === teacherId
-            );
-            return teacher ? teacher.name : teacherId; // 如果没有找到对应的 teacher，返回 teacherId
-          })
-          .join(", "); // 拼接成字符串，用逗号分隔
-        console.log("teacherNames: ", teacherNames);*/
+        const teacherNames = item.teachers
+          .map((teacher) => teacher.teacher_name)
+          .join(", ");
         return {
           ...item, // 保持原来的数据
           lab_name: lab ? lab.name : item.lab_id, // 根据 lab_id 获取 lab_name
@@ -528,7 +552,7 @@ export default {
       });
     },
     isCourseSubmitted() {
-      if (this.courseData.course_id) {
+      if (this.courseData.id) {
         return true;
       } else {
         return false;
