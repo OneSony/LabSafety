@@ -10,8 +10,10 @@
         <el-avatar :src="item.icon" size="large"></el-avatar>
         <div class="info">
           <h3>{{ item.name }}</h3>
-          <p>课程号 {{ item.course_id }}</p>
-          <p>开课院系</p>
+          <p>id {{ item.id }}</p>
+          <p>课程号 {{ item.course_code }}</p>
+          <p>课序号 {{ item.course_sequence }}</p>
+          <p>开课院系 {{ item.department }}</p>
         </div>
         <el-progress :percentage="item.progress" type="circle"></el-progress>
       </div>
@@ -84,14 +86,15 @@ export default {
   methods: {
     // 处理课程卡片点击事件
     async handleCardClick(course) {
+      console.log("Course card clicked:", course);
       // 切换课程卡片的显示状态
       course.isVisible = !course.isVisible;
 
       // 仅在 classList 为空时请求数据
       if (course.isVisible && course.isLoaded === false) {
         console.log("请求数据");
-        const response = await classAPI.getClassList(course.course_id);
-        console.log("course.course_id", course.course_id);
+        const response = await classAPI.getClassList(course.id);
+        console.log("course.id", course.id);
         if (response.success) {
           console.log("获取课程列表成功:", response.data);
           course.classList = response.data; // 假设返回的数据是 class 列表

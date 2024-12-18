@@ -122,12 +122,12 @@ const userAPI = {
         if (response.status === 200) {
           // 登录成功，保存 token 和刷新 token
           console.log(response.data);
-          const { access, refresh, role } = response.data;
+          const { access, refresh, role, user_id } = response.data;
           localStorage.setItem("accessToken", access);
           localStorage.setItem("refreshToken", refresh);
-          localStorage.setItem("username", username);
           localStorage.setItem("role", role);
-          localStorage.setItem("userId", response.data.id);
+          localStorage.setItem("userId", user_id);
+          localStorage.setItem("username", username); //TODO
           return {
             success: true,
             role,
@@ -146,8 +146,8 @@ const userAPI = {
       });
   },
 
-  register(username: string, password: string): Promise<any> {
-    const credentials = { username, password };
+  register(user_id: string, username: string, password: string): Promise<any> {
+    const credentials = { user_id, username, password };
     return server
       .post("/api/v1/users/register/", credentials)
       .then(handleResponse)
@@ -159,10 +159,11 @@ const userAPI = {
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("username");
     localStorage.removeItem("role");
+    localStorage.removeItem("userId");
     window.location.href = "/login"; //todo
   },
 
-  getUserInfo(user_id: number): Promise<any> {
+  getUserInfo(user_id: string): Promise<any> {
     const params = { user_id: user_id };
     return server
       .get("/api/v1/users/user-info", { params })
@@ -180,24 +181,50 @@ const courseAPI = {
       .catch(handleError);
   },
 
-  postCourse(course_name: string): Promise<any> {
-    const data = { name: course_name };
+  postCourse(
+    course_name: string,
+    course_code: string,
+    course_sequence: string,
+    department: string
+  ): Promise<any> {
+    const data = {
+      name: course_name,
+      course_code: course_code,
+      course_sequence: course_sequence,
+      department: department,
+    };
     return server
       .post("/api/v1/courses/course", data)
       .then(handleResponse)
       .catch(handleError);
   },
 
-  postClassToCourse(course_id: number, class_id: number): Promise<any> {
-    const data = { class_id: class_id, course_id: course_id };
+  postClassToCourse(
+    class_id: number,
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    const data = {
+      class_id: class_id,
+      course_code: course_code,
+      course_sequence: course_sequence,
+    };
     return server
       .post("/api/v1/courses/classes", data)
       .then(handleResponse)
       .catch(handleError);
   },
 
-  postEnroll(student_ids: number[], course_id: number): Promise<any> {
-    const data = { student_ids: student_ids, course_id: course_id };
+  postEnroll(
+    student_ids: string[],
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    const data = {
+      student_user_ids: student_ids,
+      course_code: course_code,
+      course_sequence: course_sequence,
+    };
     return server
       .post("/api/v1/courses/enroll", data)
       .then(handleResponse)
