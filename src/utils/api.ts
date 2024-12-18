@@ -310,54 +310,112 @@ const classAPI = {
 
 const labAPI = {
   getLabs(lab_id?: number): Promise<any> {
-    const params = lab_id ? { lab_id: lab_id } : {};
+    const params = lab_id ? { lab_id } : {};
     return server
       .get("/api/v1/labs/lab", { params })
-      .then(handleResponse)
+      .then((response) => {
+        console.log("Labs response:", response); // 添加这行来查看返回的数据结构
+        return handleResponse(response);
+      })
       .catch(handleError);
   },
+  // 获取单个实验室信息通过ID
   getLabById(lab_id: number): Promise<any> {
     return server
       .get(`/labs/lab/${lab_id}`)
       .then(handleResponse)
       .catch(handleError);
   },
-  // getLabByName(labName: string): Promise<any> {
-  //   return this.getLabs({ lab_name: labName })
-  //     .then((response) => {
-  //       if (response.success && response.data.length > 0) {
-  //         return { success: true, data: response.data[0] };
-  //       } else {
-  //         return { success: false, error: "实验室未找到" };
-  //       }
-  //     })
-  //     .catch(handleError);
-  // },
   // 创建实验室
-  createLab(labData: { name: string; location: string }): Promise<any> {
+  createLab(labData: {
+    name: string;
+    location: string;
+    safety_equipments: string;
+    safety_notes: string;
+    lab_image: string;
+  }): Promise<any> {
+    // 确保数据格式正确
+    const formattedData = {
+      ...labData,
+      // 确保是合法的 JSON 字符串
+      safety_equipments:
+        typeof labData.safety_equipments === "string"
+          ? labData.safety_equipments
+          : JSON.stringify(labData.safety_equipments),
+      safety_notes:
+        typeof labData.safety_notes === "string"
+          ? labData.safety_notes
+          : JSON.stringify(labData.safety_notes),
+    };
+
+    console.log("API sending data:", formattedData);
+
     return server
-      .post("/api/v1/labs/lab", labData)
+      .post("/api/v1/labs/lab", formattedData)
       .then(handleResponse)
-      .catch(handleError);
+      .catch((error) => {
+        console.error("API error response:", error.response?.data);
+        return handleError(error);
+      });
   },
 
   // 编辑实验室
-  editLab(
-    labId: number,
-    labData: { name: string; location: string }
-  ): Promise<any> {
+  editLab(labId: number, labData: any): Promise<any> {
     return server
-      .put(`/api/v1/labs/lab/${labId}`, labData)
+      .put(`/api/v1/labs/lab`, {
+        lab_id: labId,
+        ...labData,
+      })
       .then(handleResponse)
       .catch(handleError);
   },
+  // 添加处理图片上传的方法，添加 File 类型
+  async handleImageUpload(file: File): Promise<string> {
+    // 检查文件类型
+    if (!file.type.startsWith("image/")) {
+      throw new Error("请上传图片文件");
+    }
 
+    // 检查文件大小（限制为5MB）
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error("图片大小不能超过5MB");
+    }
+
+    // 将图片转换为 base64
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("图片读取失败"));
+        }
+      };
+      reader.onerror = () => {
+        reject(new Error("图片读取失败"));
+      };
+    });
+  },
   // 删除实验室
   deleteLab(labId: number): Promise<any> {
     return server
-      .delete(`/api/v1/labs/lab/${labId}`)
-      .then(handleResponse)
-      .catch(handleError);
+      .delete("/api/v1/labs/lab", {
+        params: { lab_id: labId }, // 使用查询参数
+      })
+      .then((response) => {
+        if (response.status === 204) {
+          return { success: true };
+        }
+        return handleResponse(response);
+      })
+      .catch((error) => {
+        if (error.response?.status === 404) {
+          return { success: false, error: "实验室未找到" };
+        }
+        return handleError(error);
+      });
   },
 };
 

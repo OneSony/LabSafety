@@ -6,6 +6,8 @@ import NotificationManagement from "../views/NotificationManagement.vue";
 import CommentManagement from "../views/CommentManagement.vue";
 import UserProfile from "../views/Profile.vue";
 import LabManagerDashboard from "../views/LabManagerDashboard.vue";
+import TeachingAffairs from "../views/TeachingAffairs.vue";
+import CreateCourse from "../views/CreateCourse.vue";
 import ClassPage from "../views/ClassPage.vue";
 import LabDetail from "../views/LabDetail.vue";
 import NotificationEditor from "@/views/NotificationEditor.vue";
@@ -75,6 +77,12 @@ const routes: Array<RouteRecordRaw> = [
         } else {
           next(); // 如果已经是老师页面，则继续
         }
+      } else if (role == "teachingaffairs") {
+        if (to.name !== "TeachingAffairs") {
+          next({ name: "TeachingAffairs" });
+        } else {
+          next();
+        }
       } else {
         next("/login"); // 如果角色无法识别，跳转到登录页面
       }
@@ -95,6 +103,12 @@ const routes: Array<RouteRecordRaw> = [
         name: "LabManagerDashboard",
         component: LabManagerDashboard,
         // component: LabDetail,
+        // component: TeachingAffairs,
+      },
+      {
+        path: "teachingaffairs",
+        name: "TeachingAffairs",
+        component: TeachingAffairs,
       },
     ],
   },
@@ -117,7 +131,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/create-course",
     name: "CreateCourse",
-    component: () => import("../views/CreateCourse.vue"), // 懒加载组件
+    component: CreateCourse,
   },
   {
     path: "/notifications/:labId",
@@ -136,7 +150,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     // 使用实验室名称作为路由参数
-    path: "/lab/:labName",
+    path: "/lab/:labId",
     name: "LabDetail",
     component: LabDetail,
     props: true, // 将路由参数作为 props 传递给组件

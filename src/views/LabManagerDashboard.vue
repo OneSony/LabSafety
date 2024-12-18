@@ -3,9 +3,9 @@
     <h2>实验室管理控制台</h2>
 
     <!-- 实验室管理 -->
-    <el-button type="primary" @click="openCreateLabDialog"
-      >创建实验室</el-button
-    >
+    <el-button type="primary" @click="openCreateLabDialog">
+      创建实验室
+    </el-button>
     <el-table
       :data="labs"
       style="width: 100%; margin-top: 20px"
@@ -16,13 +16,27 @@
       <el-table-column prop="manager" label="负责人" />
       <el-table-column label="操作">
         <template #default="scope">
-          <el-button @click.stop="editLab(scope.row)">编辑</el-button>
-          <el-button type="danger" @click.stop="deleteLab(scope.row.lab_id)"
-            >删除</el-button
+          <el-button
+            @click.stop="editLab(scope.row)"
+            type="primary"
+            size="small"
           >
-          <el-button type="info" @click.stop="openNotificationEditor(scope.row)"
-            >通知</el-button
+            编辑
+          </el-button>
+          <el-button
+            @click.stop="deleteLab(scope.row.id)"
+            type="danger"
+            size="small"
           >
+            删除
+          </el-button>
+          <el-button
+            @click.stop="openNotificationEditor(scope.row)"
+            type="info"
+            size="small"
+          >
+            通知
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -31,6 +45,8 @@
     <el-dialog
       v-model="isLabDialogVisible"
       :title="labForm.lab_id ? '编辑实验室' : '创建实验室'"
+      @closed="handleDialogClosed"
+      :before-close="handleBeforeClose"
     >
       <el-form :model="labForm">
         <el-form-item label="实验室名称" :required="true">
@@ -39,200 +55,336 @@
         <el-form-item label="地点" :required="true">
           <el-input v-model="labForm.location" placeholder="请输入实验室地点" />
         </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="isLabDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveLab">保存</el-button>
-      </template>
-    </el-dialog>
 
-    <!-- 安全准则管理 -->
-    <el-button
-      type="primary"
-      @click="openGuidelineDialog"
-      style="margin-top: 40px"
-      >添加安全准则</el-button
-    >
-    <el-table :data="guidelines" style="width: 100%; margin-top: 20px">
-      <el-table-column prop="content" label="安全准则内容" />
-      <el-table-column prop="tag" label="标签" />
-      <el-table-column label="操作">
-        <template #default="scope">
-          <el-button @click="editGuideline(scope.row)">编辑</el-button>
-          <el-button type="danger" @click="deleteGuideline(scope.row.id)"
-            >删除</el-button
+        <!-- 添加图片上传 -->
+        <el-form-item label="实验室照片" :required="false">
+          <el-upload
+            class="upload-demo"
+            action="#"
+            :http-request="handleImageUpload"
+            :show-file-list="true"
+            :limit="1"
+            accept="image/*"
           >
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <!-- 通知管理 -->
-    <el-button
-      type="primary"
-      @click="openNotificationDialog"
-      style="margin-top: 40px"
-      >发布通知</el-button
-    >
-    <el-table :data="notifications" style="width: 100%; margin-top: 20px">
-      <el-table-column prop="content" label="通知内容" />
-      <el-table-column prop="tag" label="标签" />
-      <el-table-column prop="post_time" label="发布时间" />
-    </el-table>
-
-    <!-- 安全准则弹窗 -->
-    <el-dialog v-model="isGuidelineDialogVisible" title="添加/编辑安全准则">
-      <el-form :model="guidelineForm">
-        <el-form-item label="准则内容" :required="true">
-          <el-input
-            type="textarea"
-            v-model="guidelineForm.content"
-            placeholder="请输入准则内容"
-          />
+            <el-button type="primary">选择图片</el-button>
+            <template #tip>
+              <div class="el-upload__tip">
+                只能上传 jpg/png 文件，且不超过 5MB
+              </div>
+            </template>
+          </el-upload>
+          <div v-if="labForm.lab_image" class="uploaded-photo">
+            <img :src="labForm.lab_image" alt="实验室照片" />
+          </div>
         </el-form-item>
-        <el-form-item label="标签" :required="true">
-          <el-select v-model="guidelineForm.tag" placeholder="请选择标签">
-            <el-option label="安全" value="安全"></el-option>
-            <el-option label="操作" value="操作"></el-option>
-          </el-select>
+
+        <!-- 添加安全器材 -->
+        <el-form-item label="安全器材" :required="false">
+          <el-button type="primary" @click="addSafetyEquipment"
+            >添加器材</el-button
+          >
+          <div
+            v-for="(equipment, index) in labForm.safety_equipment_list"
+            :key="index"
+            class="equipment-item"
+          >
+            <el-input
+              v-model="equipment.name"
+              placeholder="器材名称"
+              class="equipment-input"
+            />
+            <el-input
+              v-model="equipment.description"
+              placeholder="描述"
+              class="equipment-input"
+            />
+            <el-button type="danger" @click="removeSafetyEquipment(index)">
+              删除
+            </el-button>
+          </div>
+        </el-form-item>
+
+        <!-- 添加安全注意事项 -->
+        <el-form-item label="安全注意事项" :required="false">
+          <el-button type="primary" @click="addSafetyPrecaution">
+            添加注意事项
+          </el-button>
+          <div
+            v-for="(precaution, index) in labForm.safety_notes_list"
+            :key="index"
+            class="precaution-item"
+          >
+            <el-input
+              v-model="labForm.safety_notes_list[index]"
+              placeholder="请输入安全注意事项"
+              class="precaution-input"
+            />
+            <el-button type="danger" @click="removeSafetyPrecaution(index)">
+              删除
+            </el-button>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="isGuidelineDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveGuideline">保存</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 通知弹窗 -->
-    <el-dialog v-model="isNotificationDialogVisible" title="发布通知">
-      <el-form :model="notificationForm">
-        <el-form-item label="通知内容" :required="true">
-          <el-input
-            type="textarea"
-            v-model="notificationForm.content"
-            placeholder="请输入通知内容"
-          />
-        </el-form-item>
-        <el-form-item label="标签" :required="true">
-          <el-select v-model="notificationForm.tag" placeholder="请选择标签">
-            <el-option label="安全" value="安全"></el-option>
-            <el-option label="课程" value="课程"></el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="isNotificationDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="publishNotification">发布</el-button>
+        <el-button @click="handleCancel">取消</el-button>
+        <el-button type="primary" @click="saveLab">保存</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { ElMessage } from "element-plus";
-import { labAPI } from "../utils/api"; // 正确引入 labAPI
-import { useRouter } from "vue-router"; // 引入 Vue Router
+import { ElMessageBox, ElMessage } from "element-plus";
+import { labAPI } from "../utils/api";
 
 export default {
   data() {
     return {
-      labs: [], // 存储实验室数据
-      guidelines: [],
-      notifications: [],
-      isLabDialogVisible: false, // 控制创建/编辑实验室对话框的显示
-      isGuidelineDialogVisible: false, // 控制安全准则对话框的显示
-      isNotificationDialogVisible: false, // 控制通知对话框的显示
-      labForm: { lab_id: null, name: "", location: "" }, // 表单模型，添加 lab_id 用于编辑
-      guidelineForm: { content: "", tag: "" },
-      notificationForm: { content: "", tag: "" },
+      labs: [],
+      isLabDialogVisible: false,
+      labForm: {
+        lab_id: null,
+        name: "",
+        location: "",
+        lab_image: "",
+        safety_equipments: "[]",
+        safety_notes: "[]",
+        safety_equipment_list: [],
+        safety_notes_list: [],
+      },
     };
   },
   methods: {
-    // 获取实验室列表
-    fetchLabs() {
-      labAPI
-        .getLabs()
-        .then((response) => {
-          if (response.success) {
-            this.labs = response.data; // 确保 response.data 包含 name 和 location
-          } else {
-            ElMessage.error(response.error);
-          }
-        })
-        .catch((error) => {
-          ElMessage.error("获取实验室列表失败！");
-          console.error(error);
-        });
-    },
-
     // 打开创建实验室对话框
     openCreateLabDialog() {
+      // 重置表单数据
+      this.labForm = {
+        lab_id: null,
+        name: "",
+        location: "",
+        lab_image: "",
+        safety_equipments: "",
+        safety_notes: "",
+        safety_equipment_list: [],
+        safety_notes_list: [],
+      };
+      // 显示对话框
       this.isLabDialogVisible = true;
-      this.labForm = { lab_id: null, name: "", location: "" }; // 重置表单
+    },
+    getInitialLabForm() {
+      return {
+        lab_id: null,
+        name: "",
+        location: "",
+        lab_image: "",
+        safety_equipments: "",
+        safety_notes: "",
+        safety_equipment_list: [],
+        safety_notes_list: [],
+      };
+    },
+    // 处理对话框关闭前的操作
+    handleBeforeClose(done) {
+      this.resetForm();
+      done();
+    },
+    // 处理取消按钮点击
+    handleCancel() {
+      this.resetForm();
+      this.isLabDialogVisible = false;
     },
 
-    // 保存实验室（创建或编辑）
-    saveLab() {
-      // 校验表单
-      if (!this.labForm.name || !this.labForm.location) {
-        ElMessage.warning("实验室名称和地点不能为空");
-        return;
+    // 处理对话框关闭
+    handleDialogClose() {
+      this.resetForm();
+    },
+
+    // 重置表单数据
+    resetForm() {
+      this.labForm = {
+        lab_id: null,
+        name: "",
+        location: "",
+        lab_image: "",
+        safety_equipments: "[]",
+        safety_notes: "[]",
+        safety_equipment_list: [],
+        safety_notes_list: [],
+      };
+    },
+
+    handleDialogClosed() {
+      this.labForm = {
+        lab_id: null,
+        name: "",
+        location: "",
+        lab_image: "",
+        safety_equipments: "",
+        safety_notes: "",
+        safety_equipment_list: [],
+        safety_notes_list: [],
+      };
+    },
+    // 处理图片上传
+    async handleImageUpload({ file }) {
+      try {
+        // 检查文件类型
+        if (!file.type.startsWith("image/")) {
+          throw new Error("请上传图片文件");
+        }
+
+        // 检查文件大小（限制为5MB）
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+          throw new Error("图片大小不能超过5MB");
+        }
+
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (typeof e.target?.result === "string") {
+              // 保存完整的 base64 字符串
+              this.labForm.lab_image = e.target.result;
+              resolve(e.target.result);
+            } else {
+              reject(new Error("图片读取失败"));
+            }
+          };
+          reader.onerror = () => reject(new Error("图片读取失败"));
+          reader.readAsDataURL(file);
+        });
+
+        ElMessage.success("图片上传成功");
+        return base64;
+      } catch (error) {
+        ElMessage.error(error.message || "图片上传失败");
+        throw error;
       }
+    },
+    // 转换数据为API所需格式
+    prepareLabData() {
+      const equipments = this.labForm.safety_equipment_list.map((eq) => ({
+        name: eq.name,
+        description: eq.description,
+      }));
 
       const labData = {
         name: this.labForm.name,
         location: this.labForm.location,
+        lab_image: this.labForm.lab_image,
+        safety_equipments: JSON.stringify(equipments),
+        safety_notes: JSON.stringify(this.labForm.safety_notes_list),
       };
 
       if (this.labForm.lab_id) {
-        // 编辑实验室
-        labAPI
-          .editLab(this.labForm.lab_id, labData)
-          .then((response) => {
-            if (response.success) {
-              ElMessage.success("实验室更新成功！");
-              this.isLabDialogVisible = false;
-              this.fetchLabs(); // 刷新实验室列表
-            } else {
-              ElMessage.error(response.error || "编辑实验室失败");
-            }
-          })
-          .catch((error) => {
-            ElMessage.error("编辑实验室失败，请稍后重试！");
-            console.error(error);
-          });
-      } else {
-        // 创建实验室
-        labAPI
-          .createLab(labData)
-          .then((response) => {
-            if (response.success) {
-              ElMessage.success("实验室创建成功！");
-              this.isLabDialogVisible = false;
-              this.fetchLabs(); // 刷新实验室列表
-            } else {
-              ElMessage.error(response.error || "创建实验室失败");
-            }
-          })
-          .catch((error) => {
-            ElMessage.error("创建实验室失败，请稍后重试！");
-            console.error(error);
-          });
+        labData.lab_id = this.labForm.lab_id;
+      }
+
+      return labData;
+    },
+
+    // 表单验证
+    validateForm() {
+      if (!this.labForm.name.trim()) {
+        ElMessage.warning("实验室名称不能为空");
+        return false;
+      }
+      if (!this.labForm.location.trim()) {
+        ElMessage.warning("实验室地点不能为空");
+        return false;
+      }
+      return true;
+    },
+
+    // 保存实验室
+    async saveLab() {
+      if (!this.validateForm()) return;
+
+      try {
+        // 准备安全设备和注意事项数据
+        const equipments = this.labForm.safety_equipment_list.map((eq) => ({
+          name: eq.name || "",
+          description: eq.description || "",
+        }));
+
+        const labData = {
+          name: this.labForm.name.trim(),
+          location: this.labForm.location.trim(),
+          safety_equipments: JSON.stringify(equipments),
+          safety_notes: JSON.stringify(this.labForm.safety_notes_list || []),
+          lab_image: this.labForm.lab_image.split(",")[1] || "", // 只发送 base64 数据部分
+        };
+
+        // 调试日志
+        console.log("准备发送的数据:", {
+          ...labData,
+          lab_image: labData.lab_image ? "(base64图片数据)" : "空",
+        });
+
+        const response = this.labForm.lab_id
+          ? await labAPI.updateLab(this.labForm.lab_id, labData)
+          : await labAPI.createLab(labData);
+
+        if (response.success) {
+          ElMessage.success(
+            this.labForm.lab_id ? "实验室更新成功！" : "实验室创建成功！"
+          );
+          this.resetForm();
+          this.isLabDialogVisible = false;
+          await this.fetchLabs();
+        } else {
+          throw new Error(response.error || "操作失败");
+        }
+      } catch (error) {
+        console.error("保存失败:", error);
+        ElMessage.error(error.message || "保存失败，请稍后重试");
+      }
+    },
+    // 获取实验室列表
+    async fetchLabs() {
+      try {
+        const response = await labAPI.getLabs();
+        if (response.success) {
+          this.labs = response.data.map((lab) => ({
+            ...lab,
+            safety_equipment_list: JSON.parse(lab.safety_equipments || "[]"),
+            safety_notes_list: JSON.parse(lab.safety_notes || "[]"),
+          }));
+        } else {
+          ElMessage.error(response.error || "获取实验室列表失败");
+        }
+      } catch (error) {
+        console.error("Fetch labs error:", error);
+        ElMessage.error("获取实验室列表失败");
       }
     },
 
-    // 编辑实验室逻辑
+    // 编辑实验室
     editLab(lab) {
-      this.labForm = {
-        lab_id: lab.lab_id,
-        name: lab.name,
-        location: lab.location,
-      };
-      this.isLabDialogVisible = true;
+      try {
+        const safety_equipment_list = JSON.parse(lab.safety_equipments || "[]");
+        const safety_notes_list = JSON.parse(lab.safety_notes || "[]");
+
+        this.labForm = {
+          lab_id: lab.lab_id,
+          name: lab.name,
+          location: lab.location,
+          lab_image: lab.lab_image,
+          safety_equipments: lab.safety_equipments,
+          safety_notes: lab.safety_notes,
+          safety_equipment_list,
+          safety_notes_list,
+        };
+        this.isLabDialogVisible = true;
+      } catch (error) {
+        console.error("Parse lab data error:", error);
+        ElMessage.error("解析实验室数据失败");
+      }
     },
 
-    // 删除实验室逻辑
+    // 删除实验室
     deleteLab(labId) {
-      this.$confirm("确定要删除这个实验室吗?", "提示", {
+      ElMessageBox.confirm("确定要删除这个实验室吗？", "删除确认", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
@@ -242,8 +394,9 @@ export default {
             .deleteLab(labId)
             .then((response) => {
               if (response.success) {
+                this.labs = this.labs.filter((lab) => lab.lab_id !== labId);
                 ElMessage.success("实验室删除成功！");
-                this.fetchLabs(); // 刷新实验室列表
+                this.fetchLabs();
               } else {
                 ElMessage.error(response.error || "删除实验室失败");
               }
@@ -254,47 +407,30 @@ export default {
             });
         })
         .catch(() => {
-          // 用户取消删除
+          ElMessage.info("已取消删除");
         });
     },
 
-    // 打开通知编辑器
-    openNotificationEditor(lab) {
-      this.$router.push({
-        name: "NotificationEditor",
-        params: { labId: lab.lab_id },
-      });
+    // 安全器材相关方法
+    addSafetyEquipment() {
+      this.labForm.safety_equipment_list.push({ name: "", description: "" });
     },
 
-    // 打开安全准则对话框
-    openGuidelineDialog() {
-      this.isGuidelineDialogVisible = true;
-      this.guidelineForm = { content: "", tag: "" }; // 重置表单
+    removeSafetyEquipment(index) {
+      this.labForm.safety_equipment_list.splice(index, 1);
     },
 
-    // 保存安全准则
-    saveGuideline() {
-      // 安全准则保存逻辑
-      ElMessage.success("安全准则功能尚未实现！");
-      this.isGuidelineDialogVisible = false;
+    // 安全注意事项相关方法
+    addSafetyPrecaution() {
+      this.labForm.safety_notes_list.push("");
     },
 
-    // 发布通知
-    publishNotification() {
-      // 通知发布逻辑
-      ElMessage.success("发布通知功能尚未实现！");
-      this.isNotificationDialogVisible = false;
-    },
-
-    // 跳转到实验室详细信息页面
-    goToLabDetail(labName) {
-      // 使用 labName 来进行路由跳转
-      this.$router.push({ name: "LabDetail", params: { labName: labName } });
+    removeSafetyPrecaution(index) {
+      this.labForm.safety_notes_list.splice(index, 1);
     },
   },
-
   mounted() {
-    this.fetchLabs(); // 页面加载时获取实验室列表
+    this.fetchLabs();
   },
 };
 </script>
@@ -304,7 +440,39 @@ export default {
   padding: 20px;
 }
 
-.dialog-footer {
-  text-align: right;
+.upload-demo {
+  margin-bottom: 20px;
+}
+
+.uploaded-photo {
+  margin-top: 10px;
+}
+
+.uploaded-photo img {
+  max-width: 200px;
+  max-height: 200px;
+  object-fit: cover;
+}
+
+.equipment-item,
+.precaution-item {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.equipment-input,
+.precaution-input {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.equipment-item .el-button,
+.precaution-item .el-button {
+  margin-left: 10px;
+}
+
+.lab-card {
+  margin-top: 20px;
 }
 </style>
