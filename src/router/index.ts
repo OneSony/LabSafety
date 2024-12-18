@@ -78,6 +78,12 @@ const routes: Array<RouteRecordRaw> = [
         } else {
           next(); // 如果已经是老师页面，则继续
         }
+      } else if (role == "teachingaffairs") {
+        if (to.name !== "TeachingAffairs") {
+          next({ name: "TeachingAffairs" });
+        } else {
+          next();
+        }
       } else {
         next("/login"); // 如果角色无法识别，跳转到登录页面
       }
@@ -96,8 +102,13 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: "labmanager",
         name: "LabManagerDashboard",
-        // component: LabManagerDashboard,
+        component: LabManagerDashboard,
         // component: LabDetail,
+        // component: TeachingAffairs,
+      },
+      {
+        path: "teachingaffairs",
+        name: "TeachingAffairs",
         component: TeachingAffairs,
       },
     ],
