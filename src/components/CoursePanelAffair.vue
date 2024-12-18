@@ -47,26 +47,32 @@ export default {
       tableData: [],
     };
   },
-  setup() {
-    const handleRowClick = (row) => {
-      console.log("Download file:", row);
-    };
+  methods: {
+    handleRowClick(row) {
+      const inputCourseData = {
+        course_id: row.id,
+        course_name: row.name,
+        course_code: row.course_code,
+        course_sequence: row.course_sequence,
+        department: row.department,
+      };
+      console.log("Row clicked:", inputCourseData);
+      if (this.$router) {
+        this.$router.push({ name: "CreateCourse", state: { inputCourseData } });
+      } else {
+        console.error("Router instance is not available.");
+      }
+    },
 
-    const tableRowClassName = ({ row, rowIndex }) => {
+    tableRowClassName({ row, rowIndex }) {
       if (rowIndex === 1) {
         return "warning-row";
       } else if (rowIndex === 0) {
         return "success-row";
       }
       return "";
-    };
+    },
 
-    return {
-      handleRowClick,
-      tableRowClassName,
-    };
-  },
-  methods: {
     navigateToCreateCourse() {
       if (this.$router) {
         this.$router.push("/create-course");

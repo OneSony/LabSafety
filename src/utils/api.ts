@@ -333,7 +333,7 @@ const classAPI = {
       .catch(handleError);
   },
 
-  postTeacher(class_id: number, teacher_id: number): Promise<any> {
+  postTeacher(class_id: number, teacher_id: string): Promise<any> {
     const data = { class_id: class_id, teacher_id: teacher_id };
     return server
       .post("/api/v1/classes/teachers", data)
