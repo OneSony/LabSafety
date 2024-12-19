@@ -204,12 +204,7 @@
         <NoticeCard :notice="notice" />
       </el-col>
     </el-card>
-    <el-dialog
-      title="添加通知"
-      v-model="noticeDialogVisible"
-      width="40%"
-      @close="closeNoticeDialog"
-    >
+    <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
       <NoticeDialog :class_id="class_id" @close-dialog="closeNoticeDialog" />
     </el-dialog>
 
@@ -858,10 +853,7 @@ export default {
     },
 
     async fetchNotices() {
-      const result = await noticeAPI.getNotices(
-        userAPI.getUserId,
-        this.class_id
-      );
+      const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
         console.log("notice!!", result.data);
         this.noticeList = result.data;

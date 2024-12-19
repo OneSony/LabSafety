@@ -1,6 +1,20 @@
 <template>
   <el-form label-width="120px">
     <!-- 选择添加类型 -->
+    <el-form-item label="选择课堂" v-if="needToChooseClass">
+      <el-select
+        v-model="localClassId"
+        placeholder="选择地点"
+        style="width: 100%"
+      >
+        <el-option
+          v-for="classItem in classList"
+          :key="classItem.class_id"
+          :label="classItem.name"
+          :value="classItem.class_id"
+        ></el-option>
+      </el-select>
+    </el-form-item>
     <el-form-item label="选择输入类型">
       <el-select v-model="selectedType" placeholder="请选择输入类型">
         <el-option label="文本框" value="text"></el-option>
@@ -76,7 +90,7 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import {
   ElForm,
   ElFormItem,
@@ -87,14 +101,13 @@ import {
   ElUpload,
   ElMessage,
 } from "element-plus";
-import { noticeAPI, userAPI } from "@/utils/api";
-
+import { noticeAPI, userAPI, classAPI } from "@/utils/api";
 export default {
   name: "DynamicForm",
   props: {
     class_id: {
       type: Number,
-      required: true,
+      required: false,
     },
   },
   components: {
@@ -107,6 +120,11 @@ export default {
     ElUpload,
   },
   setup(props, { emit }) {
+    const classList = ref([]);
+    const localClassId = ref(props.class_id);
+    const needToChooseClass = localClassId.value === undefined;
+    console.log("chooseClass", needToChooseClass);
+
     const sender_id = userAPI.getUserId();
     const selectedType = ref("text"); // 当前选中的输入类型
     const dynamicItems = ref([]); // 用于保存动态添加的条目
@@ -162,7 +180,7 @@ export default {
     const submitNoticeForm = async () => {
       const noticeResult = await noticeAPI.postNotices(
         sender_id,
-        props.class_id
+        localClassId.value
       );
       console.log("notice", noticeResult);
       if (noticeResult.success) {
@@ -228,7 +246,26 @@ export default {
       handlePhotoChange,
       submitNoticeForm,
       closeDialog,
+      localClassId,
+      classList,
+      needToChooseClass,
     };
+  },
+  mounted() {
+    if (this.needToChooseClass) {
+      this.fetchClassList();
+    }
+  },
+  methods: {
+    async fetchClassList() {
+      const res = await classAPI.getClassList();
+      console.log("class", res);
+      if (res.success) {
+        this.classList = res.data;
+      } else {
+        console.log(res.message);
+      }
+    },
   },
 };
 </script>

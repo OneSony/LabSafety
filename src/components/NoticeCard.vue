@@ -1,5 +1,6 @@
 <template>
   <el-card :body-style="{ padding: '20px' }" class="card">
+    <h3 v-if="needToShowClass">{{ this.notice.class_info.name }}</h3>
     <el-row>
       <UserCard :userId="notice.sender" />
     </el-row>
@@ -31,6 +32,7 @@
 import { userAPI, noticeAPI } from "@/utils/api";
 import { ElCard, ElButton, ElDivider } from "element-plus";
 import UserCard from "./UserCard.vue";
+import { h } from "vue";
 export default {
   name: "NoticeCard",
   components: {
@@ -42,15 +44,21 @@ export default {
       type: Object,
       required: true,
     },
+    class: {
+      type: Object,
+      required: false,
+    },
   },
   data() {
     return {
+      needToShowClass: this.class !== undefined,
       isTeacher: userAPI.getRole() === "teacher",
       sender_name: "",
     };
   },
   mounted() {
     console.log("通知内容:", this.notice);
+    console.log("班级信息:", this.class);
   },
   methods: {
     getBasename(url) {

@@ -2,93 +2,121 @@
   <el-row>
     <el-button
       type="primary"
-      @click="navigateToCreateCourse"
+      @click="noticeDialogVisible = true"
       v-if="isTeacher"
       style="margin-bottom: 20px"
     >
       发布通知
     </el-button>
   </el-row>
-  <el-row :gutter="20">
-    <el-col
-      v-for="(notification, index) in notifications"
-      :key="index"
-      :span="8"
+
+  <el-col
+    v-for="(notice, index) in noticeList"
+    :key="index"
+    :span="8"
+    style="position: relative"
+  >
+    <el-button
+      type="text"
+      @click="deleteNotification(notice)"
+      v-if="isTeacher && notice.sender === myUserId"
+      style="position: absolute; right: 15px; top: 15px; z-index: 1000"
     >
-      <el-card :body-style="{ padding: '20px' }" class="card">
-        <el-button
-          type="text"
-          @click="deleteNotification(index)"
-          v-if="isTeacher"
-          style="position: absolute; right: 15px; top: 15px"
-          >删除</el-button
-        >
-        <el-button
-          type="text"
-          @click="deleteNotification(index)"
-          v-if="isTeacher"
-          style="position: absolute; right: 60px; top: 15px"
-          >编辑</el-button
-        >
-        <h3>{{ notification.course }}</h3>
-        <p><strong>发件人：</strong>{{ notification.sender }}</p>
-        <p><strong>标题：</strong>{{ notification.title }}</p>
-        <el-divider></el-divider>
-        <p>{{ notification.content }}</p>
-      </el-card>
-    </el-col>
-  </el-row>
+      删除
+    </el-button>
+    <el-button
+      type="text"
+      @click="editNotification(notice)"
+      v-if="isTeacher && notice.sender === myUserId"
+      style="position: absolute; right: 60px; top: 15px; z-index: 1000"
+    >
+      编辑
+    </el-button>
+    <NoticeCard :notice="notice" :class="notice" />
+  </el-col>
+
+  <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
+    <NoticeDialog @close-dialog="closeNoticeDialog" />
+  </el-dialog>
 </template>
 
 <script>
-import { userAPI } from "@/utils/api";
+import { userAPI, noticeAPI, classAPI } from "@/utils/api";
+import { toRaw } from "vue";
 import { ElCard, ElRow, ElCol, ElDivider } from "element-plus";
+import { ElButton, ElDialog, ElMessage } from "element-plus";
+import NoticeDialog from "./NoticeDialog.vue";
+import NoticeCard from "./NoticeCard.vue";
 
 export default {
   name: "NotificationPage",
   components: {
-    ElCard,
     ElRow,
     ElCol,
-    ElDivider,
+    NoticeDialog,
+    ElButton,
+    ElDialog,
+    NoticeCard,
   },
+
   data() {
     return {
+      noticeDialogVisible: false,
       isTeacher: userAPI.getRole() === "teacher",
-      notifications: [
-        {
-          sender: "张老师",
-          course: "数据科学",
-          title: "下周课程安排",
-          content:
-            "下周的课程将涵盖数据分析和机器学习基础，请提前预习相关内容。",
-        },
-        {
-          sender: "李教授",
-          course: "统计学",
-          title: "期中考试通知",
-          content: "期中考试将在下月举行，请做好准备。",
-        },
-        {
-          sender: "王助教",
-          course: "编程入门",
-          title: "实验报告提交",
-          content: "请在本周五前提交你的实验报告。",
-        },
-        {
-          sender: "李教授",
-          course: "统计学",
-          title: "期中考试通知",
-          content: "期中考试将在下月举行，请做好准备。",
-        },
-        {
-          sender: "李教授",
-          course: "统计学",
-          title: "期中考试通知",
-          content: "期中考试将在下月举行，请做好准备。",
-        },
-      ],
+      classList: [],
+      noticeList: [],
+      myUserId: userAPI.getUserId(),
     };
+  },
+  methods: {
+    async closeNoticeDialog() {
+      console.log("关闭通知对话框");
+      this.noticeDialogVisible = false;
+      await this.fetchNotices();
+    },
+
+    async fetchNotices() {
+      this.classList = [];
+      this.noticeList = [];
+
+      const result = await classAPI.getClassList();
+      console.log("classList", result);
+      if (result.success) {
+        this.classList = result.data;
+      } else {
+        ElMessage.error("获取班级列表失败");
+        return;
+      }
+
+      for (let i = 0; i < this.classList.length; i++) {
+        const result = await noticeAPI.getNotices(this.classList[i].class_id);
+        if (result.success) {
+          for (let j = 0; j < result.data.length; j++) {
+            result.data[j].class_info = this.classList[i];
+          }
+          this.noticeList.push(...result.data);
+        } else {
+          ElMessage.error("获取通知失败");
+        }
+      }
+    },
+    async deleteNotification(notice) {
+      // 在这里添加删除通知的逻辑
+      console.log("删除通知:", notice);
+      const result = await noticeAPI.deleteNotice(notice.id);
+      console.log(result);
+      if (result.success) {
+        console.log("删除成功");
+        this.fetchNotices();
+      } else {
+        console.log("删除失败");
+      }
+    },
+  },
+  async mounted() {
+    await this.fetchNotices();
+    console.log("classList", this.classList);
+    console.log("noticeList", this.noticeList);
   },
 };
 </script>
