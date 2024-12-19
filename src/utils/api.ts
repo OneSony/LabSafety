@@ -96,6 +96,13 @@ interface LoginResponse {
   role: string;
 }
 
+type UserInfo = {
+  email?: string;
+  phone?: string;
+  profile_picture?: string;
+  password?: string;
+};
+
 const userAPI = {
   isLoggedIn(): boolean {
     const token = localStorage.getItem("accessToken");
@@ -106,8 +113,8 @@ const userAPI = {
     return localStorage.getItem("username");
   },
 
-  getUserId(): number | null {
-    return parseInt(localStorage.getItem("userId") || "");
+  getUserId(): string | null {
+    return localStorage.getItem("userId");
   },
 
   getRole(): string | null {
@@ -167,6 +174,15 @@ const userAPI = {
     const params = { user_id: user_id };
     return server
       .get("/api/v1/users/user-info", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  patchUserInfo(user_id: string, data: UserInfo): Promise<any> {
+    const updatedData = { ...data, user_id };
+    console.log("发送请求：更新用户信息", updatedData); // 调试信息
+    return server
+      .patch("/api/v1/users/user-info", updatedData)
       .then(handleResponse)
       .catch(handleError);
   },

@@ -13,15 +13,16 @@
           :on-preview="handlePreview"
           :on-remove="handleRemove"
         >
-          <img v-if="userInfo.avatar" :src="userInfo.avatar" class="avatar" />
+          <img
+            v-if="userInfoForm.avatar"
+            :src="userInfoForm.avatar"
+            class="avatar"
+          />
           <i v-else class="el-icon-plus"></i>
         </el-upload>
       </el-form-item>
-      <el-form-item label="昵称">
-        <el-input v-model="userInfo.nickname" />
-      </el-form-item>
       <el-form-item label="姓名">
-        <el-input v-model="userInfo.name" :disabled="true" />
+        <el-input v-model="userInfo.username" :disabled="true" />
       </el-form-item>
       <el-form-item :label="userInfo.role === 'student' ? '学号' : '工号'">
         <el-input v-model="userInfo.id" :disabled="true" />
@@ -29,11 +30,18 @@
       <el-form-item label="院系">
         <el-input v-model="userInfo.department" :disabled="true" />
       </el-form-item>
+      <el-form-item label="手机">
+        <el-input v-model="userInfoForm.phone" />
+      </el-form-item>
       <el-form-item label="邮箱">
-        <el-input v-model="userInfo.email" />
+        <el-input v-model="userInfoForm.email" />
       </el-form-item>
       <el-form-item label="密码">
-        <el-button type="text">修改密码</el-button>
+        <el-input
+          v-model="password"
+          type="password"
+          placeholder="请输入新密码"
+        />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="saveProfile">保存</el-button>
@@ -42,8 +50,20 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { userAPI } from "@/utils/api";
+import { ElMessage } from "element-plus";
+
+interface UserInfo {
+  role: string;
+  role_str: string;
+  avatar: string;
+  username: string;
+  id: string;
+  email: string;
+  phone: string;
+  department: string;
+}
 
 export default {
   name: "UserProfile",
@@ -53,18 +73,24 @@ export default {
         role: "",
         role_str: "",
         avatar: "",
-        nickname: "",
-        name: "",
+        username: "",
         id: "",
         email: "",
+        phone: "",
         department: "",
-      },
+      } as UserInfo,
+      userInfoForm: {
+        email: "",
+        phone: "",
+        avatar: "",
+      } as UserInfo,
+      password: "" as string,
     };
   },
   mounted() {
     // 模拟获取用户信息
-    this.userInfo.id = userAPI.getUserId();
-    this.userInfo.role = userAPI.getRole();
+    this.userInfo.id = userAPI.getUserId() || "";
+    this.userInfo.role = userAPI.getRole() || "";
     switch (this.userInfo.role) {
       case "student":
         this.userInfo.role_str = "学生";
@@ -84,18 +110,76 @@ export default {
     this.fetchUserInfo();
   },
   methods: {
-    fetchUserInfo() {
+    async fetchUserInfo() {
       // 模拟获取用户信息
       //TODO
+      const result = await userAPI.getUserInfo(this.userInfo.id);
+      if (result.success) {
+        this.userInfo.username = result.data[0].username;
+        this.userInfo.email = result.data[0].email;
+        this.userInfo.phone = result.data[0].phone_number;
+        this.userInfo.department = result.data[0].department;
+        this.userInfo.avatar = result.data[0].avatar;
+
+        this.userInfoForm.email = this.userInfo.email;
+        this.userInfoForm.phone = this.userInfo.phone;
+        this.userInfoForm.avatar = this.userInfo.avatar;
+      } else {
+        ElMessage.error("获取用户信息失败");
+      }
     },
-    saveProfile() {
-      console.log("Profile saved:", this.user);
+    async saveProfile() {
+      console.log("Profile saved:", this.userInfo);
       // TODO: 调用 API 保存个人信息
+      let data: {
+        email?: string;
+        phone_number?: string;
+        profile_picture?: string;
+        password?: string;
+      } = {};
+
+      // 动态添加属性
+      if (this.userInfoForm.email !== this.userInfo.email) {
+        console.log("Email changed:", this.userInfoForm.email);
+        data.email = this.userInfoForm.email;
+      }
+
+      if (this.userInfoForm.phone !== this.userInfo.phone) {
+        console.log("Phone changed:", this.userInfoForm.phone);
+        data.phone_number = this.userInfoForm.phone;
+      }
+
+      if (this.userInfoForm.avatar !== this.userInfo.avatar) {
+        console.log("Avatar changed:", this.userInfoForm.avatar);
+        data.profile_picture = this.userInfoForm.avatar;
+      }
+
+      if (this.password !== "") {
+        data.password = this.password;
+      }
+
+      if (
+        data.email === undefined &&
+        data.phone_number === undefined &&
+        data.profile_picture === undefined &&
+        data.password === undefined
+      ) {
+        ElMessage.warning("没有修改任何信息");
+        return;
+      }
+
+      const result = await userAPI.patchUserInfo(this.userInfo.id, data);
+      if (result.success) {
+        ElMessage.success("保存成功");
+        this.fetchUserInfo();
+      } else {
+        ElMessage.error("保存失败");
+      }
     },
-    handlePreview(file) {
+    handlePreview(file: any) {
       console.log("Preview file:", file);
     },
-    handleRemove(file) {
+    handleRemove(file: any) {
       console.log("Removed file:", file);
     },
   },
