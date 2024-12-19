@@ -197,6 +197,16 @@ const userAPI = {
     return server
       .get("/api/v1/users/user-info", { params })
       .then(handleResponse)
+      .then((response) => {
+        if (response.success) {
+          console.log("顺便拿到啦", response.data);
+          localStorage.setItem("role", response.data[0].role);
+          localStorage.setItem("userId", response.data[0].user_id);
+          localStorage.setItem("username", response.data[0].username);
+          localStorage.setItem("avatar", response.data[0].profile_picture);
+        }
+        return response;
+      })
       .catch(handleError);
   },
 

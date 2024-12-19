@@ -18,12 +18,7 @@
           <el-button size="small" type="primary">选择头像</el-button>
         </el-upload>
         <div class="avatar-preview">
-          <img
-            v-if="userInfoForm.avatar"
-            :src="userInfoForm.avatar"
-            alt="头像"
-            class="avatar"
-          />
+          <ProfilePhoto :url="userInfoForm.avatar" size="120px" />
         </div>
       </el-form-item>
       <el-form-item label="姓名">
@@ -56,6 +51,7 @@
 </template>
 
 <script lang="ts">
+import ProfilePhoto from "@/components/ProfilePhoto.vue";
 import { userAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { defineComponent } from "vue";
@@ -72,6 +68,9 @@ interface UserInfo {
 }
 
 export default defineComponent({
+  components: {
+    ProfilePhoto,
+  },
   name: "UserProfile",
   data() {
     return {
@@ -144,6 +143,8 @@ export default defineComponent({
         this.userInfoForm.email = this.userInfo.email;
         this.userInfoForm.phone = this.userInfo.phone;
         this.userInfoForm.avatar = this.userInfo.avatar;
+
+        (this.$root as any).updateHeader(); // `this.$root` 访问到父组件（App.vue）
       } else {
         ElMessage.error("获取用户信息失败");
       }

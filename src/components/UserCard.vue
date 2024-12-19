@@ -4,7 +4,7 @@
     <el-tooltip class="item" effect="dark" placement="top-start">
       <div class="user-info">
         <!-- 用户头像 -->
-        <el-avatar :src="user.avatarUrl" size="large" class="user-avatar" />
+        <ProfilePhoto :url="user.avatarUrl" size="50px" />
         <div class="user-details">
           <!-- 用户名 -->
           <span class="username">{{ user.username }}</span>
@@ -59,16 +59,17 @@
 
 <script>
 import { defineComponent } from "vue";
-import { ElAvatar, ElTooltip, ElTag } from "element-plus";
+import { ElTooltip, ElTag } from "element-plus";
 import { userAPI } from "@/utils/api";
 import { ref, onMounted } from "vue";
+import ProfilePhoto from "@/components/ProfilePhoto.vue";
 
 export default defineComponent({
   name: "UserCard",
   components: {
-    ElAvatar,
     ElTooltip,
     ElTag,
+    ProfilePhoto,
   },
   props: {
     userId: {
