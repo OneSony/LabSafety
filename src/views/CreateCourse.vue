@@ -20,6 +20,27 @@
           :disabled="isCourseSubmitted"
         ></el-input>
       </el-form-item>
+      <el-form-item label="课程号">
+        <el-input
+          v-model="courseData.course_code"
+          placeholder="请输入课程号"
+          :disabled="isCourseSubmitted"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="课序号">
+        <el-input
+          v-model="courseData.course_sequence"
+          placeholder="请输入课序号"
+          :disabled="isCourseSubmitted"
+        ></el-input>
+      </el-form-item>
+      <el-form-item label="开课院系">
+        <el-input
+          v-model="courseData.department"
+          placeholder="请输入开课院系"
+          :disabled="isCourseSubmitted"
+        ></el-input>
+      </el-form-item>
     </el-card>
 
     <el-card class="form-block">
@@ -33,18 +54,18 @@
           >添加课堂</el-button
         >
       </div>
-      <el-table :data="displayClassList" border style="width: 100%">
+      <el-table :data="classList" border style="width: 100%">
         <el-table-column fixed prop="date" label="日期"></el-table-column>
         <el-table-column prop="class_name" label="课堂名"></el-table-column>
         <el-table-column prop="lab_name" label="位置"></el-table-column>
         <el-table-column
-          prop="teacher_names"
+          prop="teachers_name"
           label="授课教师"
         ></el-table-column>
         <el-table-column fixed="right" label="操作" width="100">
           <template v-slot="slotProps">
             <el-button
-              @click="handleRowClick(slotProps.row)"
+              @click="handleClassRowClick(slotProps.row)"
               type="text"
               size="small"
               :disabled="!isCourseSubmitted"
@@ -72,7 +93,7 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template v-slot="slotProps">
             <el-button
-              @click="handleRowClick(slotProps.row)"
+              @click="handleStudentRowClick(slotProps.row)"
               type="text"
               size="small"
               :disabled="!isCourseSubmitted"
@@ -119,22 +140,22 @@
             style="width: 100%"
           >
             <el-option
-              v-for="lab in labs"
-              :key="lab.id"
-              :label="lab.name"
-              :value="lab.id"
+              v-for="lab in labList"
+              :key="lab.lab_id"
+              :label="lab.lab_name"
+              :value="lab.lab_id"
             ></el-option>
           </el-select>
         </el-form-item>
 
         <el-form-item label="授课教师">
           <el-input
-            v-model="teacherFormData.teacher_ids"
-            placeholder="请输入学号，多个学号用逗号分隔"
+            v-model="teacherFormStr"
+            placeholder="请输入工号，多个工号用逗号分隔"
           ></el-input>
         </el-form-item>
-        <el-table :data="classFormData.teacher_ids" border style="width: 100%">
-          <el-table-column prop="teacher_id" label="学号"></el-table-column>
+        <el-table :data="classFormData.teachers" border style="width: 100%">
+          <el-table-column prop="teacher_id" label="工号"></el-table-column>
           <el-table-column prop="teacher_name" label="姓名"></el-table-column>
           <el-table-column fixed="right" label="操作" width="100">
             <template v-slot="slotProps">
@@ -164,10 +185,10 @@
       @close="resetClassForm"
     >
       <!-- 输入学号文本框 -->
-      <el-form :model="studentFormData" ref="studentForm">
-        <el-form-item label="学号（以逗号分隔）">
+      <el-form>
+        <el-form-item label="学生">
           <el-input
-            v-model="studentFormData.student_ids"
+            v-model="studentFormStr"
             placeholder="请输入学号，多个学号用逗号分隔"
           ></el-input>
         </el-form-item>
@@ -186,7 +207,6 @@
               @click="handleStudentDialogRowClick(slotProps.row)"
               type="text"
               size="small"
-              :disabled="!isCourseSubmitted"
               >删除</el-button
             >
           </template>
@@ -201,40 +221,80 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { courseAPI, labAPI, classAPI, userAPI } from "@/utils/api";
-import { ElMessage } from "element-plus";
+import { ElMessage, inputEmits, rowProps } from "element-plus";
+import { defineComponent, onMounted } from "vue";
+import { stringifyQuery } from "vue-router";
+import { useRoute } from "vue-router";
 
-export default {
+interface Teacher {
+  teacher_id: string;
+  teacher_name: string;
+}
+
+interface Student {
+  student_id: string;
+  student_name: string;
+}
+
+interface Class {
+  class_name: string;
+  class_id: number | null;
+  date: string;
+  lab_id: number | null;
+  lab_name: string;
+  teachers: Teacher[];
+  teachers_name: string;
+}
+
+interface Course {
+  course_name: string;
+  course_id: number | null;
+  course_code: string;
+  course_sequence: string;
+  department: string;
+  students: Student[];
+}
+
+interface Lab {
+  lab_id: number;
+  lab_name: string;
+}
+
+export default defineComponent({
   data() {
     return {
       courseData: {
         course_name: "",
-        course_id: "",
-      },
-      classList: [],
+        course_id: null,
+        course_code: "",
+        course_sequence: "",
+        department: "",
+        students: [] as Student[],
+      } as Course,
+
+      classList: [] as Class[], // 用来存储课堂数据
 
       classFormData: {
         class_name: "",
+        class_id: null,
         date: "",
-        lab_id: "",
-        teacher_ids: [],
-      },
+        lab_id: null,
+        lab_name: "",
+        teachers: [] as Teacher[],
+        teachers_name: "",
+      } as Class,
 
-      studentFormData: {
-        student_ids: "",
-      },
+      studentFormStr: "" as string,
 
-      studentFormList: [],
+      studentFormList: [] as Student[], // 用来存储学生数据
 
-      studentList: [],
+      studentList: [] as Student[], // 用来存储学生数据
 
-      teacherFormData: {
-        teacher_ids: "",
-      },
+      teacherFormStr: "" as string,
 
-      labs: [], // 用来存储获取到的地点数据
-      teachers: [], // 用来存储获取到的教师数据
+      labList: [] as Lab[], // 用来存储地点数据
 
       // 控制课堂对话框的显示
       studentDialogVisible: false,
@@ -243,19 +303,98 @@ export default {
   },
   mounted() {
     this.fetchLabs();
+    console.log("inputCourseData", history.state.inputCourseData);
+    if (history.state.inputCourseData) {
+      console.log("inputCourseData", history.state.inputCourseData);
+      this.fetchCourseData(history.state.inputCourseData);
+    }
   },
   methods: {
     async fetchLabs() {
       const result = await labAPI.getLabs(); // 获取地点的 API
       if (result.success) {
         console.log(result.data);
-        this.labs = result.data; // 假设返回的数据结构是 { success: true, data: [...] }
+        this.labList = [];
+        for (let i = 0; i < result.data.length; i++) {
+          this.labList.push({
+            lab_id: result.data[i].id,
+            lab_name: result.data[i].name,
+          });
+        }
       } else {
         ElMessage.error("加载地点失败");
       }
     },
+
+    async fetchCourseData(inputCourseData: any) {
+      this.courseData.course_id = inputCourseData?.course_id || null;
+      this.courseData.course_name = inputCourseData?.course_name || "";
+      this.courseData.course_code = inputCourseData?.course_code || "";
+      this.courseData.course_sequence = inputCourseData?.course_sequence || "";
+      this.courseData.department = inputCourseData?.department || "";
+
+      //TODO 获取学生
+      /*const result = await courseAPI.getEnrolledStudents(
+        this.courseData.course_code,
+        this.courseData.course_sequence
+      );*/
+
+      //获取class
+      const result2 = await classAPI.getClassList(this.courseData.course_id!);
+      console.log("result2", result2);
+      if (result2.success) {
+        this.classList = [] as Class[];
+        for (let i = 0; i < result2.data.length; i++) {
+          this.classList.push({
+            class_id: result2.data[i].class_id,
+            class_name: result2.data[i].name,
+            date: result2.data[i].start_time,
+          } as Class);
+        }
+      } else {
+        ElMessage.error("加载课堂失败");
+      }
+
+      for (let i = 0; i < this.classList.length; i++) {
+        const result3 = await classAPI.getLocations(
+          this.classList[i].class_id!
+        );
+        console.log("result3", result3);
+        if (result3.success && result3.data.length > 0) {
+          this.classList[i].lab_id = result3.data[0].lab_id;
+          this.classList[i].lab_name =
+            this.labList.find((lab) => lab.lab_id === result3.data[0].lab_id)
+              ?.lab_name || "";
+        } else {
+          ElMessage.error("加载地点失败");
+        }
+
+        const result4 = await classAPI.getTeachers(this.classList[i].class_id!);
+        console.log("result4", result4);
+        if (result4.success) {
+          this.classList[i].teachers = [] as Teacher[];
+          for (let j = 0; j < result4.data.length; j++) {
+            const result5 = await userAPI.getUserInfo(
+              result4.data[j].teacher_id
+            );
+            console.log("result5", result5);
+            if (result5.success) {
+              this.classList[i].teachers.push({
+                teacher_id: result4.data[j].teacher_id,
+                teacher_name: result5.data[0].username,
+              } as Teacher);
+            } else {
+              ElMessage.error("加载教师失败");
+            }
+          }
+        } else {
+          ElMessage.error("加载教师失败");
+        }
+      }
+    },
+
     async fetchStudentData() {
-      const studentIds = this.studentFormData.student_ids
+      const studentIds = this.studentFormStr
         .split(",") // 按逗号分割
         .map((id) => id.trim()) // 去掉空格
         .filter((id) => id && /^\d+$/.test(id)) // 过滤掉空的值和非数字的值
@@ -269,20 +408,20 @@ export default {
         if (result.success && result.data.length > 0) {
           if (result.data[0].role === "student") {
             students.push({
-              student_id: result.data[0].id,
+              student_id: result.data[0].user_id,
               student_name: result.data[0].username, // 假设返回数据中有 `username` 字段
-            });
+            } as Student);
           } else {
             students.push({
               student_id: studentId,
               student_name: "不是学生", // 如果没有找到学生，显示“未找到”
-            });
+            } as Student);
           }
         } else {
           students.push({
             student_id: studentId,
             student_name: "未找到", // 如果没有找到学生，显示“未找到”
-          });
+          } as Student);
         }
       }
 
@@ -297,63 +436,70 @@ export default {
             )
         ),
       ];
-      this.studentFormData.student_ids = ""; // 清空输入框
+      this.studentFormStr = ""; // 清空输入框
     },
 
     async fetchTeacherData() {
-      const teacherIds = this.teacherFormData.teacher_ids
+      const teacherIds = this.teacherFormStr
         .split(",") // 按逗号分割
         .map((id) => id.trim()) // 去掉空格
         .filter((id) => id && /^\d+$/.test(id)) // 过滤掉空的值和非数字的值
         .filter((value, index, self) => self.indexOf(value) === index); // 过滤掉重复值
 
       // 调用后端 API 查询学号对应的姓名
-      const teachers = [];
+      const teachers = [] as Teacher[];
       for (let teacherId of teacherIds) {
         const result = await userAPI.getUserInfo(teacherId); // 假设有一个 API 函数 `getStudentById`
         console.log("result", result);
         if (result.success && result.data.length > 0) {
           if (result.data[0].role === "teacher") {
             teachers.push({
-              teacher_id: result.data[0].id,
+              teacher_id: result.data[0].user_id,
               teacher_name: result.data[0].username, // 假设返回数据中有 `username` 字段
-            });
+            } as Teacher);
           } else {
             teachers.push({
               teacher_id: teacherId,
               teacher_name: "不是教师", // 如果没有找到学生，显示“未找到”
-            });
+            } as Teacher);
           }
         } else {
           teachers.push({
             teacher_id: teacherId,
             teacher_name: "未找到", // 如果没有找到学生，显示“未找到”
-          });
+          } as Teacher);
         }
       }
 
+      console.log("teat:", this.classFormData);
+
+      console.log("teachers??", this.classFormData.teachers);
+
       // 将查询到的学生信息添加到表格中
-      this.classFormData.teacher_ids = [
-        ...this.classFormData.teacher_ids,
+      this.classFormData.teachers = [
+        ...this.classFormData.teachers,
         ...teachers.filter(
           (newTeacher) =>
-            !this.classFormData.teacher_ids.some(
+            !this.classFormData.teachers.some(
               (existingTeacher) =>
                 existingTeacher.teacher_id === newTeacher.teacher_id
             )
         ),
       ];
 
-      this.teacherFormData.teacher_ids = ""; // 清空输入框
+      this.teacherFormStr = ""; // 清空输入框
     },
 
     async submitCourse() {
-      console.log("课程信息：", this.courseData.course_name);
-      const result = await courseAPI.postCourse(this.courseData.course_name);
+      const result = await courseAPI.postCourse(
+        this.courseData.course_name,
+        this.courseData.course_code,
+        this.courseData.course_sequence,
+        this.courseData.department
+      );
       if (result.success === true) {
         ElMessage.success("提交成功");
-        this.courseData.course_id = result.data.course.course_id;
-        this.courseData.course_name = result.data.course.name;
+        this.courseData.course_id = result.data.course.id;
         console.log("courseData", this.courseData);
       } else {
         ElMessage.error("提交失败");
@@ -365,12 +511,10 @@ export default {
 
       const newClass = {
         class_name: this.classFormData.class_name,
-        class_id: "",
         date: this.classFormData.date,
         lab_id: this.classFormData.lab_id,
-        // teacher_ids: [],
-        teacher_names: [],
-      };
+        teachers: [] as Teacher[],
+      } as Class;
 
       //创建课堂
       const result = await classAPI.postClass(
@@ -388,8 +532,9 @@ export default {
 
       //绑定课堂到课程
       const result2 = await courseAPI.postClassToCourse(
-        this.courseData.course_id,
-        newClass.class_id
+        newClass.class_id!,
+        this.courseData.course_code,
+        this.courseData.course_sequence
       );
       if (result2.success) {
         ElMessage.success("提交成功");
@@ -400,22 +545,24 @@ export default {
       }
 
       //绑定教师到课堂
-      for (let i = 0; i < this.classFormData.teacher_ids.length; i++) {
-        const teacher = this.classFormData.teacher_ids[i];
+      for (let i = 0; i < this.classFormData.teachers.length; i++) {
+        const teacher = this.classFormData.teachers[i];
 
         const result3 = await classAPI.postTeacher(
-          newClass.class_id,
+          newClass.class_id!,
           teacher.teacher_id
         );
 
         if (result3.success) {
           ElMessage.success("提交成功");
-          // newClass.teacher_ids.push(teacher.teacher_id); //其实这里可以直接拿到名字
-          newClass.teacher_names.push(teacher.teacher_name);
+          newClass.teachers.push({
+            teacher_id: teacher.teacher_id,
+            teacher_name: teacher.teacher_name,
+          });
         } else {
           ElMessage.error("提交失败");
           // 删除失败的教师
-          this.classFormData.teacher_ids.splice(i, 1);
+          this.classFormData.teachers.splice(i, 1);
           // 由于删除了当前项，i需要减去1来保证索引正确
           // TODO 需要测试
           i--;
@@ -425,15 +572,21 @@ export default {
       console.log("newClass", newClass);
 
       //绑定地点到课堂
-      const result4 = await classAPI.postLocation(
-        newClass.class_id,
-        newClass.lab_id
-      );
-      if (result4.success) {
-        ElMessage.success("提交成功");
-      } else {
+      //TODO
+      if (newClass.lab_id === null) {
         ElMessage.error("提交失败");
-        newClass.lab_id = "";
+        return;
+      } else {
+        const result4 = await classAPI.postLocation(
+          newClass.class_id!,
+          newClass.lab_id
+        );
+        if (result4.success) {
+          ElMessage.success("提交成功");
+        } else {
+          ElMessage.error("提交失败");
+          newClass.lab_id = null;
+        }
       }
 
       ElMessage.success("课堂已添加");
@@ -443,18 +596,21 @@ export default {
       this.resetClassForm(); // 重置表单
       console.log("classList", this.classList);
     },
+
     async submitStudents() {
       const studentIds = this.studentFormList.map(
         (student) => student.student_id
       );
       const result = await courseAPI.postEnroll(
         studentIds,
-        this.courseData.course_id
+        this.courseData.course_code,
+        this.courseData.course_sequence
       );
+      console.log("result", result);
       if (result.success) {
         ElMessage.success("提交成功");
         this.studentList = this.studentFormList;
-        this.studentFormData.student_ids = "";
+        this.studentFormStr = "";
         this.studentDialogVisible = false;
       } else {
         ElMessage.error("提交失败");
@@ -468,37 +624,36 @@ export default {
       // 重置课堂表单数据
       this.classFormData = {
         class_name: "",
+        class_id: null,
         date: "",
-        lab_id: "",
-        teacher_ids: [],
-      };
+        lab_id: null,
+        lab_name: "",
+        teachers: [] as Teacher[],
+        teachers_name: "",
+      } as Class;
+      this.teacherFormStr = "";
     },
     openStudentDialog() {
       // 打开添加学生的对话框
       this.studentDialogVisible = true;
     },
-    handleRowClick(row) {
+    handleClassRowClick(row: Class) {
       console.log("查看课堂", row);
-
-      this.classFormData = {
-        class_name: row.class_name,
-        date: row.date,
-        lab_id: row.lab_id,
-        //teacher_id: row.teacher_id,
-      };
+      this.classFormData = row;
       this.openClassDialog();
+      console.log("查看课堂", this.classFormData);
       //TODO 还不能修改课堂
     },
-    handleStudentDialogRowClick(row) {
+    handleStudentDialogRowClick(row: Student) {
       console.log("删除学生", row);
       this.studentFormList = this.studentFormList.filter(
-        (student) => student.student_id !== row.student_id
+        (student: Student) => student.student_id !== row.student_id
       );
     },
-    handleTeacherDialogRowClick(row) {
+    handleTeacherDialogRowClick(row: Teacher) {
       console.log("删除教师", row);
-      this.classFormData.teacher_ids = this.classFormData.teacher_ids.filter(
-        (teacher) => teacher.teacher_id !== row.teacher_id
+      this.classFormData.teachers = this.classFormData.teachers.filter(
+        (teacher: Teacher) => teacher.teacher_id !== row.teacher_id
       );
     },
     goBack() {
@@ -507,26 +662,6 @@ export default {
   },
   computed: {
     // 计算属性，返回带有映射的 classList
-    displayClassList() {
-      return this.classList.map((item) => {
-        const lab = this.labs.find((lab) => lab.id === item.lab_id);
-        const teacherNames = item.teacher_names.join(", ");
-        /*const teacherNames = item.teacher_ids
-          .map((teacherId) => {
-            const teacher = this.teachers.find(
-              (teacher) => teacher.id === teacherId
-            );
-            return teacher ? teacher.name : teacherId; // 如果没有找到对应的 teacher，返回 teacherId
-          })
-          .join(", "); // 拼接成字符串，用逗号分隔
-        console.log("teacherNames: ", teacherNames);*/
-        return {
-          ...item, // 保持原来的数据
-          lab_name: lab ? lab.name : item.lab_id, // 根据 lab_id 获取 lab_name
-          teacher_names: teacherNames, // 根据 teacher_id 获取 teacher_name
-        };
-      });
-    },
     isCourseSubmitted() {
       if (this.courseData.course_id) {
         return true;
@@ -535,7 +670,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style scoped>

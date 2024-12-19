@@ -3,9 +3,6 @@ import axios from "axios";
 // 创建一个axios实例
 const server = axios.create({
   baseURL: "http://111.229.210.27", // 替换为你后端的 URL
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // 设置拦截器
@@ -102,12 +99,43 @@ const userAPI = {
     return !!token;
   },
 
+  async getAvatar(): Promise<string> {
+    const avatar = localStorage.getItem("avatar");
+    if (avatar) {
+      return avatar; // 如果本地存储有头像，直接返回
+    }
+
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      return ""; // 如果没有 userId，返回 null
+    }
+
+    try {
+      // 获取用户信息并提取头像 URL
+      const result = await this.getUserInfo(userId);
+      console.log("获取用户信息成功!~:", result); // 调试信息
+      if (result.success) {
+        const userAvatar = result.data[0].profile_picture;
+        if (userAvatar) {
+          // 如果获取到头像 URL，存储到 localStorage
+          localStorage.setItem("avatar", userAvatar);
+          console.log("获取到头像 URL:", userAvatar); // 调试信息
+          return userAvatar;
+        }
+      }
+      return ""; // 如果没有头像，返回 null
+    } catch (error) {
+      console.error("获取用户信息失败:", error);
+      return ""; // 如果获取用户信息失败，返回 null
+    }
+  },
+
   getUsername(): string | null {
     return localStorage.getItem("username");
   },
 
-  getUserId(): number | null {
-    return parseInt(localStorage.getItem("userId") || "");
+  getUserId(): string | null {
+    return localStorage.getItem("userId");
   },
 
   getRole(): string | null {
@@ -122,12 +150,12 @@ const userAPI = {
         if (response.status === 200) {
           // 登录成功，保存 token 和刷新 token
           console.log(response.data);
-          const { access, refresh, role } = response.data;
+          const { access, refresh, role, user_id } = response.data;
           localStorage.setItem("accessToken", access);
           localStorage.setItem("refreshToken", refresh);
-          localStorage.setItem("username", username);
           localStorage.setItem("role", role);
-          localStorage.setItem("userId", response.data.id);
+          localStorage.setItem("userId", user_id);
+          localStorage.setItem("username", username); //TODO
           return {
             success: true,
             role,
@@ -146,8 +174,8 @@ const userAPI = {
       });
   },
 
-  register(username: string, password: string): Promise<any> {
-    const credentials = { username, password };
+  register(user_id: string, username: string, password: string): Promise<any> {
+    const credentials = { user_id, username, password };
     return server
       .post("/api/v1/users/register/", credentials)
       .then(handleResponse)
@@ -159,45 +187,98 @@ const userAPI = {
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("username");
     localStorage.removeItem("role");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("avatar");
     window.location.href = "/login"; //todo
   },
 
-  getUserInfo(user_id: number): Promise<any> {
+  getUserInfo(user_id: string): Promise<any> {
     const params = { user_id: user_id };
     return server
       .get("/api/v1/users/user-info", { params })
+      .then(handleResponse)
+      .then((response) => {
+        if (response.success) {
+          console.log("顺便拿到啦", response.data);
+          localStorage.setItem("role", response.data[0].role);
+          localStorage.setItem("userId", response.data[0].user_id);
+          localStorage.setItem("username", response.data[0].username);
+          localStorage.setItem("avatar", response.data[0].profile_picture);
+        }
+        return response;
+      })
+      .catch(handleError);
+  },
+
+  patchUserInfo(formData: FormData): Promise<any> {
+    console.log("发送请求：更新用户信息", formData); // 调试信息
+    return server
+      .patch("/api/v1/users/user-info", formData)
       .then(handleResponse)
       .catch(handleError);
   },
 };
 
 const courseAPI = {
-  getCourseList(): Promise<any> {
-    const params = { personal: true };
-    return server
-      .get("/api/v1/courses/course", { params })
-      .then(handleResponse)
-      .catch(handleError);
+  getCourseList(personal?: boolean): Promise<any> {
+    if (personal === undefined) {
+      const params = { personal: true };
+      return server
+        .get("/api/v1/courses/course", { params })
+        .then(handleResponse)
+        .catch(handleError);
+    } else {
+      return server
+        .get("/api/v1/courses/course")
+        .then(handleResponse)
+        .catch(handleError);
+    }
   },
 
-  postCourse(course_name: string): Promise<any> {
-    const data = { name: course_name };
+  postCourse(
+    course_name: string,
+    course_code: string,
+    course_sequence: string,
+    department: string
+  ): Promise<any> {
+    const data = {
+      name: course_name,
+      course_code: course_code,
+      course_sequence: course_sequence,
+      department: department,
+    };
     return server
       .post("/api/v1/courses/course", data)
       .then(handleResponse)
       .catch(handleError);
   },
 
-  postClassToCourse(course_id: number, class_id: number): Promise<any> {
-    const data = { class_id: class_id, course_id: course_id };
+  postClassToCourse(
+    class_id: number,
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    const data = {
+      class_id: class_id,
+      course_code: course_code,
+      course_sequence: course_sequence,
+    };
     return server
       .post("/api/v1/courses/classes", data)
       .then(handleResponse)
       .catch(handleError);
   },
 
-  postEnroll(student_ids: number[], course_id: number): Promise<any> {
-    const data = { student_ids: student_ids, course_id: course_id };
+  postEnroll(
+    student_ids: string[],
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    const data = {
+      student_user_ids: student_ids,
+      course_code: course_code,
+      course_sequence: course_sequence,
+    };
     return server
       .post("/api/v1/courses/enroll", data)
       .then(handleResponse)
@@ -299,7 +380,7 @@ const classAPI = {
       .catch(handleError);
   },
 
-  postTeacher(class_id: number, teacher_id: number): Promise<any> {
+  postTeacher(class_id: number, teacher_id: string): Promise<any> {
     const data = { class_id: class_id, teacher_id: teacher_id };
     return server
       .post("/api/v1/classes/teachers", data)
@@ -419,4 +500,4 @@ const labAPI = {
   },
 };
 
-export { userAPI, courseAPI, classAPI, labAPI };
+export { server, userAPI, courseAPI, classAPI, labAPI };

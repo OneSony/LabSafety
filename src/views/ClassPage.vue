@@ -736,8 +736,8 @@ export default {
 
       this.basicInfo.teacher_ids = [];
       this.basicInfo.teacher_names = [];
-      console.log("teacher ids:", this.basicInfo.teacher_names);
       const result2 = await classAPI.getTeachers(this.class_id); // 获取教师信息的 API
+      console.log("教师信息:", result2);
       if (result2.success) {
         if (result2.data.length === 0) {
           this.basicInfo.teachers_str = "未知";
@@ -806,13 +806,9 @@ export default {
 
       classAPI.postComment(this.class_id, this.newComment).then((response) => {
         if (response.success) {
-          this.commentList.push({
-            sender_id: 1,
-            content: this.newComment,
-            sent_time: "刚刚",
-          });
           this.newComment = "";
           ElMessage.success("评论成功");
+          this.fetchComments();
         } else {
           ElMessage.error("评论失败");
         }

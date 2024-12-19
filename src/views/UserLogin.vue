@@ -24,11 +24,18 @@
 
         <el-dialog v-model="isDialogVisible" title="注册" width="400px">
           <!-- 注册表单内容 -->
+          <p>页面会被弃用, 应使用TeachingAffair注册账号</p>
           <el-form
             :model="registerForm"
             @submit.prevent="handleRegister"
             label-width="80px"
           >
+            <el-form-item label="学号" prop="user_id">
+              <el-input
+                v-model="registerForm.user_id"
+                placeholder="请输入学号"
+              ></el-input>
+            </el-form-item>
             <el-form-item label="用户名" prop="username">
               <el-input
                 v-model="registerForm.username"
@@ -84,6 +91,7 @@ export default {
     });
 
     const registerForm = ref({
+      user_id: "",
       username: "",
       password: "",
     });
@@ -122,8 +130,8 @@ export default {
     },
 
     async handleRegister() {
-      const { username, password } = this.registerForm; // 使用 `this.loginForm` 访问表单数据
-      const result = await userAPI.register(username, password);
+      const { user_id, username, password } = this.registerForm; // 使用 `this.loginForm` 访问表单数据
+      const result = await userAPI.register(user_id, username, password);
 
       console.log("rrr status", result);
       if (result.success) {

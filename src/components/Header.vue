@@ -14,7 +14,7 @@
       class="user-info-dropdown"
     >
       <div class="user-info">
-        <img class="avatar" :src="userPhoto" alt="头像" />
+        <ProfilePhoto :url="userPhoto" size="50px" />
         <span class="username">{{ userName }}</span>
       </div>
 
@@ -37,9 +37,13 @@ import { computed } from "vue";
 import { userAPI } from "@/utils/api";
 import { ref, watch } from "vue";
 import { onMounted } from "vue";
+import ProfilePhoto from "@/components/ProfilePhoto.vue";
 
 export default {
   name: "HeaderComponent",
+  components: {
+    ProfilePhoto, // 注册组件
+  },
   setup() {
     const route = useRoute();
     const isUserInfoVisible = userAPI.isLoggedIn();
@@ -49,9 +53,16 @@ export default {
 
     const userName = ref(userAPI.getUsername() || "未登录");
     const roleText = ref("");
-    const userPhoto = "https://via.placeholder.com/40";
+    const userPhoto = ref("");
 
-    watch(route, () => {
+    const updateUserPhoto = async () => {
+      userPhoto.value = (await userAPI.getAvatar()) || "";
+      console.log("haha here photo: ", userPhoto.value);
+    };
+
+    watch(route, async () => {
+      userPhoto.value = (await userAPI.getAvatar()) || "";
+      console.log("photo: ", userPhoto.value);
       userName.value = userAPI.getUsername() || "未登录";
       const role = userAPI.getRole();
       switch (role) {
@@ -64,6 +75,9 @@ export default {
         case "manager":
           roleText.value = "实验室管理员";
           break;
+        case "teachingAffairs":
+          roleText.value = "教务";
+          break;
         default:
           roleText.value = "未知";
       }
@@ -75,7 +89,8 @@ export default {
       isUserInfoVisible,
       userName,
       roleText,
-      //userPhoto,
+      userPhoto,
+      updateUserPhoto,
     };
   },
   methods: {
@@ -132,14 +147,8 @@ export default {
   cursor: pointer;
 }
 
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
 .username {
+  padding-left: 10px;
   font-size: 16px;
   color: #2c3e50;
 }

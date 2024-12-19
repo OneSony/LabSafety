@@ -4,7 +4,7 @@ import UserLogin from "../views/UserLogin.vue";
 // import CourseManagement from "../views/CourseManagement.vue";
 import NotificationManagement from "../views/NotificationManagement.vue";
 import CommentManagement from "../views/CommentManagement.vue";
-import UserProfile from "../views/Profile.vue";
+import UserProfile from "../views/ProfilePage.vue";
 import LabManagerDashboard from "../views/LabManagerDashboard.vue";
 import TeachingAffairs from "../views/TeachingAffairs.vue";
 import CreateCourse from "../views/CreateCourse.vue";
@@ -27,6 +27,8 @@ const routes: Array<RouteRecordRaw> = [
         return { name: "TeacherDashboard" };
       } else if (role === "manager") {
         return { name: "LabManagerDashboard" };
+      } else if (role == "teachingAffairs") {
+        return { name: "TeachingAffairs" };
       } else {
         return "/login"; // 如果角色无法识别，跳转到登录页面
       }
@@ -57,27 +59,24 @@ const routes: Array<RouteRecordRaw> = [
       console.log("role", role);
 
       if (role === "student") {
-        // 如果目标页面不是 "StudentDashboard"，则重定向到该页面
         if (to.name !== "StudentDashboard") {
           next({ name: "StudentDashboard" });
         } else {
-          next(); // 如果已经是学生页面，则继续
+          next();
         }
       } else if (role === "teacher") {
-        // 如果目标页面不是 "TeacherDashboard"，则重定向到该页面
         if (to.name !== "TeacherDashboard") {
           next({ name: "TeacherDashboard" });
         } else {
-          next(); // 如果已经是老师页面，则继续
+          next();
         }
       } else if (role === "manager") {
-        // 如果目标页面不是 "TeacherDashboard"，则重定向到该页面
         if (to.name !== "LabManagerDashboard") {
           next({ name: "LabManagerDashboard" });
         } else {
-          next(); // 如果已经是老师页面，则继续
+          next();
         }
-      } else if (role == "teachingaffairs") {
+      } else if (role == "teachingAffairs") {
         if (to.name !== "TeachingAffairs") {
           next({ name: "TeachingAffairs" });
         } else {
@@ -108,7 +107,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: "teachingaffairs",
         name: "TeachingAffairs",
-        component: TeachingAffairs,
+        component: Dashboard,
       },
     ],
   },
@@ -175,6 +174,7 @@ router.beforeEach((to, from, next) => {
   } else if (to.path === "/login" && userAPI.isLoggedIn()) {
     //是可以的，如果是refresh进来的，已经清空了accessToken，是notLoggedIn的
     // 如果用户已经登录，且访问的是登录页面，跳转到上一个页面或主页
+    localStorage.clear();
     next(from.fullPath || "/"); // 返回上一个页面或首页
   } else {
     next(); // 直接进入目标页面
