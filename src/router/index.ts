@@ -149,10 +149,11 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     // 使用实验室名称作为路由参数
-    path: "/lab/:labId",
-    name: "LabDetail",
+    path: "/lab/:id",
+    name: "LabPage",
     component: LabDetail,
     props: true, // 将路由参数作为 props 传递给组件
+    // props: (route) => ({ labId: Number(route.params.id) }),
   },
 ];
 

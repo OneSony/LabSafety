@@ -388,7 +388,10 @@ const classAPI = {
       .catch(handleError);
   },
 };
-
+interface CreateLabRequest {
+  name: string;
+  location: string;
+}
 const labAPI = {
   getLabs(lab_id?: number): Promise<any> {
     const params = lab_id ? { lab_id } : {};
@@ -403,47 +406,28 @@ const labAPI = {
   // 获取单个实验室信息通过ID
   getLabById(lab_id: number): Promise<any> {
     return server
-      .get(`/labs/lab/${lab_id}`)
+      .get(`/api/v1/labs/lab`, { params: { id: lab_id } })
       .then(handleResponse)
       .catch(handleError);
   },
   // 创建实验室
-  createLab(labData: {
-    name: string;
-    location: string;
-    safety_equipments: string;
-    safety_notes: string;
-    lab_image: string;
-  }): Promise<any> {
-    // 确保数据格式正确
-    const formattedData = {
-      ...labData,
-      // 确保是合法的 JSON 字符串
-      safety_equipments:
-        typeof labData.safety_equipments === "string"
-          ? labData.safety_equipments
-          : JSON.stringify(labData.safety_equipments),
-      safety_notes:
-        typeof labData.safety_notes === "string"
-          ? labData.safety_notes
-          : JSON.stringify(labData.safety_notes),
+  createLab(labData: CreateLabRequest): Promise<any> {
+    // 只发送必填字段
+    const data = {
+      name: labData.name,
+      location: labData.location,
     };
 
-    console.log("API sending data:", formattedData);
-
     return server
-      .post("/api/v1/labs/lab", formattedData)
+      .post("/api/v1/labs/lab", data)
       .then(handleResponse)
-      .catch((error) => {
-        console.error("API error response:", error.response?.data);
-        return handleError(error);
-      });
+      .catch(handleError);
   },
 
   // 编辑实验室
   editLab(labId: number, labData: any): Promise<any> {
     return server
-      .put(`/api/v1/labs/lab`, {
+      .patch(`/api/v1/labs/lab`, {
         lab_id: labId,
         ...labData,
       })

@@ -55,75 +55,6 @@
         <el-form-item label="地点" :required="true">
           <el-input v-model="labForm.location" placeholder="请输入实验室地点" />
         </el-form-item>
-
-        <!-- 添加图片上传 -->
-        <el-form-item label="实验室照片" :required="false">
-          <el-upload
-            class="upload-demo"
-            action="#"
-            :http-request="handleImageUpload"
-            :show-file-list="true"
-            :limit="1"
-            accept="image/*"
-          >
-            <el-button type="primary">选择图片</el-button>
-            <template #tip>
-              <div class="el-upload__tip">
-                只能上传 jpg/png 文件，且不超过 5MB
-              </div>
-            </template>
-          </el-upload>
-          <div v-if="labForm.lab_image" class="uploaded-photo">
-            <img :src="labForm.lab_image" alt="实验室照片" />
-          </div>
-        </el-form-item>
-
-        <!-- 添加安全器材 -->
-        <el-form-item label="安全器材" :required="false">
-          <el-button type="primary" @click="addSafetyEquipment"
-            >添加器材</el-button
-          >
-          <div
-            v-for="(equipment, index) in labForm.safety_equipment_list"
-            :key="index"
-            class="equipment-item"
-          >
-            <el-input
-              v-model="equipment.name"
-              placeholder="器材名称"
-              class="equipment-input"
-            />
-            <el-input
-              v-model="equipment.description"
-              placeholder="描述"
-              class="equipment-input"
-            />
-            <el-button type="danger" @click="removeSafetyEquipment(index)">
-              删除
-            </el-button>
-          </div>
-        </el-form-item>
-
-        <!-- 添加安全注意事项 -->
-        <el-form-item label="安全注意事项" :required="false">
-          <el-button type="primary" @click="addSafetyPrecaution">
-            添加注意事项
-          </el-button>
-          <div
-            v-for="(precaution, index) in labForm.safety_notes_list"
-            :key="index"
-            class="precaution-item"
-          >
-            <el-input
-              v-model="labForm.safety_notes_list[index]"
-              placeholder="请输入安全注意事项"
-              class="precaution-input"
-            />
-            <el-button type="danger" @click="removeSafetyPrecaution(index)">
-              删除
-            </el-button>
-          </div>
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="handleCancel">取消</el-button>
@@ -147,233 +78,142 @@ export default {
         name: "",
         location: "",
         lab_image: "",
-        safety_equipments: "[]",
-        safety_notes: "[]",
+        // 这里定义为字符串数组，用于安全器材和注意事项
         safety_equipment_list: [],
         safety_notes_list: [],
       },
     };
   },
   methods: {
-    // 打开创建实验室对话框
+    fetchLabs() {
+      labAPI
+        .getLabs()
+        .then((response) => {
+          if (response.success) {
+            this.labs = response.data;
+          } else {
+            ElMessage.error(response.error || "获取实验室列表失败");
+          }
+        })
+        .catch((error) => {
+          console.error("fetchLabs error:", error);
+          ElMessage.error("获取实验室列表失败，请稍后重试");
+        });
+    },
+
     openCreateLabDialog() {
-      // 重置表单数据
-      this.labForm = {
-        lab_id: null,
-        name: "",
-        location: "",
-        lab_image: "",
-        safety_equipments: "",
-        safety_notes: "",
-        safety_equipment_list: [],
-        safety_notes_list: [],
-      };
-      // 显示对话框
+      this.resetForm();
       this.isLabDialogVisible = true;
     },
-    getInitialLabForm() {
-      return {
-        lab_id: null,
-        name: "",
-        location: "",
-        lab_image: "",
-        safety_equipments: "",
-        safety_notes: "",
-        safety_equipment_list: [],
-        safety_notes_list: [],
-      };
-    },
-    // 处理对话框关闭前的操作
+
     handleBeforeClose(done) {
       this.resetForm();
       done();
     },
-    // 处理取消按钮点击
     handleCancel() {
       this.resetForm();
       this.isLabDialogVisible = false;
     },
-
-    // 处理对话框关闭
-    handleDialogClose() {
+    handleDialogClosed() {
       this.resetForm();
     },
 
-    // 重置表单数据
     resetForm() {
       this.labForm = {
         lab_id: null,
         name: "",
         location: "",
         lab_image: "",
-        safety_equipments: "[]",
-        safety_notes: "[]",
         safety_equipment_list: [],
         safety_notes_list: [],
       };
     },
 
-    handleDialogClosed() {
-      this.labForm = {
-        lab_id: null,
-        name: "",
-        location: "",
-        lab_image: "",
-        safety_equipments: "",
-        safety_notes: "",
-        safety_equipment_list: [],
-        safety_notes_list: [],
-      };
-    },
-    // 处理图片上传
-    async handleImageUpload({ file }) {
+    async handleImageUpload(file) {
       try {
-        // 检查文件类型
-        if (!file.type.startsWith("image/")) {
+        const selectedFile = file.raw;
+        if (!selectedFile.type.startsWith("image/")) {
           throw new Error("请上传图片文件");
         }
 
-        // 检查文件大小（限制为5MB）
-        const maxSize = 5 * 1024 * 1024;
-        if (file.size > maxSize) {
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (selectedFile.size > maxSize) {
           throw new Error("图片大小不能超过5MB");
         }
 
+        const reader = new FileReader();
         const base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            if (typeof e.target?.result === "string") {
-              // 保存完整的 base64 字符串
-              this.labForm.lab_image = e.target.result;
-              resolve(e.target.result);
-            } else {
-              reject(new Error("图片读取失败"));
-            }
-          };
+          reader.onload = () => resolve(reader.result);
           reader.onerror = () => reject(new Error("图片读取失败"));
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(selectedFile);
         });
 
+        this.labForm.lab_image = base64;
         ElMessage.success("图片上传成功");
-        return base64;
       } catch (error) {
         ElMessage.error(error.message || "图片上传失败");
         throw error;
       }
     },
-    // 转换数据为API所需格式
-    prepareLabData() {
-      const equipments = this.labForm.safety_equipment_list.map((eq) => ({
-        name: eq.name,
-        description: eq.description,
-      }));
+
+    async saveLab() {
+      if (!this.labForm.name || !this.labForm.location) {
+        ElMessage.warning("实验室名称和地点不能为空");
+        return;
+      }
 
       const labData = {
         name: this.labForm.name,
         location: this.labForm.location,
         lab_image: this.labForm.lab_image,
-        safety_equipments: JSON.stringify(equipments),
-        safety_notes: JSON.stringify(this.labForm.safety_notes_list),
+        safety_equipments: this.labForm.safety_equipment_list,
+        safety_notes: this.labForm.safety_notes_list,
       };
 
-      if (this.labForm.lab_id) {
-        labData.lab_id = this.labForm.lab_id;
-      }
-
-      return labData;
-    },
-
-    // 表单验证
-    validateForm() {
-      if (!this.labForm.name.trim()) {
-        ElMessage.warning("实验室名称不能为空");
-        return false;
-      }
-      if (!this.labForm.location.trim()) {
-        ElMessage.warning("实验室地点不能为空");
-        return false;
-      }
-      return true;
-    },
-
-    // 保存实验室
-    async saveLab() {
-      if (!this.validateForm()) return;
+      const apiCall = this.labForm.lab_id
+        ? labAPI.editLab(this.labForm.lab_id, labData)
+        : labAPI.createLab(labData);
 
       try {
-        // 准备安全设备和注意事项数据
-        const equipments = this.labForm.safety_equipment_list.map((eq) => ({
-          name: eq.name || "",
-          description: eq.description || "",
-        }));
-
-        const labData = {
-          name: this.labForm.name.trim(),
-          location: this.labForm.location.trim(),
-          safety_equipments: JSON.stringify(equipments),
-          safety_notes: JSON.stringify(this.labForm.safety_notes_list || []),
-          lab_image: this.labForm.lab_image.split(",")[1] || "", // 只发送 base64 数据部分
-        };
-
-        // 调试日志
-        console.log("准备发送的数据:", {
-          ...labData,
-          lab_image: labData.lab_image ? "(base64图片数据)" : "空",
-        });
-
-        const response = this.labForm.lab_id
-          ? await labAPI.updateLab(this.labForm.lab_id, labData)
-          : await labAPI.createLab(labData);
+        const response = await apiCall;
 
         if (response.success) {
-          ElMessage.success(
-            this.labForm.lab_id ? "实验室更新成功！" : "实验室创建成功！"
-          );
-          this.resetForm();
+          ElMessage.success("实验室创建成功！");
           this.isLabDialogVisible = false;
+
+          // 调用 fetchLabs 重新获取实验室列表
           await this.fetchLabs();
+
+          // 跳转到新建实验室的详情页
+          // this.$router.push({
+          //   name: "LabPage",
+          //   params: { id: response.data.id },
+          // });
         } else {
-          throw new Error(response.error || "操作失败");
+          ElMessage.error(response.error || "保存实验室失败");
         }
       } catch (error) {
-        console.error("保存失败:", error);
-        ElMessage.error(error.message || "保存失败，请稍后重试");
-      }
-    },
-    // 获取实验室列表
-    async fetchLabs() {
-      try {
-        const response = await labAPI.getLabs();
-        if (response.success) {
-          this.labs = response.data.map((lab) => ({
-            ...lab,
-            safety_equipment_list: JSON.parse(lab.safety_equipments || "[]"),
-            safety_notes_list: JSON.parse(lab.safety_notes || "[]"),
-          }));
-        } else {
-          ElMessage.error(response.error || "获取实验室列表失败");
-        }
-      } catch (error) {
-        console.error("Fetch labs error:", error);
-        ElMessage.error("获取实验室列表失败");
+        ElMessage.error("保存实验室失败，请稍后重试！");
+        console.error("Error:", error);
       }
     },
 
-    // 编辑实验室
     editLab(lab) {
       try {
-        const safety_equipment_list = JSON.parse(lab.safety_equipments || "[]");
-        const safety_notes_list = JSON.parse(lab.safety_notes || "[]");
-
+        // 后端如果已返回的是数组，可以直接使用，
+        // 如果后端返回是数组则无需 JSON.parse()
+        // 假设后端数据格式正确，如 lab.safety_equipments 是数组
         this.labForm = {
-          lab_id: lab.lab_id,
+          lab_id: lab.id,
           name: lab.name,
           location: lab.location,
           lab_image: lab.lab_image,
-          safety_equipments: lab.safety_equipments,
-          safety_notes: lab.safety_notes,
-          safety_equipment_list,
-          safety_notes_list,
+          safety_equipment_list: Array.isArray(lab.safety_equipments)
+            ? lab.safety_equipments
+            : [],
+          safety_notes_list: Array.isArray(lab.safety_notes)
+            ? lab.safety_notes
+            : [],
         };
         this.isLabDialogVisible = true;
       } catch (error) {
@@ -382,7 +222,6 @@ export default {
       }
     },
 
-    // 删除实验室
     deleteLab(labId) {
       ElMessageBox.confirm("确定要删除这个实验室吗？", "删除确认", {
         confirmButtonText: "确定",
@@ -394,7 +233,7 @@ export default {
             .deleteLab(labId)
             .then((response) => {
               if (response.success) {
-                this.labs = this.labs.filter((lab) => lab.lab_id !== labId);
+                this.labs = this.labs.filter((lab) => lab.id !== labId);
                 ElMessage.success("实验室删除成功！");
                 this.fetchLabs();
               } else {
@@ -411,22 +250,24 @@ export default {
         });
     },
 
-    // 安全器材相关方法
+    // 操作安全器材（字符串数组）
     addSafetyEquipment() {
-      this.labForm.safety_equipment_list.push({ name: "", description: "" });
+      this.labForm.safety_equipment_list.push("");
     },
-
     removeSafetyEquipment(index) {
       this.labForm.safety_equipment_list.splice(index, 1);
     },
 
-    // 安全注意事项相关方法
+    // 操作安全注意事项（字符串数组）
     addSafetyPrecaution() {
       this.labForm.safety_notes_list.push("");
     },
-
     removeSafetyPrecaution(index) {
       this.labForm.safety_notes_list.splice(index, 1);
+    },
+    goToLabDetail(lab) {
+      console.log("id:", lab.id);
+      this.$router.push({ name: "LabPage", params: { id: lab.id } });
     },
   },
   mounted() {
