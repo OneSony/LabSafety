@@ -4,7 +4,7 @@ import UserLogin from "../views/UserLogin.vue";
 // import CourseManagement from "../views/CourseManagement.vue";
 import NotificationManagement from "../views/NotificationManagement.vue";
 import CommentManagement from "../views/CommentManagement.vue";
-import UserProfile from "../views/Profile.vue";
+import UserProfile from "../views/ProfilePage.vue";
 import LabManagerDashboard from "../views/LabManagerDashboard.vue";
 import TeachingAffairs from "../views/TeachingAffairs.vue";
 import CreateCourse from "../views/CreateCourse.vue";

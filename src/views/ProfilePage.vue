@@ -8,18 +8,23 @@
     <el-form :model="userInfo" label-width="120px" style="margin-top: 40px">
       <el-form-item label="头像">
         <el-upload
-          action="/api/upload"
-          list-type="picture-card"
-          :on-preview="handlePreview"
-          :on-remove="handleRemove"
+          ref="upload"
+          class="avatar-uploader"
+          action=""
+          :auto-upload="false"
+          :show-file-list="false"
+          :on-change="handleFileChange"
         >
+          <el-button size="small" type="primary">选择头像</el-button>
+        </el-upload>
+        <div class="avatar-preview">
           <img
             v-if="userInfoForm.avatar"
             :src="userInfoForm.avatar"
+            alt="头像"
             class="avatar"
           />
-          <i v-else class="el-icon-plus"></i>
-        </el-upload>
+        </div>
       </el-form-item>
       <el-form-item label="姓名">
         <el-input v-model="userInfo.username" :disabled="true" />
@@ -86,6 +91,7 @@ export default defineComponent({
         avatar: "",
       } as UserInfo,
       password: "" as string,
+      file: null as File | null,
     };
   },
   mounted() {
@@ -111,16 +117,29 @@ export default defineComponent({
     this.fetchUserInfo();
   },
   methods: {
+    handleFileChange(fileObj: any) {
+      const selectedFile = fileObj.raw;
+      this.file = selectedFile; // 存储文件对象
+
+      // 使用 FileReader 读取本地图片并显示
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.userInfoForm.avatar = reader.result as string; // 显示头像
+      };
+      reader.readAsDataURL(selectedFile);
+    },
+
     async fetchUserInfo() {
       // 模拟获取用户信息
       //TODO
       const result = await userAPI.getUserInfo(this.userInfo.id);
+      console.log("User info!!:", result);
       if (result.success) {
-        this.userInfo.username = result.data[0].username;
-        this.userInfo.email = result.data[0].email;
-        this.userInfo.phone = result.data[0].phone_number;
-        this.userInfo.department = result.data[0].department;
-        this.userInfo.avatar = result.data[0].avatar;
+        this.userInfo.username = result.data[0].username || "";
+        this.userInfo.email = result.data[0].email || "";
+        this.userInfo.phone = result.data[0].phone_number || "";
+        this.userInfo.department = result.data[0].department || "";
+        this.userInfo.avatar = result.data[0].profile_picture || "";
 
         this.userInfoForm.email = this.userInfo.email;
         this.userInfoForm.phone = this.userInfo.phone;
@@ -128,60 +147,51 @@ export default defineComponent({
       } else {
         ElMessage.error("获取用户信息失败");
       }
+      console.log("User info:", this.userInfo);
     },
     async saveProfile() {
       console.log("Profile saved:", this.userInfo);
-      // TODO: 调用 API 保存个人信息
-      let data: {
-        email?: string;
-        phone_number?: string;
-        profile_picture?: string;
-        password?: string;
-      } = {};
+      const formData = new FormData();
 
-      // 动态添加属性
+      formData.append("user_id", this.userInfo.id);
+
       if (this.userInfoForm.email !== this.userInfo.email) {
         console.log("Email changed:", this.userInfoForm.email);
-        data.email = this.userInfoForm.email;
+        formData.append("email", this.userInfoForm.email);
       }
 
       if (this.userInfoForm.phone !== this.userInfo.phone) {
         console.log("Phone changed:", this.userInfoForm.phone);
-        data.phone_number = this.userInfoForm.phone;
+        formData.append("phone_number", this.userInfoForm.phone);
       }
 
-      if (this.userInfoForm.avatar !== this.userInfo.avatar) {
+      if (this.file) {
         console.log("Avatar changed:", this.userInfoForm.avatar);
-        data.profile_picture = this.userInfoForm.avatar;
+        formData.append("profile_picture", this.file);
       }
 
       if (this.password !== "") {
-        data.password = this.password;
+        console.log("Password changed");
+        formData.append("password", this.password);
       }
 
       if (
-        data.email === undefined &&
-        data.phone_number === undefined &&
-        data.profile_picture === undefined &&
-        data.password === undefined
+        formData.get("email") === null &&
+        formData.get("phone_number") === null &&
+        formData.get("profile_picture") === null &&
+        formData.get("password") === null
       ) {
         ElMessage.warning("没有修改任何信息");
         return;
       }
 
-      const result = await userAPI.patchUserInfo(this.userInfo.id, data);
+      const result = await userAPI.patchUserInfo(formData);
       if (result.success) {
         ElMessage.success("保存成功");
         this.fetchUserInfo();
       } else {
         ElMessage.error("保存失败");
       }
-    },
-    handlePreview(file: any) {
-      console.log("Preview file:", file);
-    },
-    handleRemove(file: any) {
-      console.log("Removed file:", file);
     },
   },
 });
@@ -193,9 +203,20 @@ export default defineComponent({
   margin: 0 auto;
   padding: 20px;
 }
+.avatar-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar-preview {
+  margin-top: 20px;
+}
+
 .avatar {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
+  object-fit: cover;
 }
 </style>

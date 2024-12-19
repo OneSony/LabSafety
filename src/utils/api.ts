@@ -3,9 +3,6 @@ import axios from "axios";
 // 创建一个axios实例
 const server = axios.create({
   baseURL: "http://111.229.210.27", // 替换为你后端的 URL
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // 设置拦截器
@@ -96,13 +93,6 @@ interface LoginResponse {
   role: string;
 }
 
-type UserInfo = {
-  email?: string;
-  phone?: string;
-  profile_picture?: string;
-  password?: string;
-};
-
 const userAPI = {
   isLoggedIn(): boolean {
     const token = localStorage.getItem("accessToken");
@@ -178,11 +168,10 @@ const userAPI = {
       .catch(handleError);
   },
 
-  patchUserInfo(user_id: string, data: UserInfo): Promise<any> {
-    const updatedData = { ...data, user_id };
-    console.log("发送请求：更新用户信息", updatedData); // 调试信息
+  patchUserInfo(formData: FormData): Promise<any> {
+    console.log("发送请求：更新用户信息", formData); // 调试信息
     return server
-      .patch("/api/v1/users/user-info", updatedData)
+      .patch("/api/v1/users/user-info", formData)
       .then(handleResponse)
       .catch(handleError);
   },
@@ -469,4 +458,4 @@ const labAPI = {
   },
 };
 
-export { userAPI, courseAPI, classAPI, labAPI };
+export { server, userAPI, courseAPI, classAPI, labAPI };
