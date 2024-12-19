@@ -99,6 +99,37 @@ const userAPI = {
     return !!token;
   },
 
+  async getAvatar(): Promise<string> {
+    const avatar = localStorage.getItem("avatar");
+    if (avatar) {
+      return avatar; // 如果本地存储有头像，直接返回
+    }
+
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      return ""; // 如果没有 userId，返回 null
+    }
+
+    try {
+      // 获取用户信息并提取头像 URL
+      const result = await this.getUserInfo(userId);
+      console.log("获取用户信息成功!~:", result); // 调试信息
+      if (result.success) {
+        const userAvatar = result.data[0].profile_picture;
+        if (userAvatar) {
+          // 如果获取到头像 URL，存储到 localStorage
+          localStorage.setItem("avatar", userAvatar);
+          console.log("获取到头像 URL:", userAvatar); // 调试信息
+          return userAvatar;
+        }
+      }
+      return ""; // 如果没有头像，返回 null
+    } catch (error) {
+      console.error("获取用户信息失败:", error);
+      return ""; // 如果获取用户信息失败，返回 null
+    }
+  },
+
   getUsername(): string | null {
     return localStorage.getItem("username");
   },
@@ -157,6 +188,7 @@ const userAPI = {
     localStorage.removeItem("username");
     localStorage.removeItem("role");
     localStorage.removeItem("userId");
+    localStorage.removeItem("avatar");
     window.location.href = "/login"; //todo
   },
 

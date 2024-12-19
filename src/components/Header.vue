@@ -14,7 +14,7 @@
       class="user-info-dropdown"
     >
       <div class="user-info">
-        <img class="avatar" :src="userPhoto" alt="头像" />
+        <img class="avatar" v-if="userPhoto" :src="userPhoto" alt="头像" />
         <span class="username">{{ userName }}</span>
       </div>
 
@@ -49,9 +49,11 @@ export default {
 
     const userName = ref(userAPI.getUsername() || "未登录");
     const roleText = ref("");
-    const userPhoto = "https://via.placeholder.com/40";
+    const userPhoto = ref("");
 
-    watch(route, () => {
+    watch(route, async () => {
+      userPhoto.value = (await userAPI.getAvatar()) || "";
+      console.log("photo: ", userPhoto.value);
       userName.value = userAPI.getUsername() || "未登录";
       const role = userAPI.getRole();
       switch (role) {
@@ -78,7 +80,7 @@ export default {
       isUserInfoVisible,
       userName,
       roleText,
-      //userPhoto,
+      userPhoto,
     };
   },
   methods: {

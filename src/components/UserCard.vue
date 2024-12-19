@@ -34,6 +34,14 @@
             >
               实验室管理员
             </el-tag>
+            <el-tag
+              v-else-if="user.tag === 'teachingAffairs'"
+              type="danger"
+              class="user-tag"
+              size="small"
+            >
+              教务
+            </el-tag>
           </div>
         </div>
       </div>
@@ -80,9 +88,10 @@ export default defineComponent({
     // 获取用户信息函数
     const getUserInfo = async () => {
       const res = await userAPI.getUserInfo(props.userId);
+      console.log("get profile", res);
       if (res.success) {
         user.value.username = res.data[0].username;
-        user.value.avatarUrl = res.data[0].avatarUrl;
+        user.value.avatarUrl = res.data[0].profile_picture;
         user.value.tag = res.data[0].role;
       } else {
         console.log(res.message);
@@ -103,6 +112,7 @@ export default defineComponent({
 
 <style scoped>
 .user-card {
+  width: 150px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -111,10 +121,9 @@ export default defineComponent({
 
 .user-info {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
   align-items: center;
-  gap: 5px;
+  gap: 20px;
 }
 
 .user-avatar {
