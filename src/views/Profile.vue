@@ -53,6 +53,7 @@
 <script lang="ts">
 import { userAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
+import { defineComponent } from "vue";
 
 interface UserInfo {
   role: string;
@@ -65,7 +66,7 @@ interface UserInfo {
   department: string;
 }
 
-export default {
+export default defineComponent({
   name: "UserProfile",
   data() {
     return {
@@ -183,7 +184,7 @@ export default {
       console.log("Removed file:", file);
     },
   },
-};
+});
 </script>
 
 <style scoped>

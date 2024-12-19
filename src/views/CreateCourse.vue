@@ -222,7 +222,6 @@
 </template>
 
 <script lang="ts">
-import LabList from "@/components/LabList.vue";
 import { courseAPI, labAPI, classAPI, userAPI } from "@/utils/api";
 import { ElMessage, inputEmits, rowProps } from "element-plus";
 import { defineComponent, onMounted } from "vue";
