@@ -188,7 +188,7 @@
         <el-button
           type="text"
           @click="deleteNotification(notice)"
-          v-if="isTeacher"
+          v-if="isTeacher && notice.sender === myUserId"
           style="position: absolute; right: 15px; top: 15px; z-index: 1000"
         >
           删除
@@ -196,7 +196,7 @@
         <el-button
           type="text"
           @click="editNotification(notice)"
-          v-if="isTeacher"
+          v-if="isTeacher && notice.sender === myUserId"
           style="position: absolute; right: 60px; top: 15px; z-index: 1000"
         >
           编辑
@@ -594,6 +594,7 @@ export default {
       studentList: [],
       copyList: [],
       noticeList: [],
+      myUserId: userAPI.getUserId(),
     };
   },
   setup() {
