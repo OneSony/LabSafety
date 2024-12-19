@@ -170,8 +170,6 @@
 
     <el-card class="card">
       <h3>通知</h3>
-      <p>这里会有tag的汇总, 显示地图</p>
-
       <el-button
         v-if="isTeacher"
         type="primary"
@@ -181,18 +179,38 @@
       >
         添加通知
       </el-button>
+      <el-col
+        v-for="(notice, index) in noticeList"
+        :key="index"
+        :span="8"
+        style="position: relative"
+      >
+        <el-button
+          type="text"
+          @click="deleteNotification(notice)"
+          v-if="isTeacher && notice.sender === myUserId"
+          style="position: absolute; right: 15px; top: 15px; z-index: 1000"
+        >
+          删除
+        </el-button>
+        <el-button
+          type="text"
+          @click="editNotification(notice)"
+          v-if="isTeacher && notice.sender === myUserId"
+          style="position: absolute; right: 60px; top: 15px; z-index: 1000"
+        >
+          编辑
+        </el-button>
+        <NoticeCard :notice="notice" />
+      </el-col>
     </el-card>
     <el-dialog
       title="添加通知"
       v-model="noticeDialogVisible"
       width="40%"
-      @close="resetNoticeForm"
+      @close="closeNoticeDialog"
     >
-      <!-- 自定义底部按钮 -->
-      <div class="dialog-footer">
-        <el-button @click="noticeDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitNoticeForm">保存</el-button>
-      </div>
+      <NoticeDialog :class_id="class_id" @close-dialog="closeNoticeDialog" />
     </el-dialog>
 
     <el-card class="card">
@@ -473,10 +491,12 @@
 </template>
 
 <script>
-import { classAPI, labAPI, userAPI } from "@/utils/api";
+import { classAPI, labAPI, userAPI, noticeAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
 import UserCard from "@/components/UserCard.vue";
+import NoticeCard from "@/components/NoticeCard.vue";
+import NoticeDialog from "@/components/NoticeDialog.vue";
 
 export default {
   name: "ClassPage",
@@ -488,6 +508,8 @@ export default {
   },
   components: {
     UserCard,
+    NoticeCard,
+    NoticeDialog,
   },
   data() {
     return {
@@ -571,6 +593,8 @@ export default {
       commentList: [],
       studentList: [],
       copyList: [],
+      noticeList: [],
+      myUserId: userAPI.getUserId(),
     };
   },
   setup() {
@@ -588,10 +612,28 @@ export default {
     console.log("class id:", this.class_id);
     this.fetchClassBasicInfo();
     this.fetchComments();
+    this.fetchNotices();
     console.log("basic:", this.basicInfo);
     //TODO
   },
   methods: {
+    closeNoticeDialog() {
+      console.log("关闭通知对话框");
+      this.noticeDialogVisible = false;
+      this.fetchNotices();
+    },
+    async deleteNotification(notice) {
+      // 在这里添加删除通知的逻辑
+      console.log("删除通知:", notice);
+      const result = await noticeAPI.deleteNotice(notice.id);
+      console.log(result);
+      if (result.success) {
+        console.log("删除成功");
+        this.fetchNotices();
+      } else {
+        console.log("删除失败");
+      }
+    },
     handleRowClickView(row) {
       console.log("查看", row);
     },
@@ -813,6 +855,19 @@ export default {
           ElMessage.error("评论失败");
         }
       });
+    },
+
+    async fetchNotices() {
+      const result = await noticeAPI.getNotices(
+        userAPI.getUserId,
+        this.class_id
+      );
+      if (result.success) {
+        console.log("notice!!", result.data);
+        this.noticeList = result.data;
+      } else {
+        ElMessage.error("获取通知失败");
+      }
     },
   },
 };

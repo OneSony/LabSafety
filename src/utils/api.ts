@@ -73,7 +73,11 @@ const clearTokensAndRedirect = () => {
 
 // 通用响应处理函数
 const handleResponse = (response: any) => {
-  if (response.status === 200 || response.status === 201) {
+  if (
+    response.status === 200 ||
+    response.status === 201 ||
+    response.status === 204
+  ) {
     return { success: true, data: response.data };
   } else {
     return { success: false, error: response.data.detail || "Unknown error" };
@@ -484,4 +488,92 @@ const labAPI = {
   },
 };
 
-export { server, userAPI, courseAPI, classAPI, labAPI };
+const noticeAPI = {
+  getNotices(senderId: string, classId?: number, labId?: number): Promise<any> {
+    const params: { [key: string]: number | string } = {};
+    params["sender"] = senderId;
+    if (classId) {
+      params["class_or_lab_id"] = classId;
+      params["notice_type"] = "class";
+    } else if (labId) {
+      params["class_or_lab_id"] = labId;
+      params["notice_type"] = "lab";
+    }
+    return server
+      .get("/api/v1/notices/notices", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postNotices(
+    senderId: string,
+    classId?: number,
+    labId?: number
+  ): Promise<any> {
+    const params: { [key: string]: number | string } = {};
+    params["sender"] = senderId;
+    params["post_time"] = new Date().toISOString();
+    params["end_time"] = new Date().toISOString();
+    if (classId) {
+      params["class_or_lab_id"] = Number(classId);
+      params["notice_type"] = "class";
+    } else if (labId) {
+      params["class_or_lab_id"] = Number(labId);
+      params["notice_type"] = "lab";
+    }
+    console.log("发送请求：发布通知", params); // 调试信息
+    return server
+      .post("/api/v1/notices/notices", params)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postContent(formData: FormData): Promise<any> {
+    return server
+      .post("/api/v1/notices/notice-contents", formData)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postContentToNotice(
+    order_num: number,
+    notice_id: number,
+    content_id: number
+  ): Promise<any> {
+    const data = {
+      order_num: order_num,
+      notice_id: notice_id,
+      notice_content_id: content_id,
+    };
+    console.log("发送请求：发布通知内容", data); // 调试信息
+    return server
+      .post("/api/v1/notices/notice-rows", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteContentToNotice(row_id: number) {
+    return server
+      .delete("/api/v1/notices/notice-rows", { params: { row_id: row_id } })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteContent(content_id: number) {
+    return server
+      .delete("/api/v1/notices/notice-contents", {
+        params: { content_id: content_id },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteNotice(notice_id: number) {
+    return server
+      .delete("/api/v1/notices/notices", { params: { notice_id: notice_id } })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+};
+
+export { server, userAPI, courseAPI, classAPI, labAPI, noticeAPI };
