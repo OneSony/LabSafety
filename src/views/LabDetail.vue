@@ -170,10 +170,10 @@ export default {
   },
   created() {
     // 从路由参数获取实验室 ID
-    this.labId = parseInt(this.$route.params.labId);
-    if (this.labId) {
-      this.fetchLabDetails();
-    }
+    // this.labId = parseInt(this.$route.params.id);
+    // if (this.labId) {
+    this.fetchLabDetails();
+    // }
   },
   methods: {
     // 获取实验室详情

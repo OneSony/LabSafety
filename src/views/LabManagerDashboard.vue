@@ -57,7 +57,7 @@
         </el-form-item>
 
         <!-- 添加图片上传 -->
-        <el-form-item label="实验室照片" :required="false">
+        <!-- <el-form-item label="实验室照片" :required="false">
           <el-upload
             class="upload-demo"
             action="#"
@@ -76,10 +76,10 @@
           <div v-if="labForm.lab_image" class="uploaded-photo">
             <img :src="labForm.lab_image" alt="实验室照片" />
           </div>
-        </el-form-item>
+        </el-form-item> -->
 
         <!-- 添加安全器材 -->
-        <el-form-item label="安全器材" :required="false">
+        <!-- <el-form-item label="安全器材" :required="false">
           <el-button type="primary" @click="addSafetyEquipment"
             >添加器材</el-button
           >
@@ -102,10 +102,10 @@
               删除
             </el-button>
           </div>
-        </el-form-item>
+        </el-form-item> -->
 
         <!-- 添加安全注意事项 -->
-        <el-form-item label="安全注意事项" :required="false">
+        <!-- <el-form-item label="安全注意事项" :required="false">
           <el-button type="primary" @click="addSafetyPrecaution">
             添加注意事项
           </el-button>
@@ -123,7 +123,7 @@
               删除
             </el-button>
           </div>
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
       <template #footer>
         <el-button @click="handleCancel">取消</el-button>
@@ -257,7 +257,7 @@ export default {
               this.labs.push(response.data);
               this.$router.push({
                 name: "LabPage",
-                params: { id: response.data.lab_id },
+                params: { id: response.data.id },
               });
             }
           } else {
@@ -339,7 +339,7 @@ export default {
     },
     goToLabDetail(lab) {
       console.log("lab_id:", lab.id);
-      this.$router.push({ name: "LabPage", params: { id: lab.lab_id } });
+      this.$router.push({ name: "LabPage", params: { id: lab.id } });
     },
   },
   mounted() {
