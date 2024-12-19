@@ -55,75 +55,6 @@
         <el-form-item label="地点" :required="true">
           <el-input v-model="labForm.location" placeholder="请输入实验室地点" />
         </el-form-item>
-
-        <!-- 添加图片上传 -->
-        <!-- <el-form-item label="实验室照片" :required="false">
-          <el-upload
-            class="upload-demo"
-            action="#"
-            :http-request="handleImageUpload"
-            :show-file-list="true"
-            :limit="1"
-            accept="image/*"
-          >
-            <el-button type="primary">选择图片</el-button>
-            <template #tip>
-              <div class="el-upload__tip">
-                只能上传 jpg/png 文件，且不超过 5MB
-              </div>
-            </template>
-          </el-upload>
-          <div v-if="labForm.lab_image" class="uploaded-photo">
-            <img :src="labForm.lab_image" alt="实验室照片" />
-          </div>
-        </el-form-item> -->
-
-        <!-- 添加安全器材 -->
-        <!-- <el-form-item label="安全器材" :required="false">
-          <el-button type="primary" @click="addSafetyEquipment"
-            >添加器材</el-button
-          >
-          <div
-            v-for="(equipment, index) in labForm.safety_equipment_list"
-            :key="index"
-            class="equipment-item"
-          >
-            <el-input
-              v-model="equipment.name"
-              placeholder="器材名称"
-              class="equipment-input"
-            />
-            <el-input
-              v-model="equipment.description"
-              placeholder="描述"
-              class="equipment-input"
-            />
-            <el-button type="danger" @click="removeSafetyEquipment(index)">
-              删除
-            </el-button>
-          </div>
-        </el-form-item> -->
-
-        <!-- 添加安全注意事项 -->
-        <!-- <el-form-item label="安全注意事项" :required="false">
-          <el-button type="primary" @click="addSafetyPrecaution">
-            添加注意事项
-          </el-button>
-          <div
-            v-for="(precaution, index) in labForm.safety_notes_list"
-            :key="index"
-            class="precaution-item"
-          >
-            <el-input
-              v-model="labForm.safety_notes_list[index]"
-              placeholder="请输入安全注意事项"
-              class="precaution-input"
-            />
-            <el-button type="danger" @click="removeSafetyPrecaution(index)">
-              删除
-            </el-button>
-          </div>
-        </el-form-item> -->
       </el-form>
       <template #footer>
         <el-button @click="handleCancel">取消</el-button>
@@ -231,7 +162,6 @@ export default {
         return;
       }
 
-      // 不再使用 JSON.stringify，将数组直接传递给后端
       const labData = {
         name: this.labForm.name,
         location: this.labForm.location,
@@ -244,30 +174,28 @@ export default {
         ? labAPI.editLab(this.labForm.lab_id, labData)
         : labAPI.createLab(labData);
 
-      apiCall
-        .then((response) => {
-          if (response.success) {
-            if (this.labForm.lab_id) {
-              ElMessage.success("实验室更新成功！");
-              this.isLabDialogVisible = false;
-              this.fetchLabs();
-            } else {
-              ElMessage.success("实验室创建成功！");
-              this.isLabDialogVisible = false;
-              this.labs.push(response.data);
-              this.$router.push({
-                name: "LabPage",
-                params: { id: response.data.id },
-              });
-            }
-          } else {
-            ElMessage.error(response.error || "保存实验室失败");
-          }
-        })
-        .catch((error) => {
-          ElMessage.error("保存实验室失败，请稍后重试！");
-          console.error("Error:", error);
-        });
+      try {
+        const response = await apiCall;
+
+        if (response.success) {
+          ElMessage.success("实验室创建成功！");
+          this.isLabDialogVisible = false;
+
+          // 调用 fetchLabs 重新获取实验室列表
+          await this.fetchLabs();
+
+          // 跳转到新建实验室的详情页
+          // this.$router.push({
+          //   name: "LabPage",
+          //   params: { id: response.data.id },
+          // });
+        } else {
+          ElMessage.error(response.error || "保存实验室失败");
+        }
+      } catch (error) {
+        ElMessage.error("保存实验室失败，请稍后重试！");
+        console.error("Error:", error);
+      }
     },
 
     editLab(lab) {
@@ -276,7 +204,7 @@ export default {
         // 如果后端返回是数组则无需 JSON.parse()
         // 假设后端数据格式正确，如 lab.safety_equipments 是数组
         this.labForm = {
-          lab_id: lab.lab_id,
+          lab_id: lab.id,
           name: lab.name,
           location: lab.location,
           lab_image: lab.lab_image,
@@ -305,7 +233,7 @@ export default {
             .deleteLab(labId)
             .then((response) => {
               if (response.success) {
-                this.labs = this.labs.filter((lab) => lab.lab_id !== labId);
+                this.labs = this.labs.filter((lab) => lab.id !== labId);
                 ElMessage.success("实验室删除成功！");
                 this.fetchLabs();
               } else {
@@ -338,7 +266,7 @@ export default {
       this.labForm.safety_notes_list.splice(index, 1);
     },
     goToLabDetail(lab) {
-      console.log("lab_id:", lab.id);
+      console.log("id:", lab.id);
       this.$router.push({ name: "LabPage", params: { id: lab.id } });
     },
   },

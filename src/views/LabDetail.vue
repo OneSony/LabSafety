@@ -1,13 +1,48 @@
 <template>
-  <div class="lab-detail">
-    <h2>实验室详细信息</h2>
-    <el-card class="lab-card" v-if="labDetails">
-      <!-- 显示模式 -->
-      <div v-if="!isEditing">
+  <div v-if="labDetails" class="lab-detail">
+    <!-- 添加 v-if -->
+    <div class="lab-detail">
+      <!-- 大标题（实验室名称） -->
+      <h1 class="lab-name">
+        <span
+          v-if="!editingField.name"
+          @click="startEditing('name')"
+          class="editable-field"
+        >
+          {{ labDetails.name || "未命名实验室" }}
+        </span>
+        <el-input
+          v-else
+          v-model="editForm.name"
+          placeholder="请输入实验室名称"
+          @blur="saveField('name')"
+          @keyup.enter="saveField('name')"
+        ></el-input>
+      </h1>
+
+      <!-- 小标题（实验室地点） -->
+      <h2 class="lab-location">
+        <span
+          v-if="!editingField.location"
+          @click="startEditing('location')"
+          class="editable-field"
+        >
+          {{ labDetails.location || "未设置地点" }}
+        </span>
+        <el-input
+          v-else
+          v-model="editForm.location"
+          placeholder="请输入实验室地点"
+          @blur="saveField('location')"
+          @keyup.enter="saveField('location')"
+        ></el-input>
+      </h2>
+
+      <el-card class="lab-card" v-if="labDetails">
         <el-row :gutter="20">
-          <!-- 左侧为实验室照片 -->
+          <!-- 实验室照片 -->
           <el-col :span="8">
-            <div class="lab-photo-container">
+            <div class="lab-photo-container" @click="startEditing('photo')">
               <el-image
                 v-if="labDetails.photo"
                 :src="labDetails.photo"
@@ -15,35 +50,65 @@
                 fit="cover"
               ></el-image>
               <div v-else class="no-photo">
-                <span>暂无照片</span>
+                <span>点击上传照片</span>
               </div>
+              <!-- 图片上传控件，仅在编辑状态下显示 -->
+              <el-upload
+                v-if="editingField.photo"
+                action="/api/v1/upload"
+                :headers="uploadHeaders"
+                @success="handlePhotoUploadSuccess"
+                @error="handlePhotoUploadError"
+                :show-file-list="false"
+                accept="image/*"
+              >
+                <el-button type="primary">上传照片</el-button>
+              </el-upload>
             </div>
           </el-col>
 
-          <!-- 右侧为实验室基本信息 -->
+          <!-- 实验室安全员和联系方式 -->
           <el-col :span="16">
             <div class="lab-info">
-              <p><strong>实验室名称:</strong> {{ labDetails.name }}</p>
               <p>
                 <strong>实验室安全员:</strong>
-                {{ labDetails.safety_officer || "暂无" }}
+                <span
+                  v-if="!editingField.safety_officer"
+                  @click="startEditing('safety_officer')"
+                  class="editable-field"
+                >
+                  {{ labDetails.safety_officer || "暂无" }}
+                </span>
+                <el-input
+                  v-else
+                  v-model="editForm.safety_officer"
+                  placeholder="请输入安全员姓名"
+                  @blur="saveField('safety_officer')"
+                  @keyup.enter="saveField('safety_officer')"
+                ></el-input>
               </p>
-              <p><strong>地点:</strong> {{ labDetails.location }}</p>
               <p>
-                <strong>联系方式:</strong> {{ labDetails.contact || "暂无" }}
+                <strong>联系方式:</strong>
+                <span
+                  v-if="!editingField.contact"
+                  @click="startEditing('contact')"
+                  class="editable-field"
+                >
+                  {{ labDetails.contact || "暂无" }}
+                </span>
+                <el-input
+                  v-else
+                  v-model="editForm.contact"
+                  placeholder="请输入联系方式"
+                  @blur="saveField('contact')"
+                  @keyup.enter="saveField('contact')"
+                ></el-input>
               </p>
             </div>
-            <el-button
-              type="primary"
-              @click="toggleEditMode"
-              style="margin-top: 10px"
-            >
-              编辑
-            </el-button>
           </el-col>
         </el-row>
 
-        <!-- 下方列出安全器材 -->
+        <!-- 实验室安全器材 -->
         <div
           class="safety-equipment"
           v-if="
@@ -58,7 +123,7 @@
           </el-table>
         </div>
 
-        <!-- 下方列出安全注意事项 -->
+        <!-- 实验室安全注意事项 -->
         <div
           class="safety-precautions"
           v-if="
@@ -77,79 +142,15 @@
             </li>
           </ul>
         </div>
-      </div>
+      </el-card>
 
-      <!-- 编辑模式 -->
-      <div v-else>
-        <el-form :model="editForm" label-width="120px">
-          <el-form-item label="实验室名称" :required="true">
-            <el-input v-model="editForm.name" placeholder="请输入实验室名称" />
-          </el-form-item>
-          <el-form-item label="地点" :required="true">
-            <el-input
-              v-model="editForm.location"
-              placeholder="请输入实验室地点"
-            />
-          </el-form-item>
-          <el-form-item label="实验室照片" :required="false">
-            <el-upload
-              class="upload-demo"
-              action="/api/v1/upload"
-              :headers="uploadHeaders"
-              :on-success="handlePhotoUploadSuccess"
-              :on-error="handlePhotoUploadError"
-              :show-file-list="false"
-              accept="image/*"
-            >
-              <el-button type="primary">上传照片</el-button>
-            </el-upload>
-            <div v-if="editForm.photo" class="uploaded-photo">
-              <img :src="editForm.photo" alt="实验室照片" />
-            </div>
-          </el-form-item>
-          <el-form-item label="实验室安全员" :required="false">
-            <el-input
-              v-model="editForm.safetyOfficer"
-              placeholder="请输入安全员姓名"
-            />
-          </el-form-item>
-          <el-form-item label="联系方式" :required="false">
-            <el-input v-model="editForm.contact" placeholder="请输入联系方式" />
-          </el-form-item>
-          <el-form-item label="安全器材" :required="false">
-            <el-button type="dashed" @click="addSafetyEquipment">
-              添加器材
-            </el-button>
-            <div
-              v-for="(equipment, index) in editForm.safety_equipment"
-              :key="index"
-              class="equipment-item"
-            >
-              <el-input
-                v-model="equipment.name"
-                placeholder="器材名称"
-                class="equipment-input"
-              />
-              <el-input
-                v-model="equipment.description"
-                placeholder="描述"
-                class="equipment-input"
-              />
-              <el-button type="danger" @click="removeSafetyEquipment(index)">
-                删除
-              </el-button>
-            </div>
-          </el-form-item>
-          <el-button type="primary" @click="saveLab">保存</el-button>
-          <el-button @click="toggleEditMode">取消</el-button>
-        </el-form>
-      </div>
-    </el-card>
-
-    <el-button type="primary" @click="goBack" style="margin-top: 20px">
-      返回
-    </el-button>
+      <el-button type="primary" @click="goBack" style="margin-top: 20px">
+        返回
+      </el-button>
+    </div>
   </div>
+  <div v-else class="loading">加载中...</div>
+  <!-- 加载中的占位内容 -->
 </template>
 
 <script>
@@ -159,27 +160,39 @@ import { labAPI } from "../utils/api";
 export default {
   data() {
     return {
-      isEditing: false,
-      labDetails: null, // 初始化为 null
+      labDetails: {
+        name: "",
+        location: "",
+        photo: null,
+        safety_officer: "",
+        contact: "",
+        safety_equipment: [],
+        safety_precautions: [],
+      }, // 确保字段有默认值
       editForm: {},
-      labId: null, // 用于存储当前实验室 ID
-      uploadHeaders: {
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
+      editingField: {},
+      labId: null,
     };
   },
+  // created() {
+  //   this.labId = parseInt(this.$route.params.id, 10);
+  //   if (this.labId) {
+  //     this.fetchLabDetails();
+  //   }
+  // },
   created() {
-    // 从路由参数获取实验室 ID
-    // this.labId = parseInt(this.$route.params.id);
-    // if (this.labId) {
-    this.fetchLabDetails();
-    // }
+    this.labId = parseInt(this.$route.params.id, 10);
+    if (this.labId) {
+      this.fetchLabDetails();
+    } else {
+      ElMessage.error("未找到实验室 ID");
+    }
   },
   methods: {
     // 获取实验室详情
     async fetchLabDetails() {
       try {
-        const response = await labAPI.getLabs(this.labId);
+        const response = await labAPI.getLabById(this.labId);
         if (response.success) {
           this.labDetails = response.data;
         } else {
@@ -191,61 +204,52 @@ export default {
       }
     },
 
-    // 修改保存方法
-    async saveLab() {
-      if (!this.editForm.name || !this.editForm.location) {
-        ElMessage.warning("实验室名称和地点不能为空");
+    // 开始编辑某个字段
+    startEditing(field) {
+      this.editingField[field] = true;
+      this.editForm[field] = this.labDetails[field] || "";
+    },
+
+    // 保存某个字段
+    async saveField(field) {
+      this.editingField[field] = false;
+
+      // 数据未变化则不提交
+      if (this.labDetails[field] === this.editForm[field]) {
         return;
       }
 
+      const updateData = { [field]: this.editForm[field] };
       try {
-        const labData = {
-          name: this.editForm.name,
-          location: this.editForm.location,
-          photo: this.editForm.photo,
-          safety_officer: this.editForm.safetyOfficer,
-          contact: this.editForm.contact,
-          safety_equipment: this.editForm.safety_equipment,
-          safety_precautions: this.editForm.safety_precautions,
-        };
-
-        const response = await labAPI.editLab(this.labId, labData);
+        const response = await labAPI.editLab(this.labId, updateData);
         if (response.success) {
-          this.labDetails = { ...this.editForm };
-          this.isEditing = false;
-          ElMessage.success("实验室信息保存成功");
-          // 重新获取实验室详情以确保数据同步
-          await this.fetchLabDetails();
+          this.labDetails[field] = this.editForm[field];
+          ElMessage.success("更新成功");
         } else {
-          ElMessage.error(response.error || "保存失败");
+          ElMessage.error("更新失败");
         }
       } catch (error) {
-        console.error("Error saving lab:", error);
-        ElMessage.error("保存实验室信息失败");
+        console.error("Error updating field:", error);
+        ElMessage.error("更新失败，请稍后重试");
       }
     },
 
-    toggleEditMode() {
-      this.isEditing = !this.isEditing;
-      if (this.isEditing) {
-        // 创建深拷贝以避免直接修改 labDetails
-        this.editForm = JSON.parse(JSON.stringify(this.labDetails));
-      }
-    },
-
-    // 处理图片上传
+    // 图片上传成功回调
     handlePhotoUploadSuccess(response) {
       if (response.success) {
-        this.editForm.photo = response.data.url;
+        this.labDetails.photo = response.data.url;
         ElMessage.success("图片上传成功");
+        this.editingField.photo = false;
       } else {
         ElMessage.error("图片上传失败");
       }
     },
+    // 图片上传失败回调
     handlePhotoUploadError(error) {
       console.error("Upload error:", error);
       ElMessage.error("图片上传失败");
     },
+
     goBack() {
       this.$router.go(-1);
     },
@@ -258,6 +262,19 @@ export default {
   padding: 20px;
 }
 
+.lab-name {
+  margin: 0;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.lab-location {
+  margin: 10px 0 20px 0;
+  font-size: 20px;
+  font-weight: normal;
+  color: #666;
+}
+
 .lab-card {
   margin-bottom: 20px;
 }
@@ -266,20 +283,31 @@ export default {
   width: 100%;
   height: auto;
   background-color: #fafafa;
+  cursor: pointer;
+  text-align: center;
+  position: relative;
 }
 
-.lab-info p {
-  margin: 5px 0;
+.no-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #999;
+  background-color: #f0f0f0;
+}
+
+.editable-field {
+  color: #409eff;
+  cursor: pointer;
+}
+
+.editable-field:hover {
+  text-decoration: underline;
 }
 
 .precautions-list {
   list-style-type: decimal;
   margin-left: 20px;
-}
-
-.uploaded-photo {
-  margin-top: 10px;
-  max-width: 100%;
-  max-height: 300px;
 }
 </style>

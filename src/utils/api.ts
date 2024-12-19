@@ -325,7 +325,7 @@ const labAPI = {
   // 获取单个实验室信息通过ID
   getLabById(lab_id: number): Promise<any> {
     return server
-      .get(`/api/v1/labs/lab/${lab_id}`)
+      .get(`/api/v1/labs/lab`)
       .then(handleResponse)
       .catch(handleError);
   },
