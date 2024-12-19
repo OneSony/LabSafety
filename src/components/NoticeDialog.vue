@@ -211,6 +211,7 @@ export default {
         }
       }
       console.log("提交成功");
+      dynamicItems.value = [];
       closeDialog();
     };
 
