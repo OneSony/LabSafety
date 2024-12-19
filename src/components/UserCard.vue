@@ -11,7 +11,7 @@
           <!-- 用户标签 -->
           <div class="user-tags">
             <el-tag
-              v-if="user.tag === 'student'"
+              v-if="user.role === 'student'"
               type="success"
               class="user-tag"
               size="small"
@@ -19,7 +19,7 @@
               学生
             </el-tag>
             <el-tag
-              v-else-if="user.tag === 'teacher'"
+              v-else-if="user.role === 'teacher'"
               type="warning"
               class="user-tag"
               size="small"
@@ -27,7 +27,7 @@
               教师
             </el-tag>
             <el-tag
-              v-else-if="user.tag === 'mamager'"
+              v-else-if="user.role === 'mamager'"
               type="warning"
               class="user-tag"
               size="small"
@@ -35,7 +35,7 @@
               实验室管理员
             </el-tag>
             <el-tag
-              v-else-if="user.tag === 'teachingAffairs'"
+              v-else-if="user.role === 'teachingAffairs'"
               type="danger"
               class="user-tag"
               size="small"
@@ -48,9 +48,12 @@
 
       <template #content>
         <div>
-          <h3>详细信息</h3>
-          <p>班级:</p>
-          <p>学院:</p>
+          <p>学院: {{ user.department }}</p>
+          <p>
+            {{ user.role === "student" ? "学号" : "工号" }}: {{ user.userId }}
+          </p>
+          <p>邮箱: {{ user.email }}</p>
+          <p>电话: {{ user.phone_number }}</p>
         </div>
       </template>
     </el-tooltip>
@@ -83,7 +86,10 @@ export default defineComponent({
       userId: props.userId,
       username: "",
       avatarUrl: "",
-      tag: "",
+      role: "",
+      email: "",
+      phone_number: "",
+      department: "",
     });
 
     // 获取用户信息函数
@@ -93,7 +99,10 @@ export default defineComponent({
       if (res.success) {
         user.value.username = res.data[0].username;
         user.value.avatarUrl = res.data[0].profile_picture;
-        user.value.tag = res.data[0].role;
+        user.value.role = res.data[0].role;
+        user.value.email = res.data[0].email;
+        user.value.phone_number = res.data[0].phone_number;
+        user.value.department = res.data[0].department;
       } else {
         console.log(res.message);
       }
