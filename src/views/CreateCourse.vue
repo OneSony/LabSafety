@@ -263,7 +263,7 @@ interface Lab {
   lab_name: string;
 }
 
-export default {
+export default defineComponent({
   data() {
     return {
       courseData: {
@@ -341,7 +341,7 @@ export default {
       );*/
 
       //获取class
-      const result2 = await classAPI.getClassList(this.courseData.course_id);
+      const result2 = await classAPI.getClassList(this.courseData.course_id!);
       console.log("result2", result2);
       if (result2.success) {
         this.classList = [] as Class[];
@@ -357,7 +357,9 @@ export default {
       }
 
       for (let i = 0; i < this.classList.length; i++) {
-        const result3 = await classAPI.getLocations(this.classList[i].class_id);
+        const result3 = await classAPI.getLocations(
+          this.classList[i].class_id!
+        );
         console.log("result3", result3);
         if (result3.success && result3.data.length > 0) {
           this.classList[i].lab_id = result3.data[0].lab_id;
@@ -368,7 +370,7 @@ export default {
           ElMessage.error("加载地点失败");
         }
 
-        const result4 = await classAPI.getTeachers(this.classList[i].class_id);
+        const result4 = await classAPI.getTeachers(this.classList[i].class_id!);
         console.log("result4", result4);
         if (result4.success) {
           this.classList[i].teachers = [] as Teacher[];
@@ -531,7 +533,7 @@ export default {
 
       //绑定课堂到课程
       const result2 = await courseAPI.postClassToCourse(
-        newClass.class_id,
+        newClass.class_id!,
         this.courseData.course_code,
         this.courseData.course_sequence
       );
@@ -548,7 +550,7 @@ export default {
         const teacher = this.classFormData.teachers[i];
 
         const result3 = await classAPI.postTeacher(
-          newClass.class_id,
+          newClass.class_id!,
           teacher.teacher_id
         );
 
@@ -577,7 +579,7 @@ export default {
         return;
       } else {
         const result4 = await classAPI.postLocation(
-          newClass.class_id,
+          newClass.class_id!,
           newClass.lab_id
         );
         if (result4.success) {
@@ -646,13 +648,13 @@ export default {
     handleStudentDialogRowClick(row: Student) {
       console.log("删除学生", row);
       this.studentFormList = this.studentFormList.filter(
-        (student) => student.student_id !== row.student_id
+        (student: Student) => student.student_id !== row.student_id
       );
     },
     handleTeacherDialogRowClick(row: Teacher) {
       console.log("删除教师", row);
       this.classFormData.teachers = this.classFormData.teachers.filter(
-        (teacher) => teacher.teacher_id !== row.teacher_id
+        (teacher: Teacher) => teacher.teacher_id !== row.teacher_id
       );
     },
     goBack() {
@@ -669,7 +671,7 @@ export default {
       }
     },
   },
-};
+});
 </script>
 
 <style scoped>
