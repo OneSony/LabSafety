@@ -594,7 +594,7 @@ export default {
       copyDialogVisible: false,
       isLocationEditing: false,
       isTeacher: localStorage.getItem("role") === "teacher",
-      class_id: this.classId,
+      class_id: Number(this.classId),
       name: "",
       date: "",
       newComment: "",
