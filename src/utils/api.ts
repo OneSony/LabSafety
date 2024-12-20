@@ -392,6 +392,28 @@ interface CreateLabRequest {
   name: string;
   location: string;
 }
+export interface LabDetails {
+  id?: number;
+  name: string;
+  location: string;
+  safety_equipments: string;
+  safety_notes: string;
+  lab_image: string;
+}
+
+export interface LabResponse {
+  success: boolean;
+  data?: LabDetails;
+  error?: string;
+}
+
+export interface UpdateLabRequest {
+  lab_id: number;
+  name?: string;
+  location?: string;
+  safety_equipments?: string;
+  safety_notes?: string;
+}
 const labAPI = {
   getLabs(lab_id?: number): Promise<any> {
     const params = lab_id ? { lab_id } : {};
@@ -410,6 +432,13 @@ const labAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+  getLabname(): string | null {
+    return localStorage.getItem("name");
+  },
+  getLabId(): string | null {
+    return localStorage.getItem("id");
+  },
+
   // 创建实验室
   createLab(labData: CreateLabRequest): Promise<any> {
     // 只发送必填字段
@@ -424,45 +453,55 @@ const labAPI = {
       .catch(handleError);
   },
 
-  // 编辑实验室
-  editLab(labId: number, labData: any): Promise<any> {
+  editLab(
+    labId: number,
+    labData: Partial<UpdateLabRequest>
+  ): Promise<LabResponse> {
+    const data: UpdateLabRequest = {
+      lab_id: labId,
+      ...labData,
+    };
+
     return server
-      .patch(`/api/v1/labs/lab`, {
-        lab_id: labId,
-        ...labData,
-      })
+      .patch("/api/v1/labs/lab", data)
       .then(handleResponse)
       .catch(handleError);
   },
-  // 添加处理图片上传的方法，添加 File 类型
-  async handleImageUpload(file: File): Promise<string> {
-    // 检查文件类型
-    if (!file.type.startsWith("image/")) {
-      throw new Error("请上传图片文件");
+
+  patchLabPhoto(labId: number | string, file: File): Promise<LabResponse> {
+    console.log("Preparing to upload image for lab:", labId); // 调试日志
+
+    const formData = new FormData();
+    // 确保 lab_id 是字符串
+    formData.append("lab_id", String(labId));
+    formData.append("lab_image", file);
+
+    // 打印 FormData 内容，用于调试
+    console.log("FormData contents:");
+    for (const [key, value] of formData.entries()) {
+      console.log(key, ":", value);
     }
 
-    // 检查文件大小（限制为5MB）
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      throw new Error("图片大小不能超过5MB");
-    }
-
-    // 将图片转换为 base64
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          resolve(reader.result);
-        } else {
-          reject(new Error("图片读取失败"));
-        }
-      };
-      reader.onerror = () => {
-        reject(new Error("图片读取失败"));
-      };
-    });
+    return server
+      .patch("/api/v1/labs/lab", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        // 添加调试信息
+        onUploadProgress: (progressEvent) => {
+          console.log("Upload progress:", progressEvent);
+        },
+      })
+      .then((response) => {
+        console.log("Raw server response:", response);
+        return handleResponse(response);
+      })
+      .catch((error) => {
+        console.error("Server error:", error.response || error);
+        return handleError(error);
+      });
   },
+
   // 删除实验室
   deleteLab(labId: number): Promise<any> {
     return server
