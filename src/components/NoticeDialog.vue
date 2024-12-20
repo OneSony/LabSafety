@@ -1,15 +1,21 @@
 <template>
   <el-form label-width="120px">
-    <!-- 选择添加类型 -->
-    <el-form-item label="选择输入类型">
-      <el-select v-model="selectedType" placeholder="请选择输入类型">
-        <el-option label="文本框" value="text"></el-option>
-        <el-option label="文件上传" value="file"></el-option>
-        <el-option label="图片" value="image"></el-option>
+    <el-form-item label="选择课堂">
+      <el-select
+        v-model="localClassId"
+        placeholder="选择地点"
+        style="width: 100%"
+        :disabled="isEditting || !needToChooseClass"
+      >
+        <el-option
+          v-for="classItem in classList"
+          :key="classItem.class_id"
+          :label="classItem.name"
+          :value="classItem.class_id"
+        ></el-option>
       </el-select>
     </el-form-item>
 
-    <!-- 动态表单项 -->
     <div
       v-for="(item, index) in dynamicItems"
       :key="index"
@@ -18,11 +24,17 @@
       <el-form-item :label="'条目 ' + (index + 1)">
         <!-- 根据条目的 type 动态渲染不同的输入框 -->
         <template v-if="item.type === 'text'">
-          <el-input v-model="item.value" placeholder="请输入文本" />
+          <el-input
+            type="textarea"
+            v-model="item.value"
+            placeholder="请输入文本"
+            :autosize="{ minRows: 1, maxRows: 6 }"
+          />
         </template>
 
         <template v-if="item.type === 'file'">
-          <p v-if="item.value">{{ item.value }}</p>
+          <p v-if="item.value && !item.uploaded">{{ item.value }}</p>
+          <DownloadLink v-if="item.value && item.uploaded" :url="item.value" />
           <el-upload
             class="upload-demo"
             action=""
@@ -34,12 +46,7 @@
           </el-upload>
         </template>
         <template v-if="item.type === 'image'">
-          <img
-            v-if="item.value"
-            :src="item.value"
-            alt="图片"
-            style="width: 100px"
-          />
+          <ImageBox v-if="item.value" :src="item.value" />
           <el-upload
             ref="upload"
             class="photo-uploader"
@@ -62,7 +69,13 @@
       </el-form-item>
     </div>
 
-    <!-- 添加条目按钮 -->
+    <el-form-item label="选择输入类型">
+      <el-select v-model="selectedType" placeholder="请选择输入类型">
+        <el-option label="文本框" value="text"></el-option>
+        <el-option label="文件上传" value="file"></el-option>
+        <el-option label="图片" value="image"></el-option>
+      </el-select>
+    </el-form-item>
     <el-form-item>
       <el-button type="primary" @click="addItem">添加条目</el-button>
     </el-form-item>
@@ -76,7 +89,7 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import {
   ElForm,
   ElFormItem,
@@ -87,14 +100,19 @@ import {
   ElUpload,
   ElMessage,
 } from "element-plus";
-import { noticeAPI, userAPI } from "@/utils/api";
-
+import { noticeAPI, userAPI, classAPI } from "@/utils/api";
+import ImageBox from "@/components/ImageBox.vue";
+import DownloadLink from "@/components/DownloadLink.vue";
 export default {
   name: "DynamicForm",
   props: {
     class_id: {
       type: Number,
-      required: true,
+      required: false,
+    },
+    notice: {
+      type: Object,
+      required: false,
     },
   },
   components: {
@@ -105,8 +123,18 @@ export default {
     ElSelect,
     ElOption,
     ElUpload,
+    ImageBox,
+    DownloadLink,
   },
   setup(props, { emit }) {
+    const isEditting = props.notice !== undefined;
+    const classList = ref([]);
+    const localClassId = ref(props.class_id);
+    const needToChooseClass = localClassId.value === undefined;
+
+    console.log("chooseClass", needToChooseClass);
+    console.log("is editing", isEditting);
+
     const sender_id = userAPI.getUserId();
     const selectedType = ref("text"); // 当前选中的输入类型
     const dynamicItems = ref([]); // 用于保存动态添加的条目
@@ -162,7 +190,7 @@ export default {
     const submitNoticeForm = async () => {
       const noticeResult = await noticeAPI.postNotices(
         sender_id,
-        props.class_id
+        localClassId.value
       );
       console.log("notice", noticeResult);
       if (noticeResult.success) {
@@ -220,6 +248,7 @@ export default {
     };
 
     return {
+      isEditting,
       selectedType,
       dynamicItems,
       addItem,
@@ -228,7 +257,64 @@ export default {
       handlePhotoChange,
       submitNoticeForm,
       closeDialog,
+      localClassId,
+      classList,
+      needToChooseClass,
     };
+  },
+  mounted() {
+    /*if (this.needToChooseClass) {
+      this.fetchClassList();
+    }*/
+
+    this.fetchClassList();
+    if (this.isEditting) {
+      this.transformNotice(this.notice);
+    }
+  },
+  methods: {
+    async fetchClassList() {
+      const res = await classAPI.getClassList();
+      console.log("class", res);
+      if (res.success) {
+        this.classList = res.data;
+      } else {
+        console.log(res.message);
+      }
+    },
+
+    transformNotice(notice) {
+      console.log("notice!!!||~~", notice);
+      for (let i = 0; i < notice.rows.length; i++) {
+        const connect_id = notice.rows[i].id;
+        const content = notice.rows[i].notice_content;
+        if (content.content_type === "text") {
+          this.dynamicItems.push({
+            type: "text",
+            value: content.text_content,
+            file: null,
+            id: connect_id,
+            uploaded: true,
+          });
+        } else if (content.content_type === "file") {
+          this.dynamicItems.push({
+            type: "file",
+            value: content.file_content,
+            file: content.file_content,
+            id: connect_id,
+            uploaded: true,
+          });
+        } else if (content.content_type === "image") {
+          this.dynamicItems.push({
+            type: "image",
+            value: content.image_content,
+            file: content.image_content,
+            id: connect_id,
+            uploaded: true,
+          });
+        }
+      }
+    },
   },
 };
 </script>

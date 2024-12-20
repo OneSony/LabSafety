@@ -201,16 +201,6 @@ const userAPI = {
     return server
       .get("/api/v1/users/user-info", { params })
       .then(handleResponse)
-      .then((response) => {
-        if (response.success) {
-          console.log("顺便拿到啦", response.data);
-          localStorage.setItem("role", response.data[0].role);
-          localStorage.setItem("userId", response.data[0].user_id);
-          localStorage.setItem("username", response.data[0].username);
-          localStorage.setItem("avatar", response.data[0].profile_picture);
-        }
-        return response;
-      })
       .catch(handleError);
   },
 
@@ -328,8 +318,10 @@ const classAPI = {
       .catch(handleError);
   },
 
-  getClassList(course_id: number): Promise<any> {
-    const params = { course_id: course_id, personal: true };
+  getClassList(course_id?: number): Promise<any> {
+    const params = course_id
+      ? { course_id: course_id, personal: true }
+      : { personal: true };
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)
@@ -489,9 +481,8 @@ const labAPI = {
 };
 
 const noticeAPI = {
-  getNotices(senderId: string, classId?: number, labId?: number): Promise<any> {
+  getNotices(classId?: number, labId?: number): Promise<any> {
     const params: { [key: string]: number | string } = {};
-    params["sender"] = senderId;
     if (classId) {
       params["class_or_lab_id"] = classId;
       params["notice_type"] = "class";
