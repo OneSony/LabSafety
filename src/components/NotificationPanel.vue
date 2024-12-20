@@ -10,30 +10,41 @@
     </el-button>
   </el-row>
 
-  <el-col
-    v-for="(notice, index) in noticeList"
-    :key="index"
-    :span="8"
-    style="position: relative"
-  >
-    <el-button
-      type="text"
-      @click="deleteNotification(notice)"
-      v-if="isTeacher && notice.sender === myUserId"
-      style="position: absolute; right: 15px; top: 15px; z-index: 1000"
+  <el-skeleton :rows="3" animated v-if="isLoaded === false" />
+  <el-empty
+    description="没有课程"
+    :image-size="100"
+    v-if="noticeList.length === 0 && isLoaded === true"
+  />
+  <el-row v-if="isLoaded" gutter="20">
+    <el-col
+      :xs="24"
+      :sm="12"
+      :md="8"
+      v-for="(notice, index) in noticeList"
+      :key="index"
+      :span="8"
+      style="position: relative; display: flex; flex-direction: column"
     >
-      删除
-    </el-button>
-    <el-button
-      type="text"
-      @click="editNotification(notice)"
-      v-if="isTeacher && notice.sender === myUserId"
-      style="position: absolute; right: 60px; top: 15px; z-index: 1000"
-    >
-      编辑
-    </el-button>
-    <NoticeCard :notice="notice" :class="notice" />
-  </el-col>
+      <el-button
+        type="text"
+        @click="deleteNotification(notice)"
+        v-if="isTeacher && notice.sender === myUserId"
+        style="position: absolute; right: 25px; top: 15px; z-index: 1000"
+      >
+        删除
+      </el-button>
+      <el-button
+        type="text"
+        @click="editNotification(notice)"
+        v-if="isTeacher && notice.sender === myUserId"
+        style="position: absolute; right: 65px; top: 15px; z-index: 1000"
+      >
+        编辑
+      </el-button>
+      <NoticeCard :notice="notice" :class="notice" />
+    </el-col>
+  </el-row>
 
   <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
     <NoticeDialog @close-dialog="closeNoticeDialog" />
@@ -66,6 +77,7 @@ export default {
       classList: [],
       noticeList: [],
       myUserId: userAPI.getUserId(),
+      isLoaded: false,
     };
   },
   methods: {
@@ -115,6 +127,7 @@ export default {
   },
   async mounted() {
     await this.fetchNotices();
+    this.isLoaded = true;
     console.log("classList", this.classList);
     console.log("noticeList", this.noticeList);
   },
@@ -127,13 +140,5 @@ export default {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   position: relative;
-}
-
-.el-card {
-  transition: transform 0.3s ease;
-}
-
-.el-card:hover {
-  transform: translateY(-10px);
 }
 </style>

@@ -1,30 +1,32 @@
 <template>
   <el-card :body-style="{ padding: '20px' }" class="card">
-    <h3 v-if="needToShowClass">{{ this.notice.class_info.name }}</h3>
     <el-row>
       <UserCard :userId="notice.sender" />
     </el-row>
-    <el-col v-for="(content, index) in notice.rows" :key="index" :span="8">
-      <img
+    <h3 v-if="needToShowClass" style="margin-top: 10px; margin-bottom: 10px">
+      {{ this.notice.class_info.name }}
+    </h3>
+    <el-row v-for="(content, index) in notice.rows" :key="index">
+      <ImageBox
         v-if="content.notice_content.content_type === 'image'"
         :src="content.notice_content.image_content"
-        alt="图片"
-        style="width: 100%"
       />
-      <p v-if="content.notice_content.content_type === 'text'">
+      <p
+        v-if="content.notice_content.content_type === 'text'"
+        style="
+          margin-left: 0px;
+          margin-right: 0px;
+          margin-top: 5px;
+          margin-bottom: 5px;
+        "
+      >
         {{ content.notice_content.text_content }}
       </p>
-      <el-button
+      <DownloadLink
         v-if="content.notice_content.content_type === 'file'"
-        @click="downloadFile(content.notice_content.file_content)"
-        type="primary"
-      >
-        下载
-        {{
-          decodeURIComponent(getBasename(content.notice_content.file_content))
-        }}
-      </el-button>
-    </el-col>
+        :url="content.notice_content.file_content"
+      />
+    </el-row>
   </el-card>
 </template>
 
@@ -32,12 +34,15 @@
 import { userAPI, noticeAPI } from "@/utils/api";
 import { ElCard, ElButton, ElDivider } from "element-plus";
 import UserCard from "./UserCard.vue";
-import { h } from "vue";
+import ImageBox from "./ImageBox.vue";
+import DownloadLink from "@/components/DownloadLink.vue";
 export default {
   name: "NoticeCard",
   components: {
     ElCard,
     UserCard,
+    ImageBox,
+    DownloadLink,
   },
   props: {
     notice: {
@@ -60,17 +65,6 @@ export default {
     console.log("通知内容:", this.notice);
     console.log("班级信息:", this.class);
   },
-  methods: {
-    getBasename(url) {
-      return url.split("/").pop();
-    },
-    downloadFile(url) {
-      const link = document.createElement("a");
-      link.href = url; // 使用文件的 URL
-      link.download = decodeURIComponent(this.getBasename(url)); // 使用文件的名称作为下载文件名
-      link.click(); // 触发下载
-    },
-  },
 };
 </script>
 
@@ -80,13 +74,5 @@ export default {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   position: relative;
-}
-
-.el-card {
-  transition: transform 0.3s ease;
-}
-
-.el-card:hover {
-  transform: translateY(-10px);
 }
 </style>

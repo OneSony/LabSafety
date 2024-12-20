@@ -179,30 +179,35 @@
       >
         添加通知
       </el-button>
-      <el-col
-        v-for="(notice, index) in noticeList"
-        :key="index"
-        :span="8"
-        style="position: relative"
-      >
-        <el-button
-          type="text"
-          @click="deleteNotification(notice)"
-          v-if="isTeacher && notice.sender === myUserId"
-          style="position: absolute; right: 15px; top: 15px; z-index: 1000"
+      <el-row gutter="20">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="8"
+          v-for="(notice, index) in noticeList"
+          :key="index"
+          :span="8"
+          style="position: relative; display: flex; flex-direction: column"
         >
-          删除
-        </el-button>
-        <el-button
-          type="text"
-          @click="editNotification(notice)"
-          v-if="isTeacher && notice.sender === myUserId"
-          style="position: absolute; right: 60px; top: 15px; z-index: 1000"
-        >
-          编辑
-        </el-button>
-        <NoticeCard :notice="notice" />
-      </el-col>
+          <el-button
+            type="text"
+            @click="deleteNotification(notice)"
+            v-if="isTeacher && notice.sender === myUserId"
+            style="position: absolute; right: 25px; top: 15px; z-index: 1000"
+          >
+            删除
+          </el-button>
+          <el-button
+            type="text"
+            @click="editNotification(notice)"
+            v-if="isTeacher && notice.sender === myUserId"
+            style="position: absolute; right: 65px; top: 15px; z-index: 1000"
+          >
+            编辑
+          </el-button>
+          <NoticeCard :notice="notice" />
+        </el-col>
+      </el-row>
     </el-card>
     <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
       <NoticeDialog :class_id="class_id" @close-dialog="closeNoticeDialog" />
