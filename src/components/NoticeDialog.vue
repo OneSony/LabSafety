@@ -129,11 +129,12 @@ export default {
   setup(props, { emit }) {
     const isEditting = props.notice !== undefined;
     const classList = ref([]);
-    const localClassId = ref(props.class_id);
+    const localClassId = ref(Number(props.class_id));
     const needToChooseClass = localClassId.value === undefined;
 
     console.log("chooseClass", needToChooseClass);
     console.log("is editing", isEditting);
+    console.log("class_id", localClassId.value);
 
     const sender_id = userAPI.getUserId();
     const selectedType = ref("text"); // 当前选中的输入类型
@@ -262,12 +263,12 @@ export default {
       needToChooseClass,
     };
   },
-  mounted() {
+  async mounted() {
     /*if (this.needToChooseClass) {
       this.fetchClassList();
     }*/
 
-    this.fetchClassList();
+    await this.fetchClassList();
     if (this.isEditting) {
       this.transformNotice(this.notice);
     }
