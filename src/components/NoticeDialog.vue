@@ -126,7 +126,7 @@ export default {
   setup(props, { emit }) {
     const isEditting = props.notice !== undefined;
     const classList = ref([]);
-    const localClassId = ref(Number(props.class_id));
+    const localClassId = ref(props.class_id);
     const needToChooseClass = localClassId.value === undefined;
 
     console.log("chooseClass", needToChooseClass);
