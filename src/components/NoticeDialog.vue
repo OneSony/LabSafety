@@ -36,7 +36,6 @@
           <p v-if="item.value && !item.uploaded">{{ item.value }}</p>
           <DownloadLink v-if="item.value && item.uploaded" :url="item.value" />
           <el-upload
-            class="upload-demo"
             action=""
             :show-file-list="false"
             :auto-upload="false"
@@ -48,8 +47,6 @@
         <template v-if="item.type === 'image'">
           <ImageBox v-if="item.value" :src="item.value" />
           <el-upload
-            ref="upload"
-            class="photo-uploader"
             action=""
             :auto-upload="false"
             :show-file-list="false"
@@ -163,6 +160,12 @@ export default {
       const selectedFile = fileObj.raw;
       item.file = selectedFile; // 存储文件对象
 
+      const isLt2M = item.file.size / 1024 / 1024 < 2; // 检查文件大小
+      if (!isLt2M) {
+        ElMessage.error("文件大小不能超过 2MB!");
+        return;
+      }
+
       // 使用 FileReader 读取本地图片并显示
       const reader = new FileReader();
       reader.onload = () => {
@@ -179,6 +182,18 @@ export default {
 
       const selectedFile = fileObj.raw;
       item.file = selectedFile; // 存储文件对象
+
+      const allowedTypes = ["image/jpeg", "image/png"]; // 只允许 PNG 和 JPG
+      if (!allowedTypes.includes(item.file.type)) {
+        ElMessage.error("只允许上传 JPG 或 PNG 格式的图片!");
+        return;
+      }
+
+      const isLt2M = item.file.size / 1024 / 1024 < 2; // 检查文件大小
+      if (!isLt2M) {
+        ElMessage.error("文件大小不能超过 2MB!");
+        return;
+      }
 
       // 使用 FileReader 读取本地图片并显示
       const reader = new FileReader();
