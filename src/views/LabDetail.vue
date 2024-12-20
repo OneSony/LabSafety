@@ -122,6 +122,7 @@ import type {
   LabResponse,
   EditingField,
   EditForm,
+  Lab,
 } from "../types/lab";
 
 export default defineComponent({
@@ -255,25 +256,27 @@ export default defineComponent({
       return true;
     },
 
+    // LabDetail.vue 中的上传方法
     async customImageUpload({ file }: { file: File }) {
-      let loadingInstance = ElLoading.service({
-        lock: true,
-        text: "上传中...",
-        background: "rgba(0, 0, 0, 0.7)",
-      });
-
+      let loadingInstance = null;
       try {
-        const response = await labAPI.patchLabPhoto(this.id, file);
+        // 显示加载提示
+        loadingInstance = ElLoading.service({
+          lock: true,
+          text: "上传中...",
+          background: "rgba(0, 0, 0, 0.7)",
+        });
+
+        console.log("Uploading file:", file.name, file.type, file.size);
+
+        const response = await labAPI.patchLabPhoto(this.labForm.lab_id!, file);
 
         if (response.success && response.data) {
-          // 使用可选链和类型断言
-          const labImage = (response.data as any).lab_image;
-          if (labImage) {
-            this.labForm.lab_image = labImage;
-            ElMessage.success("图片上传成功");
-          } else {
-            throw new Error("上传成功但未收到图片URL");
-          }
+          // 更新本地图片URL
+          this.labForm.lab_image = response.data.lab_image;
+          ElMessage.success("图片上传成功");
+          // 刷新实验室详情
+          await this.fetchLabDetails();
         } else {
           throw new Error(response.error || "上传失败");
         }
@@ -283,7 +286,9 @@ export default defineComponent({
           error instanceof Error ? error.message : "图片上传失败"
         );
       } finally {
-        loadingInstance.close();
+        if (loadingInstance) {
+          loadingInstance.close();
+        }
       }
     },
   },

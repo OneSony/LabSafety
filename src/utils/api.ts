@@ -468,18 +468,20 @@ const labAPI = {
       .catch(handleError);
   },
 
-  patchLabPhoto(labId: number | string, file: File): Promise<LabResponse> {
-    console.log("Preparing to upload image for lab:", labId); // 调试日志
-
+  async patchLabPhoto(
+    labId: number | string,
+    file: File
+  ): Promise<LabResponse> {
+    // 创建 FormData 对象
     const formData = new FormData();
-    // 确保 lab_id 是字符串
-    formData.append("lab_id", String(labId));
+    // 添加实验室ID
+    formData.append("id", String(labId));
+    // 添加图片文件
     formData.append("lab_image", file);
 
-    // 打印 FormData 内容，用于调试
-    console.log("FormData contents:");
-    for (const [key, value] of formData.entries()) {
-      console.log(key, ":", value);
+    // 添加调试日志
+    for (const pair of formData.entries()) {
+      console.log("FormData:", pair[0], pair[1]);
     }
 
     return server
@@ -487,17 +489,13 @@ const labAPI = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        // 添加调试信息
-        onUploadProgress: (progressEvent) => {
-          console.log("Upload progress:", progressEvent);
-        },
       })
       .then((response) => {
-        console.log("Raw server response:", response);
+        console.log("Upload response:", response);
         return handleResponse(response);
       })
       .catch((error) => {
-        console.error("Server error:", error.response || error);
+        console.error("Upload error:", error);
         return handleError(error);
       });
   },
