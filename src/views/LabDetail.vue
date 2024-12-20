@@ -2,9 +2,9 @@
   <div class="lab-detail">
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
-    <el-card class="lab-card" v-if="labForm">
-      <!-- 实验室名称 -->
-      <h1 class="lab-name">
+
+    <div class="lab-header">
+      <h2 class="lab-name">
         <span
           v-if="!editingField.name"
           @click="startEditing('name')"
@@ -19,10 +19,9 @@
           @blur="saveField('name')"
           @keyup.enter="saveField('name')"
         ></el-input>
-      </h1>
+      </h2>
 
-      <!-- 实验室地点 -->
-      <h2 class="lab-location">
+      <h3 class="lab-location">
         <span
           v-if="!editingField.location"
           @click="startEditing('location')"
@@ -37,79 +36,108 @@
           @blur="saveField('location')"
           @keyup.enter="saveField('location')"
         ></el-input>
-      </h2>
+      </h3>
+    </div>
 
-      <el-row :gutter="20">
-        <!-- 实验室照片 -->
-        <el-col :span="8">
-          <div class="lab-photo-container">
-            <el-image
-              v-if="labForm.lab_image"
-              :src="labForm.lab_image"
-              style="width: 100%; max-height: 300px; object-fit: cover"
-              fit="cover"
-            ></el-image>
-            <div v-else class="no-photo">
-              <span>点击上传照片</span>
-            </div>
+    <!-- 下面的卡片部分竖着排列 -->
+    <el-row :gutter="20" class="lab-cards">
+      <!-- 第一张卡片：实验室照片和安全员信息 -->
+      <el-col :span="24">
+        <el-card class="info-card">
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <!-- 实验室照片 -->
+              <div class="lab-photo-container">
+                <el-image
+                  v-if="labForm.lab_image"
+                  :src="labForm.lab_image"
+                  style="width: 100%; max-height: 300px; object-fit: cover"
+                  fit="cover"
+                ></el-image>
+                <div v-else class="no-photo">
+                  <span>点击上传照片</span>
+                </div>
+                <el-upload
+                  class="upload-container"
+                  :action="null"
+                  :http-request="customImageUpload"
+                  :show-file-list="false"
+                  accept="image/*"
+                  :before-upload="beforeImageUpload"
+                >
+                  <el-button type="primary">上传照片</el-button>
+                </el-upload>
+              </div>
+            </el-col>
 
-            <el-upload
-              class="upload-container"
-              :action="null"
-              :http-request="customImageUpload"
-              :show-file-list="false"
-              accept="image/*"
-              :before-upload="beforeImageUpload"
+            <el-col :span="16">
+              <!-- 安全员信息 -->
+              <div class="safety-officer">
+                <h3>实验室安全员</h3>
+                <div class="safety-info">
+                  <span>安全员：</span>
+                  <span>{{ labForm.safety_officer || "未设置安全员" }}</span>
+                </div>
+                <div class="safety-info">
+                  <span>电话：</span>
+                  <span>{{ labForm.safety_phone || "未设置安全员电话" }}</span>
+                </div>
+                <div class="safety-info">
+                  <span>邮箱：</span>
+                  <span>{{ labForm.safety_email || "未设置安全员邮箱" }}</span>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </el-card>
+      </el-col>
+
+      <!-- 第二张卡片：安全设备 -->
+      <el-col :span="24">
+        <el-card class="info-card">
+          <div class="safety-equipment">
+            <h3>安全设备</h3>
+            <span
+              v-if="!editingField.safety_equipments"
+              @click="startEditing('safety_equipments')"
+              class="editable-field"
             >
-              <el-button type="primary">上传照片</el-button>
-            </el-upload>
+              {{ labForm.safety_equipments || "暂无安全设备信息" }}
+            </span>
+            <el-input
+              v-else
+              v-model="editForm.safety_equipments"
+              type="textarea"
+              placeholder="请输入安全设备信息"
+              @blur="saveField('safety_equipments')"
+            ></el-input>
           </div>
-        </el-col>
+        </el-card>
+      </el-col>
 
-        <!-- 实验室信息 -->
-        <el-col :span="16">
-          <div class="lab-info">
-            <!-- 安全设备 -->
-            <div class="safety-equipment">
-              <h3>安全设备</h3>
-              <span
-                v-if="!editingField.safety_equipments"
-                @click="startEditing('safety_equipments')"
-                class="editable-field"
-              >
-                {{ labForm.safety_equipments || "暂无安全设备信息" }}
-              </span>
-              <el-input
-                v-else
-                v-model="editForm.safety_equipments"
-                type="textarea"
-                placeholder="请输入安全设备信息"
-                @blur="saveField('safety_equipments')"
-              ></el-input>
-            </div>
-
-            <!-- 安全须知 -->
-            <div class="safety-notes" style="margin-top: 20px">
-              <h3>安全须知</h3>
-              <span
-                v-if="!editingField.safety_notes"
-                @click="startEditing('safety_notes')"
-                class="editable-field"
-              >
-                {{ labForm.safety_notes || "暂无安全须知" }}
-              </span>
-              <el-input
-                v-else
-                v-model="editForm.safety_notes"
-                type="textarea"
-                placeholder="请输入安全须知"
-                @blur="saveField('safety_notes')"
-              ></el-input>
-            </div>
+      <!-- 第三张卡片：安全须知 -->
+      <el-col :span="24">
+        <el-card class="info-card">
+          <div class="safety-notes">
+            <h3>安全须知</h3>
+            <span
+              v-if="!editingField.safety_notes"
+              @click="startEditing('safety_notes')"
+              class="editable-field"
+            >
+              {{ labForm.safety_notes || "暂无安全须知" }}
+            </span>
+            <el-input
+              v-else
+              v-model="editForm.safety_notes"
+              type="textarea"
+              placeholder="请输入安全须知"
+              @blur="saveField('safety_notes')"
+            ></el-input>
           </div>
-        </el-col>
-      </el-row>
-    </el-card>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -349,5 +377,26 @@ export default defineComponent({
   padding: 20px;
   font-size: 16px;
   color: #666;
+}
+.lab-header {
+  margin-bottom: 20px;
+}
+
+.info-card {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.safety-officer {
+  margin-bottom: 20px;
+}
+
+.safety-info {
+  margin-bottom: 10px;
+}
+
+.safety-equipment,
+.safety-notes {
+  margin-bottom: 20px;
 }
 </style>
