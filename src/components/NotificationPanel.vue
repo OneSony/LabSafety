@@ -36,13 +36,25 @@
       </el-button>
       <el-button
         type="text"
-        @click="editNotification(notice)"
+        @click="notice.noticeEditDialogVisible = true"
         v-if="isTeacher && notice.sender === myUserId"
         style="position: absolute; right: 65px; top: 15px; z-index: 1000"
       >
         编辑
       </el-button>
       <NoticeCard :notice="notice" :class="notice" />
+      <el-dialog
+        title="编辑通知"
+        v-model="notice.noticeEditDialogVisible"
+        width="40%"
+        @close="fetchNotices"
+      >
+        <NoticeDialog
+          :class_id="notice.class_info.class_id"
+          :notice="notice"
+          @close-dialog="closeEditNoticeDialog(notice)"
+        />
+      </el-dialog>
     </el-col>
   </el-row>
 
@@ -88,6 +100,7 @@ export default {
     },
 
     async fetchNotices() {
+      this.isLoaded = false;
       this.classList = [];
       this.noticeList = [];
 
@@ -111,6 +124,7 @@ export default {
           ElMessage.error("获取通知失败");
         }
       }
+      this.isLoaded = true;
     },
     async deleteNotification(notice) {
       // 在这里添加删除通知的逻辑
@@ -124,10 +138,15 @@ export default {
         console.log("删除失败");
       }
     },
+
+    closeEditNoticeDialog(notice) {
+      console.log("关闭通知对话框");
+      notice.noticeEditDialogVisible = false;
+      //this.fetchNotices();
+    },
   },
   async mounted() {
     await this.fetchNotices();
-    this.isLoaded = true;
     console.log("classList", this.classList);
     console.log("noticeList", this.noticeList);
   },

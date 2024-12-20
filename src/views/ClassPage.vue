@@ -199,13 +199,25 @@
           </el-button>
           <el-button
             type="text"
-            @click="editNotification(notice)"
+            @click="notice.noticeEditDialogVisible = true"
             v-if="isTeacher && notice.sender === myUserId"
             style="position: absolute; right: 65px; top: 15px; z-index: 1000"
           >
             编辑
           </el-button>
           <NoticeCard :notice="notice" />
+          <el-dialog
+            title="编辑通知"
+            v-model="notice.noticeEditDialogVisible"
+            width="40%"
+            @close="fetchNotices"
+          >
+            <NoticeDialog
+              :class_id="class_id"
+              :notice="notice"
+              @close-dialog="closeEditNoticeDialog(notice)"
+            />
+          </el-dialog>
         </el-col>
       </el-row>
     </el-card>
@@ -621,6 +633,11 @@ export default {
       console.log("关闭通知对话框");
       this.noticeDialogVisible = false;
       this.fetchNotices();
+    },
+    closeEditNoticeDialog(notice) {
+      console.log("关闭通知对话框");
+      notice.noticeEditDialogVisible = false;
+      //this.fetchNotices();
     },
     async deleteNotification(notice) {
       // 在这里添加删除通知的逻辑
