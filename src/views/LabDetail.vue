@@ -92,28 +92,28 @@
         </el-card>
       </el-col>
 
-      <!-- 第二张卡片：安全设备 -->
+      <!-- 第二张卡片：安全器材 -->
       <el-col :span="24">
         <el-card class="info-card">
           <div class="safety-equipment">
             <div class="equipment-header">
-              <h3>安全设备</h3>
+              <h3>安全器材</h3>
               <el-button
                 type="primary"
                 size="small"
                 @click="openEquipmentDialog"
               >
-                添加设备
+                添加器材
               </el-button>
             </div>
 
-            <!-- 设备列表 -->
+            <!-- 器材列表 -->
             <el-table
               :data="parsedEquipments"
               style="width: 100%"
               v-if="parsedEquipments.length"
             >
-              <el-table-column label="设备图片" width="150">
+              <el-table-column label="器材图片" width="150">
                 <template #default="{ row }">
                   <div class="equipment-image-container">
                     <el-image
@@ -127,8 +127,8 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="设备名称" prop="name" width="180" />
-              <el-table-column label="设备描述" prop="description" />
+              <el-table-column label="器材名称" prop="name" width="180" />
+              <el-table-column label="器材描述" prop="description" />
               <el-table-column label="操作" width="200" align="center">
                 <template #default="{ $index }">
                   <el-button
@@ -149,32 +149,32 @@
               </el-table-column>
             </el-table>
 
-            <div v-else class="no-equipment">暂无安全设备信息</div>
+            <div v-else class="no-equipment">暂无安全器材信息</div>
 
             <!-- 编辑对话框 -->
             <el-dialog
-              :title="editingIndex === null ? '添加设备' : '编辑设备'"
+              :title="editingIndex === null ? '添加器材' : '编辑器材'"
               v-model="dialogVisible"
               width="500px"
             >
               <el-form :model="currentEquipment" label-width="80px">
-                <el-form-item label="设备名称" required>
+                <el-form-item label="器材名称" required>
                   <el-input
                     v-model="currentEquipment.name"
-                    placeholder="请输入设备名称"
+                    placeholder="请输入器材名称"
                   />
                 </el-form-item>
 
-                <el-form-item label="设备描述" required>
+                <el-form-item label="器材描述" required>
                   <el-input
                     v-model="currentEquipment.description"
                     type="textarea"
                     rows="3"
-                    placeholder="请输入设备描述"
+                    placeholder="请输入器材描述"
                   />
                 </el-form-item>
 
-                <el-form-item label="设备图片">
+                <el-form-item label="器材图片">
                   <div class="equipment-image-preview">
                     <el-image
                       v-if="currentEquipment.image"
@@ -215,21 +215,74 @@
       <el-col :span="24">
         <el-card class="info-card">
           <div class="safety-notes">
-            <h3>安全须知</h3>
-            <span
-              v-if="!editingField.safety_notes"
-              @click="startEditing('safety_notes')"
-              class="editable-field"
+            <div class="safety-header">
+              <h3>安全须知</h3>
+              <el-button
+                type="primary"
+                size="small"
+                @click="openNoteDialog(null)"
+              >
+                添加须知
+              </el-button>
+            </div>
+
+            <!-- Safety notes list -->
+            <div class="safety-list" v-if="parsedNotes.length">
+              <div
+                v-for="(note, index) in parsedNotes"
+                :key="index"
+                class="safety-item"
+              >
+                <span class="note-number">{{ index + 1 }}</span>
+                <el-tag class="note-tag" size="small">{{ note.tag }}</el-tag>
+                <span class="note-content">{{ note.content }}</span>
+                <div class="note-actions">
+                  <el-button type="text" @click="openNoteDialog(index)"
+                    >编辑</el-button
+                  >
+                  <el-button
+                    type="text"
+                    class="delete-btn"
+                    @click="removeNote(index)"
+                    >删除</el-button
+                  >
+                </div>
+              </div>
+            </div>
+            <div v-else class="no-notes">暂无安全须知</div>
+
+            <!-- Note dialog -->
+            <el-dialog
+              :title="
+                editingNoteIndex === null ? '添加安全须知' : '编辑安全须知'
+              "
+              v-model="noteDialogVisible"
+              width="500px"
             >
-              {{ labForm.safety_notes || "暂无安全须知" }}
-            </span>
-            <el-input
-              v-else
-              v-model="editForm.safety_notes"
-              type="textarea"
-              placeholder="请输入安全须知"
-              @blur="saveField('safety_notes')"
-            ></el-input>
+              <el-form :model="currentNote" label-width="80px">
+                <el-form-item label="类型标签" required>
+                  <el-input
+                    v-model="currentNote.tag"
+                    placeholder="请输入标签"
+                    maxlength="10"
+                  />
+                </el-form-item>
+                <el-form-item label="须知内容" required>
+                  <el-input
+                    v-model="currentNote.content"
+                    type="textarea"
+                    rows="3"
+                    placeholder="请输入须知内容"
+                  />
+                </el-form-item>
+              </el-form>
+              <template #footer>
+                <span class="dialog-footer">
+                  <el-button @click="noteDialogVisible = false">取消</el-button>
+                  <el-button type="primary" @click="saveNote">确定</el-button>
+                </span>
+              </template>
+            </el-dialog>
           </div>
         </el-card>
       </el-col>
@@ -254,7 +307,10 @@ interface Equipment {
   description: string;
   image: string;
 }
-
+interface SafetyNote {
+  tag: string;
+  content: string;
+}
 export default defineComponent({
   name: "LabDetail",
 
@@ -287,6 +343,13 @@ export default defineComponent({
         description: "",
         image: "",
       } as Equipment,
+      parsedNotes: [] as SafetyNote[],
+      noteDialogVisible: false,
+      editingNoteIndex: null as number | null,
+      currentNote: {
+        tag: "",
+        content: "",
+      } as SafetyNote,
     };
   },
 
@@ -331,7 +394,7 @@ export default defineComponent({
               safety_notes: lab.safety_notes || "",
             };
 
-            // 尝试解析设备信息
+            // 尝试解析器材信息
             try {
               this.parsedEquipments = this.parseEquipments(
                 lab.safety_equipments
@@ -340,6 +403,14 @@ export default defineComponent({
             } catch (e) {
               console.error("Error parsing equipments:", e);
               this.parsedEquipments = [];
+            }
+            // Parse safety notes
+            try {
+              this.parsedNotes = this.parseNotes(lab.safety_notes || "[]");
+              console.log("Parsed safety notes:", this.parsedNotes);
+            } catch (e) {
+              console.error("Error parsing safety notes:", e);
+              this.parsedNotes = [];
             }
           }
         }
@@ -359,7 +430,7 @@ export default defineComponent({
         reader.onerror = (error) => reject(error);
       });
     },
-    // 处理设备图片变更
+    // 处理器材图片变更
     async handleImageChange(file: any) {
       const isImage = file.raw.type.startsWith("image/");
       const isLt5M = file.raw.size / 1024 / 1024 < 5;
@@ -376,7 +447,7 @@ export default defineComponent({
       try {
         // 将文件转换为 base64
         const base64String = await this.fileToBase64(file.raw);
-        // 直接更新当前编辑的设备的图片
+        // 直接更新当前编辑的器材的图片
         this.currentEquipment.image = base64String;
       } catch (error) {
         console.error("Error converting image:", error);
@@ -434,14 +505,14 @@ export default defineComponent({
         }
       }
     },
-    // 打开设备编辑对话框
+    // 打开器材编辑对话框
     openEquipmentDialog(index?: number) {
       this.editingIndex = typeof index === "number" ? index : null;
       if (this.editingIndex !== null) {
-        // 编辑现有设备，复制所有属性包括图片
+        // 编辑现有器材，复制所有属性包括图片
         this.currentEquipment = { ...this.parsedEquipments[this.editingIndex] };
       } else {
-        // 添加新设备，重置所有字段
+        // 添加新器材，重置所有字段
         this.currentEquipment = {
           name: "",
           description: "",
@@ -459,16 +530,16 @@ export default defineComponent({
 
         const base64String = await this.fileToBase64(file);
 
-        // 更新设备的图片
+        // 更新器材的图片
         this.parsedEquipments[index].image = base64String;
 
-        // 保存更新后的设备信息
+        // 保存更新后的器材信息
         const response = await labAPI.editLab(this.labForm.lab_id!, {
           safety_equipments: this.stringifyEquipments(this.parsedEquipments),
         });
 
         if (response.success) {
-          ElMessage.success("设备图片上传成功");
+          ElMessage.success("器材图片上传成功");
         } else {
           throw new Error(response.error || "保存失败");
         }
@@ -480,19 +551,19 @@ export default defineComponent({
       }
     },
 
-    // 保存设备信息
-    // 保存设备信息
+    // 保存器材信息
+    // 保存器材信息
     async saveEquipment() {
       if (
         !this.currentEquipment.name.trim() ||
         !this.currentEquipment.description.trim()
       ) {
-        ElMessage.error("请填写设备名称和描述");
+        ElMessage.error("请填写器材名称和描述");
         return;
       }
 
       try {
-        // 更新设备列表
+        // 更新器材列表
         const updatedEquipments = [...this.parsedEquipments];
         if (this.editingIndex !== null) {
           updatedEquipments[this.editingIndex] = { ...this.currentEquipment };
@@ -519,7 +590,7 @@ export default defineComponent({
           this.labForm.safety_equipments = equipmentsJson;
 
           ElMessage.success(
-            this.editingIndex !== null ? "设备更新成功" : "设备添加成功"
+            this.editingIndex !== null ? "器材更新成功" : "器材添加成功"
           );
           this.dialogVisible = false;
 
@@ -534,7 +605,7 @@ export default defineComponent({
       }
     },
 
-    // 解析设备信息
+    // 解析器材信息
     parseEquipments(equipmentsStr: string): Equipment[] {
       try {
         if (!equipmentsStr) return [];
@@ -542,12 +613,12 @@ export default defineComponent({
         if (!Array.isArray(parsed)) return [];
         return parsed;
       } catch (e) {
-        console.error("解析设备信息失败:", e);
+        console.error("解析器材信息失败:", e);
         return [];
       }
     },
 
-    // 将设备信息转换为字符串
+    // 将器材信息转换为字符串
     stringifyEquipments(equipments: Equipment[]): string {
       const cleanEquipments = equipments.map(
         ({ name, description, image }) => ({
@@ -559,10 +630,10 @@ export default defineComponent({
       return JSON.stringify(cleanEquipments);
     },
 
-    // 删除设备
+    // 删除器材
     async removeEquipment(index: number) {
       try {
-        await this.$confirm("确认删除该设备?", "提示", {
+        await this.$confirm("确认删除该器材?", "提示", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning",
@@ -594,11 +665,161 @@ export default defineComponent({
         }
       }
     },
+    parseNotes(notesStr: string): SafetyNote[] {
+      try {
+        if (!notesStr) return [];
+        const parsed = JSON.parse(notesStr);
+        if (!Array.isArray(parsed)) return [];
+        return parsed;
+      } catch (e) {
+        console.error("解析安全须知失败:", e);
+        return [];
+      }
+    },
+
+    openNoteDialog(index: number | null) {
+      this.editingNoteIndex = index;
+      if (index !== null) {
+        // Edit existing note
+        this.currentNote = { ...this.parsedNotes[index] };
+      } else {
+        // Add new note
+        this.currentNote = {
+          tag: "",
+          content: "",
+        };
+      }
+      this.noteDialogVisible = true;
+    },
+
+    async saveNote() {
+      if (!this.currentNote.tag.trim() || !this.currentNote.content.trim()) {
+        ElMessage.error("请填写标签和内容");
+        return;
+      }
+
+      try {
+        const updatedNotes = [...this.parsedNotes];
+        if (this.editingNoteIndex !== null) {
+          updatedNotes[this.editingNoteIndex] = { ...this.currentNote };
+        } else {
+          updatedNotes.push({ ...this.currentNote });
+        }
+
+        const notesJson = JSON.stringify(updatedNotes);
+
+        const response = await labAPI.editLab(this.labForm.lab_id!, {
+          safety_notes: notesJson,
+        });
+
+        if (response.success) {
+          this.parsedNotes = updatedNotes;
+          this.labForm.safety_notes = notesJson;
+          ElMessage.success(
+            this.editingNoteIndex !== null ? "须知更新成功" : "须知添加成功"
+          );
+          this.noteDialogVisible = false;
+        } else {
+          throw new Error(response.error || "保存失败");
+        }
+      } catch (error) {
+        console.error("Save error:", error);
+        ElMessage.error("保存失败，请稍后重试");
+      }
+    },
+
+    async removeNote(index: number) {
+      try {
+        await this.$confirm("确认删除该安全须知?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        });
+
+        const updatedNotes = this.parsedNotes.filter((_, i) => i !== index);
+        const notesJson = JSON.stringify(updatedNotes);
+
+        const response = await labAPI.editLab(this.labForm.lab_id!, {
+          safety_notes: notesJson,
+        });
+
+        if (response.success) {
+          this.parsedNotes = updatedNotes;
+          this.labForm.safety_notes = notesJson;
+          ElMessage.success("删除成功");
+        } else {
+          throw new Error(response.error || "删除失败");
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          console.error("Delete error:", error);
+          ElMessage.error("删除失败，请稍后重试");
+        }
+      }
+    },
   },
 });
 </script>
 
 <style scoped>
+.safety-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.safety-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.safety-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  gap: 12px;
+}
+
+.note-number {
+  min-width: 24px;
+  height: 24px;
+  background-color: #409eff;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.note-tag {
+  min-width: 60px;
+  text-align: center;
+}
+
+.note-content {
+  flex-grow: 1;
+  margin: 0 12px;
+}
+
+.note-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.delete-btn {
+  color: #f56c6c;
+}
+
+.no-notes {
+  text-align: center;
+  color: #909399;
+  padding: 20px;
+}
 .equipment-image {
   display: flex;
   flex-direction: column;
