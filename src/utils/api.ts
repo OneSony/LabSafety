@@ -227,8 +227,19 @@ const userAPI = {
     window.location.href = "/login"; //todo
   },
 
-  getUserInfo(user_id: string): Promise<any> {
-    const params = { user_id: user_id };
+  getUserInfo(user_id: string, options?: { role?: string }): Promise<any> {
+    const params: any = {};
+
+    // 如果提供了 user_id，添加到参数中
+    if (user_id) {
+      params.user_id = user_id;
+    }
+
+    // 如果提供了 role，添加到参数中
+    if (options?.role) {
+      params.role = options.role;
+    }
+
     return server
       .get("/api/v1/users/user-info", { params })
       .then(handleResponse)
