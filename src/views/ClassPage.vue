@@ -810,7 +810,7 @@ export default {
             );
             if (result.success) {
               console.log("教师信息:", result.data[0]);
-              this.basicInfo.teacher_names.push(result.data[0].username);
+              this.basicInfo.teacher_names.push(result.data[0].real_name);
             } else {
               ElMessage.error("获取教师信息失败");
             }

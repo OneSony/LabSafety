@@ -381,7 +381,7 @@ export default defineComponent({
             if (result5.success) {
               this.classList[i].teachers.push({
                 teacher_id: result4.data[j].teacher_id,
-                teacher_name: result5.data[0].username,
+                teacher_name: result5.data[0].real_name,
               } as Teacher);
             } else {
               ElMessage.error("加载教师失败");
@@ -409,7 +409,7 @@ export default defineComponent({
           if (result.data[0].role === "student") {
             students.push({
               student_id: result.data[0].user_id,
-              student_name: result.data[0].username, // 假设返回数据中有 `username` 字段
+              student_name: result.data[0].real_name, // 假设返回数据中有 `username` 字段
             } as Student);
           } else {
             students.push({
@@ -455,7 +455,7 @@ export default defineComponent({
           if (result.data[0].role === "teacher") {
             teachers.push({
               teacher_id: result.data[0].user_id,
-              teacher_name: result.data[0].username, // 假设返回数据中有 `username` 字段
+              teacher_name: result.data[0].real_name, // 假设返回数据中有 `username` 字段
             } as Teacher);
           } else {
             teachers.push({

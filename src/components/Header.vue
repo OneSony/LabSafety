@@ -54,7 +54,7 @@ export default {
     const userName = ref("");
 
     const fetchUserName = async () => {
-      userName.value = (await userAPI.getUsername()) || "未登录";
+      userName.value = (await userAPI.getUsername()) || "";
     };
 
     fetchUserName();
@@ -63,13 +63,11 @@ export default {
 
     const updateUserPhoto = async () => {
       userPhoto.value = (await userAPI.getAvatar()) || "";
-      console.log("haha here photo: ", userPhoto.value);
     };
 
     watch(route, async () => {
       userPhoto.value = (await userAPI.getAvatar()) || "";
-      console.log("photo: ", userPhoto.value);
-      userName.value = (await userAPI.getUsername()) || "未登录";
+      userName.value = (await userAPI.getUsername()) || "";
       const role = userAPI.getRole();
       switch (role) {
         case "student":
@@ -87,8 +85,6 @@ export default {
         default:
           roleText.value = "未知";
       }
-      console.log("text: ", roleText.value);
-      console.log("route changed");
     });
 
     return {
