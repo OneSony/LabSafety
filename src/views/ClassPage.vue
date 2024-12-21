@@ -559,10 +559,11 @@ export default {
 
       basicForm: {
         class_name: "",
-        class_id: "",
+        class_id: Number,
         teachers_str: "",
         date: "",
         lab_name: "",
+        lab_id: Number,
         tags: [],
       },
 
@@ -758,27 +759,49 @@ export default {
             ElMessage.error("修改失败");
           }
         });
-      //TODO
+
+      if (this.basicForm.lab_id != this.basicInfo.lab_id) {
+        if (this.basicInfo.lab_id != "") {
+          const deleteResult = await classAPI.deleteLocation(
+            this.class_id,
+            this.basicInfo.lab_id
+          );
+          if (deleteResult.success) {
+            console.log("删除地点成功");
+          } else {
+            ElMessage.error("删除地点失败");
+            return;
+          }
+        }
+        if (this.basicForm.lab_id != "") {
+          const addResult = await classAPI.postLocation(
+            this.class_id,
+            this.basicForm.lab_id
+          );
+          if (addResult.success) {
+            ElMessage.success("成功");
+            console.log("添加地点成功");
+          } else {
+            ElMessage.error("添加地点失败");
+          }
+        }
+      }
     },
     async fetchLabs() {
       const result = await labAPI.getLabs(); // 获取地点的 API
       if (result.success) {
-        console.log(result.data);
         this.labs = result.data; // 假设返回的数据结构是 { success: true, data: [...] }
       } else {
         ElMessage.error("加载地点失败");
       }
     },
     async openBasicDialog() {
-      console.log("here", this.basicDialogVisible);
       await this.fetchLabs();
       this.basicForm = { ...this.basicInfo };
       this.basicDialogVisible = true;
-      console.log("here", this.basicDialogVisible);
     },
 
     async fetchClassBasicInfo() {
-      console.log("class id:", this.class_id);
       this.basicInfo.class_id = Number(this.class_id);
       const result1 = await classAPI.getClass(this.class_id); // 获取课程信息的 API
       if (result1.success) {
@@ -786,7 +809,6 @@ export default {
           ElMessage.error("课程不存在");
           this.$router.push("/");
         } else {
-          console.log("课程信息:", result1.data[0]);
           this.basicInfo.class_name = result1.data[0].name;
           this.basicInfo.date = result1.data[0].start_time;
         }
@@ -824,15 +846,13 @@ export default {
       }
 
       const result3 = await classAPI.getLocations(this.class_id); // 获取地点信息的 API
-      console.log("地点信息:", result3);
       if (result3.success) {
         if (result3.data.length === 0) {
           this.basicInfo.lab_name = "未知";
         } else {
           this.basicInfo.lab_id = result3.data[0].lab_id;
-          const result = await labAPI.getLabs(this.basicInfo.location);
+          const result = await labAPI.getLabs(this.basicInfo.lab_id);
           if (result.success) {
-            console.log("地点信息:", result.data[0]);
             this.basicInfo.lab_name = result.data[0].name;
           } else {
             ElMessage.error("获取地点信息失败");
@@ -842,18 +862,16 @@ export default {
         ElMessage.error("获取地点信息失败");
       }
 
-      console.log("basic info:!!", this.basicInfo);
+      console.log("basic info:", this.basicInfo);
     },
 
     fetchComments() {
       classAPI.getComments(this.class_id).then((response) => {
-        console.log("评论信息:", response);
         if (response.success) {
           if (response.data.length === 0) {
             this.commentList = [];
           } else {
             this.commentList = response.data;
-            console.log("评论区信息:", this.commentList);
           }
         } else {
           ElMessage.error("获取评论失败");
@@ -878,7 +896,6 @@ export default {
     async fetchNotices() {
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
-        console.log("notice!!", result.data);
         this.noticeList = result.data;
       } else {
         ElMessage.error("获取通知失败");

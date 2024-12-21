@@ -368,6 +368,7 @@ const classAPI = {
   },
 
   getLocations(class_id: number): Promise<any> {
+    //返回lab_id
     const params = { class_id: class_id };
     return server
       .get("/api/v1/classes/locations", { params })
@@ -399,10 +400,28 @@ const classAPI = {
       .catch(handleError);
   },
 
+  deleteLocation(class_id: number, lab_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/classes/locations", {
+        params: { class_id: class_id, lab_id: lab_id },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   postTeacher(class_id: number, teacher_id: string): Promise<any> {
     const data = { class_id: class_id, teacher_id: teacher_id };
     return server
       .post("/api/v1/classes/teachers", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteTeacher(class_id: number, teacher_id: string): Promise<any> {
+    return server
+      .delete("/api/v1/classes/teachers", {
+        params: { class_id: class_id, teacher_id: teacher_id },
+      })
       .then(handleResponse)
       .catch(handleError);
   },
@@ -465,6 +484,7 @@ export interface BindManagerApiResponse {
 
 const labAPI = {
   getLabs(lab_id?: number): Promise<any> {
+    //返回id, 不是lab_id
     const params = lab_id ? { lab_id } : {};
     return server
       .get("/api/v1/labs/lab", { params })
