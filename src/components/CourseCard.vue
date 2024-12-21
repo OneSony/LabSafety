@@ -31,7 +31,7 @@
             v-for="(classItem, index) in item.classList"
             :key="index"
             class="sub-course-card"
-            @click="handleClassCardClick(classItem, $event)"
+            @click="handleClassCardClick(item, classItem, $event)"
           >
             <div class="class-index">{{ index + 1 }}</div>
             <el-card class="class-card">
@@ -106,10 +106,10 @@ export default {
     },
 
     // 处理 class card 的点击事件
-    handleClassCardClick(classItem, event) {
-      console.log("Class card clicked:", classItem);
+    handleClassCardClick(item, classItem, event) {
+      console.log("Class card clicked:", classItem, item.id);
       event.stopPropagation(); // 防止触发父级课程卡片点击事件
-      this.$emit("class-clicked", classItem.class_id); // 将选中的 class 传递给父组件
+      this.$emit("class-clicked", classItem.class_id, item.id); // 将选中的 class 传递给父组件
     },
   },
 };

@@ -124,7 +124,6 @@ const userAPI = {
   },
 
   async getUsername(): Promise<string> {
-    console.log("获取用户名"); // 调试信息
     const username = localStorage.getItem("username");
     if (username) {
       return username; // 如果本地存储有头像，直接返回
@@ -205,7 +204,6 @@ const userAPI = {
       .get("/api/v1/users/user-info", { params })
       .then(handleResponse)
       .then((response) => {
-        console.log("获取用户信息APIIII", response); // 调试信息
         if (response.success) {
           if (
             response.data.length != 0 &&

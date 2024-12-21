@@ -40,11 +40,22 @@
     </el-dialog>
 
     <el-dialog title="上课学生" v-model="studentDialogVisible" width="40%">
-      <el-table :data="studentList" border style="width: 100%">
-        <el-table-column fixed prop="id" label="学号"></el-table-column>
+      <el-button type="primary" @click="fetchEnrolledStudents">刷新</el-button>
+      <el-table
+        :data="studentList"
+        border
+        style="width: 100%"
+        v-if="isEnrolledStudentsLoaded"
+      >
+        <el-table-column fixed prop="student_id" label="学号"></el-table-column>
         <el-table-column prop="name" label="姓名"></el-table-column>
         <el-table-column prop="department" label="院系"></el-table-column>
       </el-table>
+      <el-skeleton
+        :rows="3"
+        animated
+        v-if="!isEnrolledStudentsLoaded"
+      ></el-skeleton>
       <div class="dialog-footer">
         <el-button @click="studentDialogVisible = false">关闭</el-button>
       </div>
@@ -503,7 +514,7 @@
 </template>
 
 <script>
-import { classAPI, labAPI, userAPI, noticeAPI } from "@/utils/api";
+import { classAPI, labAPI, userAPI, noticeAPI, courseAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
 import UserCard from "@/components/UserCard.vue";
@@ -514,6 +525,10 @@ export default {
   name: "ClassPage",
   props: {
     classId: {
+      type: Number,
+      required: true,
+    },
+    courseId: {
       type: Number,
       required: true,
     },
@@ -593,8 +608,10 @@ export default {
       studentDialogVisible: false,
       copyDialogVisible: false,
       isLocationEditing: false,
+      isEnrolledStudentsLoaded: false,
       isTeacher: localStorage.getItem("role") === "teacher",
       class_id: Number(this.classId),
+      course_id: Number(this.courseId),
       name: "",
       date: "",
       newComment: "",
@@ -621,7 +638,7 @@ export default {
     };
   },
   mounted() {
-    console.log("class id:", this.class_id);
+    console.log("classiid:", this.class_id, this.course_id);
     this.fetchClassBasicInfo();
     this.fetchComments();
     this.fetchNotices();
@@ -681,25 +698,9 @@ export default {
     },
     openStudentDialog() {
       this.studentDialogVisible = true;
-      this.studentList = [
-        {
-          id: "2018000000",
-          name: "张三",
-          department: "计算机科学与技术",
-        },
-        {
-          id: "2018000001",
-          name: "李四",
-          department: "软件工程",
-        },
-        {
-          id: "2018000002",
-          name: "王五",
-          department: "信息安全",
-        },
-      ];
-      //studentList = [];
-      //TODO
+      if (this.isEnrolledStudentsLoaded === false) {
+        this.fetchEnrolledStudents();
+      }
     },
     addTag(tagType) {
       const tagKey = `new${
@@ -882,6 +883,30 @@ export default {
       } else {
         ElMessage.error("获取通知失败");
       }
+    },
+
+    async fetchEnrolledStudents() {
+      this.isEnrolledStudentsLoaded = false;
+      const result = await courseAPI.getEnroll(this.course_id);
+      if (result.success) {
+        console.log("students!!", result.data);
+        this.studentList = result.data;
+        for (let i = 0; i < this.studentList.length; i++) {
+          const result = await userAPI.getUserInfo(
+            this.studentList[i].student_id
+          );
+          if (result.success) {
+            console.log("学生信息:", result.data[0]);
+            this.studentList[i].name = result.data[0].real_name;
+            this.studentList[i].department = result.data[0].department;
+          } else {
+            ElMessage.error("获取学生信息失败");
+          }
+        }
+      } else {
+        ElMessage.error("获取学生失败");
+      }
+      this.isEnrolledStudentsLoaded = true;
     },
   },
 };
