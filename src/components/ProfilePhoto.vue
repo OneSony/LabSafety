@@ -33,13 +33,6 @@ export default {
         objectFit: "cover",
       };
     });
-
-    // watch 可以监听 url 或 size 的变化
-    watch([url, size], ([newUrl, newSize]) => {
-      console.log("头像 URL 更新为:", newUrl);
-      console.log("头像大小更新为:", newSize);
-    });
-
     return {
       avatarStyle,
     };
