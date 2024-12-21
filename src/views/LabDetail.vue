@@ -374,14 +374,11 @@
 <script lang="ts">
 import { Search } from "@element-plus/icons-vue";
 import { defineComponent } from "vue";
-import { ElMessage, ElLoading } from "element-plus";
+import { ElMessage, ElLoading, ElMessageBox } from "element-plus";
 import { labAPI } from "../utils/api";
 import _ from "lodash";
-import type {
-  LabForm,
-  // Equipment,
-  LabManager,
-} from "../types/lab.ts";
+import type { Lab, LabForm, LabManager, UpdateLabRequest } from "../types/lab";
+
 interface Equipment {
   name: string;
   description: string;
@@ -463,7 +460,7 @@ export default defineComponent({
 
         if (response.success && response.data) {
           const lab = Array.isArray(response.data)
-            ? response.data.find((l) => l.id === labId)
+            ? response.data.find((l: Lab) => l.id === labId)
             : response.data;
 
           if (lab) {
@@ -719,7 +716,7 @@ export default defineComponent({
     // 删除器材
     async removeEquipment(index: number) {
       try {
-        await this.$confirm("确认删除该器材?", "提示", {
+        await ElMessageBox.confirm("确认删除该器材?", "提示", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning",
@@ -730,8 +727,8 @@ export default defineComponent({
         );
         const equipmentsJson = this.stringifyEquipments(updatedEquipments);
 
+        // 移除 id，只传递需要更新的字段
         const response = await labAPI.editLab(this.labForm.lab_id!, {
-          id: this.labForm.lab_id,
           safety_equipments: equipmentsJson,
         });
 
@@ -816,7 +813,7 @@ export default defineComponent({
 
     async removeNote(index: number) {
       try {
-        await this.$confirm("确认删除该安全须知?", "提示", {
+        await ElMessageBox.confirm("确认删除该安全须知?", "提示", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning",
@@ -846,6 +843,10 @@ export default defineComponent({
     // 获取当前实验室的安全员列表
     async fetchLabManagers() {
       try {
+        if (!this.labForm.lab_id) {
+          return;
+        }
+
         const response = await labAPI.getLabManagers({
           lab_id: this.labForm.lab_id,
         });
@@ -932,7 +933,7 @@ export default defineComponent({
     // 解除绑定安全员
     async unbindManager(manager: LabManager) {
       try {
-        await this.$confirm("确认解除该安全员的绑定?", "提示", {
+        await ElMessageBox.confirm("确认解除该安全员的绑定?", "提示", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning",
