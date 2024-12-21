@@ -44,3 +44,22 @@ export interface EditingField {
 export interface EditForm {
   [key: string]: string | number | null;
 }
+
+export interface LabManager {
+  manager_user_id: string;
+  manager_name: string;
+  manager_phone: string;
+  manager_email: string;
+  lab_id: number;
+}
+
+export interface BindManagerRequest {
+  manager_user_id: string;
+  lab_id: number;
+}
+
+export interface ManagerResponse {
+  success: boolean;
+  data?: LabManager | LabManager[];
+  error?: string;
+}

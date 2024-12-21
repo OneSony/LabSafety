@@ -44,6 +44,10 @@
       <!-- 第一张卡片：实验室照片和安全员信息 -->
       <el-col :span="24">
         <el-card class="info-card">
+          <div class="card-main-title">
+            <h3>实验室信息</h3>
+          </div>
+          
           <el-row :gutter="20">
             <el-col :span="8">
               <!-- 实验室照片 -->
@@ -69,26 +73,110 @@
                 </el-upload>
               </div>
             </el-col>
-
+      
             <el-col :span="16">
               <!-- 安全员信息 -->
               <div class="safety-officer">
-                <h3>实验室安全员</h3>
-                <div class="safety-info">
-                  <span>安全员：</span>
-                  <span>{{ labForm.safety_officer || "未设置安全员" }}</span>
+                <h4 class="section-title">实验室安全员</h4>
+                <div class="action-button">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="openManagerDialog"
+                    v-if="!currentManager"
+                  >
+                    选择安全员
+                  </el-button>
                 </div>
-                <div class="safety-info">
-                  <span>电话：</span>
-                  <span>{{ labForm.safety_phone || "未设置安全员电话" }}</span>
-                </div>
-                <div class="safety-info">
-                  <span>邮箱：</span>
-                  <span>{{ labForm.safety_email || "未设置安全员邮箱" }}</span>
+                
+                <!-- 当有安全员信息时显示 -->
+                <div v-if="currentManager" class="manager-info">
+                  <div class="manager-card">
+                    <div class="safety-info">
+                      <span class="info-label">安全员：</span>
+                      <span>{{ currentManager.manager_name }}</span>
+                    </div>
+                    <div class="safety-info">
+                      <span class="info-label">电话：</span>
+                      <span>{{ currentManager.manager_phone }}</span>
+                    </div>
+                    <div class="safety-info">
+                      <span class="info-label">邮箱：</span>
+                      <span>{{ currentManager.manager_email }}</span>
+                    </div>
+                    <el-button 
+                      type="danger" 
+                      size="small" 
+                      @click="unbindManager"
+                    >
+                      解除绑定
+                    </el-button>
+                  </div>
                 </div>
               </div>
             </el-col>
           </el-row>
+      
+          <!-- 选择安全员的对话框 -->
+          <el-dialog
+            title="选择安全员"
+            v-model="managerDialogVisible"
+            width="600px"
+          >
+            <div class="search-box">
+              <el-input
+                v-model="searchManagerName"
+                placeholder="搜索安全员"
+                clearable
+                @input="handleManagerSearch"
+              >
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+            </div>
+      
+            <el-table
+              :data="availableManagers"
+              style="width: 100%"
+              height="300px"
+              v-loading="loadingManagers"
+            >
+              <el-table-column 
+                prop="manager_name" 
+                label="姓名"
+              />
+              <el-table-column 
+                prop="manager_phone" 
+                label="电话"
+              />
+              <el-table-column 
+                prop="manager_email" 
+                label="邮箱"
+              />
+              <el-table-column
+                fixed="right"
+                label="操作"
+                width="120"
+              >
+                <template #default="{ row }">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="bindManager(row)"
+                  >
+                    选择
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+      
+            <template #footer>
+              <span class="dialog-footer">
+                <el-button @click="managerDialogVisible = false">取消</el-button>
+              </span>
+            </template>
+          </el-dialog>
         </el-card>
       </el-col>
 
@@ -291,17 +379,16 @@
 </template>
 
 <script lang="ts">
+import { Search } from "@element-plus/icons-vue";
 import { defineComponent } from "vue";
 import { ElMessage, ElLoading } from "element-plus";
 import { labAPI } from "../utils/api";
+import _ from "lodash";
 import type {
   LabForm,
-  LabResponse,
-  EditingField,
-  EditForm,
-  Lab,
   // Equipment,
-} from "../types/lab";
+  LabManager,
+} from "../types/lab.ts";
 interface Equipment {
   name: string;
   description: string;
@@ -350,6 +437,11 @@ export default defineComponent({
         tag: "",
         content: "",
       } as SafetyNote,
+      currentManager: null as LabManager | null,
+      availableManagers: [] as LabManager[],
+      managerDialogVisible: false,
+      searchManagerName: "",
+      loadingManagers: false,
     };
   },
 
@@ -411,6 +503,22 @@ export default defineComponent({
             } catch (e) {
               console.error("Error parsing safety notes:", e);
               this.parsedNotes = [];
+            }
+            try {
+              const managerResponse = await labAPI.getLabManagers({
+                lab_id: lab.id,
+              });
+
+              if (managerResponse.success && managerResponse.data) {
+                const managers = Array.isArray(managerResponse.data)
+                  ? managerResponse.data
+                  : [managerResponse.data];
+
+                // 获取当前实验室的安全员（通常应该只有一个）
+                this.currentManager = managers[0] || null;
+              }
+            } catch (error) {
+              console.error("获取安全员信息失败:", error);
             }
           }
         }
@@ -757,11 +865,177 @@ export default defineComponent({
         }
       }
     },
+    // 打开选择安全员对话框
+    async openManagerDialog() {
+      this.managerDialogVisible = true;
+      await this.fetchAvailableManagers();
+    },
+
+    // 获取可选的安全员列表
+    async fetchAvailableManagers() {
+      this.loadingManagers = true;
+      try {
+        const response = await labAPI.getLabManagers({
+          manager_name: this.searchManagerName,
+        });
+
+        if (response.success && response.data) {
+          this.availableManagers = Array.isArray(response.data)
+            ? response.data
+            : [response.data];
+        } else {
+          throw new Error(response.error || "获取安全员列表失败");
+        }
+      } catch (error) {
+        console.error("获取安全员列表失败:", error);
+        ElMessage.error("获取安全员列表失败");
+      } finally {
+        this.loadingManagers = false;
+      }
+    },
+
+    // 处理安全员搜索
+    handleManagerSearch: _.debounce(async function (this: any) {
+      await this.fetchAvailableManagers();
+    }, 300),
+
+    // 绑定安全员
+    async bindManager(manager: LabManager) {
+      try {
+        const response = await labAPI.bindLabManager({
+          manager_user_id: manager.manager_user_id,
+          lab_id: this.labForm.lab_id!,
+        });
+
+        if (response.success) {
+          this.currentManager = manager;
+          this.managerDialogVisible = false;
+          ElMessage.success("安全员绑定成功");
+          await this.fetchLabDetails(); // 刷新实验室信息
+        } else {
+          throw new Error(response.error || "绑定失败");
+        }
+      } catch (error) {
+        console.error("绑定安全员失败:", error);
+        ElMessage.error("绑定安全员失败，请稍后重试");
+      }
+    },
+
+    // 解除绑定安全员
+    async unbindManager() {
+      try {
+        await this.$confirm("确认解除该安全员的绑定?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        });
+
+        if (!this.currentManager) {
+          return;
+        }
+
+        const response = await labAPI.unbindLabManager(
+          this.labForm.lab_id!,
+          this.currentManager.manager_user_id
+        );
+
+        if (response.success) {
+          this.currentManager = null;
+          ElMessage.success("解除绑定成功");
+          await this.fetchLabDetails(); // 刷新实验室信息
+        } else {
+          throw new Error(response.error || "解除绑定失败");
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          console.error("解除绑定失败:", error);
+          ElMessage.error("解除绑定失败，请稍后重试");
+        }
+      }
+    },
   },
 });
 </script>
 
 <style scoped>
+.card-main-title {
+  margin-bottom: 20px;
+}
+
+.card-main-title h3 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #303133;
+  margin: 0;
+}
+
+.section-title {
+  font-size: 16px;
+  color: #606266;
+  margin: 0 0 12px 0;
+}
+
+.action-button {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.manager-card {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 4px;
+  position: relative;
+}
+
+.safety-info {
+  margin-bottom: 12px;
+}
+
+.info-label {
+  font-weight: bold;
+  margin-right: 8px;
+  color: #606266;
+}
+
+.search-box {
+  margin-bottom: 16px;
+}
+
+.safety-officer {
+  padding: 0 12px;
+}
+
+.dialog-footer {
+  padding-top: 20px;
+}
+.safety-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.manager-card {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 4px;
+  position: relative;
+}
+
+.info-label {
+  font-weight: bold;
+  margin-right: 8px;
+  color: #606266;
+}
+
+.safety-info {
+  margin-bottom: 12px;
+}
+
+.search-box {
+  margin-bottom: 16px;
+}
 .safety-header {
   display: flex;
   justify-content: space-between;

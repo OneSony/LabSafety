@@ -414,6 +414,25 @@ export interface UpdateLabRequest {
   safety_equipments?: string;
   safety_notes?: string;
 }
+export interface LabManager {
+  manager_user_id: string;
+  manager_name: string;
+  manager_phone: string;
+  manager_email: string;
+  lab_id: number;
+}
+
+export interface BindManagerRequest {
+  manager_user_id: string;
+  lab_id: number;
+}
+
+export interface ManagerResponse {
+  success: boolean;
+  data?: LabManager | LabManager[];
+  error?: string;
+}
+
 const labAPI = {
   getLabs(lab_id?: number): Promise<any> {
     const params = lab_id ? { lab_id } : {};
@@ -543,6 +562,80 @@ const labAPI = {
         }
         return handleError(error);
       });
+  },
+  // 获取实验室安全员列表
+  async getLabManagers(params: {
+    lab_id?: number;
+    manager_name?: string;
+  }): Promise<ManagerResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.lab_id) {
+        queryParams.append("lab_id", params.lab_id.toString());
+      }
+      if (params.manager_name) {
+        queryParams.append("manager_name", params.manager_name);
+      }
+
+      const response = await axios.get<LabManager[]>(
+        `/api/v1/labs/managers?${queryParams.toString()}`
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("获取安全员列表失败:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "获取安全员列表失败",
+      };
+    }
+  },
+
+  // 绑定实验室安全员
+  async bindLabManager(request: BindManagerRequest): Promise<ManagerResponse> {
+    try {
+      const response = await axios.post<LabManager>(
+        "/api/v1/labs/managers",
+        request
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("绑定安全员失败:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "绑定安全员失败",
+      };
+    }
+  },
+
+  // 可选：解绑实验室安全员
+  async unbindLabManager(
+    lab_id: number,
+    manager_user_id: string
+  ): Promise<ManagerResponse> {
+    try {
+      const response = await axios.delete<LabManager>(
+        `/api/v1/labs/managers/${lab_id}/${manager_user_id}`
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("解绑安全员失败:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "解绑安全员失败",
+      };
+    }
   },
 };
 
