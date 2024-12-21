@@ -388,6 +388,47 @@ interface CreateLabRequest {
   name: string;
   location: string;
 }
+export interface LabDetails {
+  id?: number;
+  name: string;
+  location: string;
+  safety_equipments: string;
+  safety_notes: string;
+  lab_image: string;
+}
+
+export interface LabResponse {
+  success: boolean;
+  data?: LabDetails;
+  error?: string;
+}
+
+export interface UpdateLabRequest {
+  lab_id: number;
+  name?: string;
+  location?: string;
+  safety_equipments?: string;
+  safety_notes?: string;
+}
+export interface LabManager {
+  manager_user_id: string;
+  manager_name: string;
+  manager_phone: string;
+  manager_email: string;
+  lab_id: number;
+}
+
+export interface BindManagerRequest {
+  manager_user_id: string;
+  lab_id: number;
+}
+
+export interface ManagerResponse {
+  success: boolean;
+  data?: LabManager | LabManager[];
+  error?: string;
+}
+
 const labAPI = {
   getLabs(lab_id?: number): Promise<any> {
     const params = lab_id ? { lab_id } : {};
@@ -406,6 +447,13 @@ const labAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+  getLabname(): string | null {
+    return localStorage.getItem("name");
+  },
+  getLabId(): string | null {
+    return localStorage.getItem("id");
+  },
+
   // 创建实验室
   createLab(labData: CreateLabRequest): Promise<any> {
     // 只发送必填字段
@@ -420,45 +468,78 @@ const labAPI = {
       .catch(handleError);
   },
 
-  // 编辑实验室
-  editLab(labId: number, labData: any): Promise<any> {
+  editLab(
+    labId: number,
+    labData: Partial<UpdateLabRequest>
+  ): Promise<LabResponse> {
+    const data = {
+      id: labId, // 确保传入 id 字段
+      ...labData,
+    };
+
+    console.log("Sending update request with data:", data);
+
     return server
-      .patch(`/api/v1/labs/lab`, {
-        lab_id: labId,
-        ...labData,
+      .patch("/api/v1/labs/lab", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  async updateLabEquipments(
+    labId: number,
+    equipmentsJson: string,
+    equipmentImage?: File
+  ): Promise<LabResponse> {
+    const formData = new FormData();
+    formData.append("id", String(labId));
+    formData.append("safety_equipments", equipmentsJson);
+
+    if (equipmentImage) {
+      formData.append("lab_image", equipmentImage);
+    }
+
+    return server
+      .patch("/api/v1/labs/lab", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       })
       .then(handleResponse)
       .catch(handleError);
   },
-  // 添加处理图片上传的方法，添加 File 类型
-  async handleImageUpload(file: File): Promise<string> {
-    // 检查文件类型
-    if (!file.type.startsWith("image/")) {
-      throw new Error("请上传图片文件");
+
+  async patchLabPhoto(
+    labId: number | string,
+    file: File
+  ): Promise<LabResponse> {
+    // 创建 FormData 对象
+    const formData = new FormData();
+    // 添加实验室ID
+    formData.append("id", String(labId));
+    // 添加图片文件
+    formData.append("lab_image", file);
+
+    // 添加调试日志
+    for (const pair of formData.entries()) {
+      console.log("FormData:", pair[0], pair[1]);
     }
 
-    // 检查文件大小（限制为5MB）
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      throw new Error("图片大小不能超过5MB");
-    }
-
-    // 将图片转换为 base64
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        if (typeof reader.result === "string") {
-          resolve(reader.result);
-        } else {
-          reject(new Error("图片读取失败"));
-        }
-      };
-      reader.onerror = () => {
-        reject(new Error("图片读取失败"));
-      };
-    });
+    return server
+      .patch("/api/v1/labs/lab", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((response) => {
+        console.log("Upload response:", response);
+        return handleResponse(response);
+      })
+      .catch((error) => {
+        console.error("Upload error:", error);
+        return handleError(error);
+      });
   },
+
   // 删除实验室
   deleteLab(labId: number): Promise<any> {
     return server
@@ -477,6 +558,80 @@ const labAPI = {
         }
         return handleError(error);
       });
+  },
+  // 获取实验室安全员列表
+  async getLabManagers(params: {
+    lab_id?: number;
+    manager_name?: string;
+  }): Promise<ManagerResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.lab_id) {
+        queryParams.append("lab_id", params.lab_id.toString());
+      }
+      if (params.manager_name) {
+        queryParams.append("manager_name", params.manager_name);
+      }
+
+      const response = await axios.get<LabManager[]>(
+        `/api/v1/labs/managers?${queryParams.toString()}`
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("获取安全员列表失败:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "获取安全员列表失败",
+      };
+    }
+  },
+
+  // 绑定实验室安全员
+  async bindLabManager(request: BindManagerRequest): Promise<ManagerResponse> {
+    try {
+      const response = await axios.post<LabManager>(
+        "/api/v1/labs/managers",
+        request
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("绑定安全员失败:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "绑定安全员失败",
+      };
+    }
+  },
+
+  // 可选：解绑实验室安全员
+  async unbindLabManager(
+    lab_id: number,
+    manager_user_id: string
+  ): Promise<ManagerResponse> {
+    try {
+      const response = await axios.delete<LabManager>(
+        `/api/v1/labs/managers/${lab_id}/${manager_user_id}`
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("解绑安全员失败:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "解绑安全员失败",
+      };
+    }
   },
 };
 

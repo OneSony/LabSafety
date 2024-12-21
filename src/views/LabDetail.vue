@@ -1,331 +1,1223 @@
 <template>
   <div class="lab-detail">
     <div v-if="loading" class="loading">加载中...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
 
-    <!-- 大标题（实验室名称） -->
-    <h1 class="lab-name">
-      <span
-        v-if="!editingField.name"
-        @click="startEditing('name')"
-        class="editable-field"
-      >
-        {{ labDetails.name || "未命名实验室" }}
-      </span>
-      <el-input
-        v-else
-        v-model="editForm.name"
-        placeholder="请输入实验室名称"
-        @blur="saveField('name')"
-        @keyup.enter="saveField('name')"
-      ></el-input>
-    </h1>
+    <div class="lab-header">
+      <h2 class="lab-name">
+        <span
+          v-if="!editingField.name"
+          @click="startEditing('name')"
+          class="editable-field"
+        >
+          {{ labForm.name || "未命名实验室" }}
+        </span>
+        <el-input
+          v-else
+          v-model="editForm.name"
+          placeholder="请输入实验室名称"
+          @blur="saveField('name')"
+          @keyup.enter="saveField('name')"
+        ></el-input>
+      </h2>
 
-    <!-- 小标题（实验室地点） -->
-    <h2 class="lab-location">
-      <span
-        v-if="!editingField.location"
-        @click="startEditing('location')"
-        class="editable-field"
-      >
-        {{ labDetails.location || "未设置地点" }}
-      </span>
-      <el-input
-        v-else
-        v-model="editForm.location"
-        placeholder="请输入实验室地点"
-        @blur="saveField('location')"
-        @keyup.enter="saveField('location')"
-      ></el-input>
-    </h2>
+      <h3 class="lab-location">
+        <span
+          v-if="!editingField.location"
+          @click="startEditing('location')"
+          class="editable-field"
+        >
+          {{ labForm.location || "未设置地点" }}
+        </span>
+        <el-input
+          v-else
+          v-model="editForm.location"
+          placeholder="请输入实验室地点"
+          @blur="saveField('location')"
+          @keyup.enter="saveField('location')"
+        ></el-input>
+      </h3>
+    </div>
 
-    <el-card class="lab-card" v-if="labDetails">
-      <el-row :gutter="20">
-        <!-- 实验室照片 -->
-        <el-col :span="8">
-          <div class="lab-photo-container" @click="startEditing('photo')">
-            <el-image
-              v-if="labDetails.photo"
-              :src="labDetails.photo"
-              style="width: 100%; max-height: 300px; object-fit: cover"
-              fit="cover"
-            ></el-image>
-            <div v-else class="no-photo">
-              <span>点击上传照片</span>
-            </div>
-            <!-- 图片上传控件，仅在编辑状态下显示 -->
-            <el-upload
-              v-if="editingField.photo"
-              :http-request="customImageUpload"
-            >
-              :show-file-list="false" accept="image/*" >
-              <el-button type="primary">上传照片</el-button>
-            </el-upload>
+    <!-- 下面的卡片部分竖着排列 -->
+    <el-row :gutter="20" class="lab-cards">
+      <!-- 第一张卡片：实验室照片和安全员信息 -->
+      <el-col :span="24">
+        <el-card class="info-card">
+          <div class="card-main-title">
+            <h3>实验室信息</h3>
           </div>
-        </el-col>
-
-        <!-- 实验室安全员和联系方式 -->
-        <el-col :span="16">
-          <div class="lab-info">
-            <p>
-              <strong>实验室安全员:</strong>
-              <span
-                v-if="!editingField.safety_officer"
-                @click="startEditing('safety_officer')"
-                class="editable-field"
-              >
-                {{ labDetails.safety_officer || "暂无" }}
-              </span>
-              <el-input
-                v-else
-                v-model="editForm.safety_officer"
-                placeholder="请输入安全员姓名"
-                @blur="saveField('safety_officer')"
-                @keyup.enter="saveField('safety_officer')"
-              ></el-input>
-            </p>
-            <p>
-              <strong>联系方式:</strong>
-              <span
-                v-if="!editingField.contact"
-                @click="startEditing('contact')"
-                class="editable-field"
-              >
-                {{ labDetails.contact || "暂无" }}
-              </span>
-              <el-input
-                v-else
-                v-model="editForm.contact"
-                placeholder="请输入联系方式"
-                @blur="saveField('contact')"
-                @keyup.enter="saveField('contact')"
-              ></el-input>
-            </p>
-          </div>
-        </el-col>
-      </el-row>
-
-      <!-- 实验室安全器材 -->
-      <div
-        class="safety-equipment"
-        v-if="labDetails.safety_equipment && labDetails.safety_equipment.length"
-        style="margin-top: 30px"
-      >
-        <h3>实验室安全器材</h3>
-        <el-table :data="labDetails.safety_equipment" style="width: 100%">
-          <el-table-column prop="name" label="器材名称" />
-          <el-table-column prop="description" label="描述" />
-        </el-table>
-      </div>
-
-      <!-- 实验室安全注意事项 -->
-      <div
-        class="safety-precautions"
-        v-if="
-          labDetails.safety_precautions && labDetails.safety_precautions.length
-        "
-        style="margin-top: 30px"
-      >
-        <h3>安全注意事项</h3>
-        <ul class="precautions-list">
-          <li
-            v-for="(item, index) in labDetails.safety_precautions"
-            :key="index"
+          
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <!-- 实验室照片 -->
+              <div class="lab-photo-container">
+                <el-image
+                  v-if="labForm.lab_image"
+                  :src="labForm.lab_image"
+                  style="width: 100%; max-height: 300px; object-fit: cover"
+                  fit="cover"
+                ></el-image>
+                <div v-else class="no-photo">
+                  <span>点击上传照片</span>
+                </div>
+                <el-upload
+                  class="upload-container"
+                  :action="null"
+                  :http-request="customImageUpload"
+                  :show-file-list="false"
+                  accept="image/*"
+                  :before-upload="beforeImageUpload"
+                >
+                  <el-button type="primary">上传照片</el-button>
+                </el-upload>
+              </div>
+            </el-col>
+      
+            <el-col :span="16">
+              <!-- 安全员信息 -->
+              <div class="safety-officer">
+                <h4 class="section-title">实验室安全员</h4>
+                <div class="action-button">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="openManagerDialog"
+                    v-if="!currentManager"
+                  >
+                    选择安全员
+                  </el-button>
+                </div>
+                
+                <!-- 当有安全员信息时显示 -->
+                <div v-if="currentManager" class="manager-info">
+                  <div class="manager-card">
+                    <div class="safety-info">
+                      <span class="info-label">安全员：</span>
+                      <span>{{ currentManager.manager_name }}</span>
+                    </div>
+                    <div class="safety-info">
+                      <span class="info-label">电话：</span>
+                      <span>{{ currentManager.manager_phone }}</span>
+                    </div>
+                    <div class="safety-info">
+                      <span class="info-label">邮箱：</span>
+                      <span>{{ currentManager.manager_email }}</span>
+                    </div>
+                    <el-button 
+                      type="danger" 
+                      size="small" 
+                      @click="unbindManager"
+                    >
+                      解除绑定
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+      
+          <!-- 选择安全员的对话框 -->
+          <el-dialog
+            title="选择安全员"
+            v-model="managerDialogVisible"
+            width="600px"
           >
-            {{ index + 1 }}. {{ item }}
-          </li>
-        </ul>
-      </div>
-    </el-card>
+            <div class="search-box">
+              <el-input
+                v-model="searchManagerName"
+                placeholder="搜索安全员"
+                clearable
+                @input="handleManagerSearch"
+              >
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+            </div>
+      
+            <el-table
+              :data="availableManagers"
+              style="width: 100%"
+              height="300px"
+              v-loading="loadingManagers"
+            >
+              <el-table-column 
+                prop="manager_name" 
+                label="姓名"
+              />
+              <el-table-column 
+                prop="manager_phone" 
+                label="电话"
+              />
+              <el-table-column 
+                prop="manager_email" 
+                label="邮箱"
+              />
+              <el-table-column
+                fixed="right"
+                label="操作"
+                width="120"
+              >
+                <template #default="{ row }">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="bindManager(row)"
+                  >
+                    选择
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+      
+            <template #footer>
+              <span class="dialog-footer">
+                <el-button @click="managerDialogVisible = false">取消</el-button>
+              </span>
+            </template>
+          </el-dialog>
+        </el-card>
+      </el-col>
 
-    <el-button type="primary" @click="goBack" style="margin-top: 20px">
-      返回
-    </el-button>
+      <!-- 第二张卡片：安全器材 -->
+      <el-col :span="24">
+        <el-card class="info-card">
+          <div class="safety-equipment">
+            <div class="equipment-header">
+              <h3>安全器材</h3>
+              <el-button
+                type="primary"
+                size="small"
+                @click="openEquipmentDialog"
+              >
+                添加器材
+              </el-button>
+            </div>
+
+            <!-- 器材列表 -->
+            <el-table
+              :data="parsedEquipments"
+              style="width: 100%"
+              v-if="parsedEquipments.length"
+            >
+              <el-table-column label="器材图片" width="150">
+                <template #default="{ row }">
+                  <div class="equipment-image-container">
+                    <el-image
+                      v-if="row.image"
+                      :src="row.image"
+                      fit="cover"
+                      class="equipment-thumb"
+                      :preview-src-list="[row.image]"
+                    ></el-image>
+                    <div v-else class="no-image">暂无图片</div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="器材名称" prop="name" width="180" />
+              <el-table-column label="器材描述" prop="description" />
+              <el-table-column label="操作" width="200" align="center">
+                <template #default="{ $index }">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="editEquipment($index)"
+                  >
+                    编辑
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="removeEquipment($index)"
+                  >
+                    删除
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <div v-else class="no-equipment">暂无安全器材信息</div>
+
+            <!-- 编辑对话框 -->
+            <el-dialog
+              :title="editingIndex === null ? '添加器材' : '编辑器材'"
+              v-model="dialogVisible"
+              width="500px"
+            >
+              <el-form :model="currentEquipment" label-width="80px">
+                <el-form-item label="器材名称" required>
+                  <el-input
+                    v-model="currentEquipment.name"
+                    placeholder="请输入器材名称"
+                  />
+                </el-form-item>
+
+                <el-form-item label="器材描述" required>
+                  <el-input
+                    v-model="currentEquipment.description"
+                    type="textarea"
+                    rows="3"
+                    placeholder="请输入器材描述"
+                  />
+                </el-form-item>
+
+                <el-form-item label="器材图片">
+                  <div class="equipment-image-preview">
+                    <el-image
+                      v-if="currentEquipment.image"
+                      :src="currentEquipment.image"
+                      class="preview-image"
+                      fit="cover"
+                    ></el-image>
+                    <div v-else class="no-image">暂无图片</div>
+                  </div>
+                  <el-upload
+                    class="equipment-upload"
+                    :auto-upload="false"
+                    :show-file-list="false"
+                    :on-change="handleImageChange"
+                    accept="image/*"
+                  >
+                    <el-button type="primary">
+                      {{ currentEquipment.image ? "更换图片" : "选择图片" }}
+                    </el-button>
+                  </el-upload>
+                </el-form-item>
+              </el-form>
+
+              <template #footer>
+                <span class="dialog-footer">
+                  <el-button @click="dialogVisible = false">取消</el-button>
+                  <el-button type="primary" @click="saveEquipment"
+                    >确定</el-button
+                  >
+                </span>
+              </template>
+            </el-dialog>
+          </div>
+        </el-card>
+      </el-col>
+
+      <!-- 第三张卡片：安全须知 -->
+      <el-col :span="24">
+        <el-card class="info-card">
+          <div class="safety-notes">
+            <div class="safety-header">
+              <h3>安全须知</h3>
+              <el-button
+                type="primary"
+                size="small"
+                @click="openNoteDialog(null)"
+              >
+                添加须知
+              </el-button>
+            </div>
+
+            <!-- Safety notes list -->
+            <div class="safety-list" v-if="parsedNotes.length">
+              <div
+                v-for="(note, index) in parsedNotes"
+                :key="index"
+                class="safety-item"
+              >
+                <span class="note-number">{{ index + 1 }}</span>
+                <el-tag class="note-tag" size="small">{{ note.tag }}</el-tag>
+                <span class="note-content">{{ note.content }}</span>
+                <div class="note-actions">
+                  <el-button type="text" @click="openNoteDialog(index)"
+                    >编辑</el-button
+                  >
+                  <el-button
+                    type="text"
+                    class="delete-btn"
+                    @click="removeNote(index)"
+                    >删除</el-button
+                  >
+                </div>
+              </div>
+            </div>
+            <div v-else class="no-notes">暂无安全须知</div>
+
+            <!-- Note dialog -->
+            <el-dialog
+              :title="
+                editingNoteIndex === null ? '添加安全须知' : '编辑安全须知'
+              "
+              v-model="noteDialogVisible"
+              width="500px"
+            >
+              <el-form :model="currentNote" label-width="80px">
+                <el-form-item label="类型标签" required>
+                  <el-input
+                    v-model="currentNote.tag"
+                    placeholder="请输入标签"
+                    maxlength="10"
+                  />
+                </el-form-item>
+                <el-form-item label="须知内容" required>
+                  <el-input
+                    v-model="currentNote.content"
+                    type="textarea"
+                    rows="3"
+                    placeholder="请输入须知内容"
+                  />
+                </el-form-item>
+              </el-form>
+              <template #footer>
+                <span class="dialog-footer">
+                  <el-button @click="noteDialogVisible = false">取消</el-button>
+                  <el-button type="primary" @click="saveNote">确定</el-button>
+                </span>
+              </template>
+            </el-dialog>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
-<script>
-import { ElMessage } from "element-plus";
+<script lang="ts">
+import { Search } from "@element-plus/icons-vue";
+import { defineComponent } from "vue";
+import { ElMessage, ElLoading } from "element-plus";
 import { labAPI } from "../utils/api";
+import _ from "lodash";
+import type {
+  LabForm,
+  // Equipment,
+  LabManager,
+} from "../types/lab.ts";
+interface Equipment {
+  name: string;
+  description: string;
+  image: string;
+}
+interface SafetyNote {
+  tag: string;
+  content: string;
+}
+export default defineComponent({
+  name: "LabDetail",
 
-export default {
+  props: {
+    id: {
+      type: [String, Number],
+      required: true,
+    },
+  },
+
   data() {
     return {
-      labDetails: {
+      labForm: {
+        lab_id: null,
         name: "",
         location: "",
-        photo: "",
-        safety_equipment: [],
-        safety_precautions: [],
-      },
-      editForm: {},
-      editingField: {},
-      labId: null,
+        lab_image: "",
+        safety_equipments: "",
+        safety_notes: "",
+      } as LabForm,
+      // editForm: {} as Partial<LabForm>,
+      editingField: {} as Record<string, boolean>,
+      editingIndex: null as number | null,
       loading: false,
+      dialogVisible: false,
+      error: null as string | null,
+      parsedEquipments: [] as Equipment[],
+      currentEquipment: {
+        name: "",
+        description: "",
+        image: "",
+      } as Equipment,
+      parsedNotes: [] as SafetyNote[],
+      noteDialogVisible: false,
+      editingNoteIndex: null as number | null,
+      currentNote: {
+        tag: "",
+        content: "",
+      } as SafetyNote,
+      currentManager: null as LabManager | null,
+      availableManagers: [] as LabManager[],
+      managerDialogVisible: false,
+      searchManagerName: "",
+      loadingManagers: false,
     };
   },
-  created() {
-    this.labId = parseInt(this.$route.params.id, 10);
-    if (this.labId) {
-      this.fetchLabDetails();
-    } else {
-      ElMessage.error("未找到实验室 ID");
-    }
+
+  watch: {
+    id: {
+      immediate: true,
+      handler(newId) {
+        if (newId) {
+          this.fetchLabDetails();
+        }
+      },
+    },
   },
+
   methods: {
     async fetchLabDetails() {
       this.loading = true;
+      this.error = null;
+
       try {
-        const response = await labAPI.getLabById(this.labId);
-        if (response.success) {
-          this.labDetails = response.data;
-        } else {
-          ElMessage.error("获取实验室详情失败");
+        const labId = parseInt(String(this.id), 10);
+        console.log("Fetching lab details for ID:", labId);
+
+        const response = await labAPI.getLabById(labId);
+        console.log("API response:", response);
+
+        if (response.success && response.data) {
+          const lab = Array.isArray(response.data)
+            ? response.data.find((l) => l.id === labId)
+            : response.data;
+
+          if (lab) {
+            console.log("Lab data:", lab);
+            console.log("Safety equipments:", lab.safety_equipments);
+
+            this.labForm = {
+              lab_id: lab.id,
+              name: lab.name,
+              location: lab.location,
+              lab_image: lab.lab_image || "",
+              safety_equipments: lab.safety_equipments || "[]",
+              safety_notes: lab.safety_notes || "",
+            };
+
+            // 尝试解析器材信息
+            try {
+              this.parsedEquipments = this.parseEquipments(
+                lab.safety_equipments
+              );
+              console.log("Parsed equipments:", this.parsedEquipments);
+            } catch (e) {
+              console.error("Error parsing equipments:", e);
+              this.parsedEquipments = [];
+            }
+            // Parse safety notes
+            try {
+              this.parsedNotes = this.parseNotes(lab.safety_notes || "[]");
+              console.log("Parsed safety notes:", this.parsedNotes);
+            } catch (e) {
+              console.error("Error parsing safety notes:", e);
+              this.parsedNotes = [];
+            }
+            try {
+              const managerResponse = await labAPI.getLabManagers({
+                lab_id: lab.id,
+              });
+
+              if (managerResponse.success && managerResponse.data) {
+                const managers = Array.isArray(managerResponse.data)
+                  ? managerResponse.data
+                  : [managerResponse.data];
+
+                // 获取当前实验室的安全员（通常应该只有一个）
+                this.currentManager = managers[0] || null;
+              }
+            } catch (error) {
+              console.error("获取安全员信息失败:", error);
+            }
+          }
         }
       } catch (error) {
-        console.error("Error fetching lab details:", error);
-        ElMessage.error("获取实验室详情失败");
+        console.error("Error in fetchLabDetails:", error);
+        this.error =
+          error instanceof Error ? error.message : "获取实验室详情失败";
       } finally {
         this.loading = false;
       }
     },
-
-    startEditing(field) {
-      this.editingField[field] = true;
-      this.editForm[field] = this.labDetails[field] || "";
+    async fileToBase64(file: File): Promise<string> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
     },
+    // 处理器材图片变更
+    async handleImageChange(file: any) {
+      const isImage = file.raw.type.startsWith("image/");
+      const isLt5M = file.raw.size / 1024 / 1024 < 5;
 
-    async saveField(field) {
-      this.editingField[field] = false;
-
-      // 数据未变化则不提交
-      if (this.labDetails[field] === this.editForm[field]) {
+      if (!isImage) {
+        ElMessage.error("只能上传图片文件!");
+        return;
+      }
+      if (!isLt5M) {
+        ElMessage.error("图片大小不能超过 5MB!");
         return;
       }
 
-      const updateData = { [field]: this.editForm[field] };
       try {
-        const response = await labAPI.editLab(this.labId, updateData);
-        if (response.success) {
-          this.labDetails[field] = this.editForm[field];
-          ElMessage.success("更新成功");
-        } else {
-          ElMessage.error("更新失败");
-        }
+        // 将文件转换为 base64
+        const base64String = await this.fileToBase64(file.raw);
+        // 直接更新当前编辑的器材的图片
+        this.currentEquipment.image = base64String;
       } catch (error) {
-        console.error("Error updating field:", error);
-        ElMessage.error("更新失败，请稍后重试");
+        console.error("Error converting image:", error);
+        ElMessage.error("图片处理失败");
       }
     },
 
-    // 自定义图片上传函数
-    async customImageUpload({ file, onSuccess, onError }) {
+    beforeImageUpload(file: File) {
+      const isImage = file.type.startsWith("image/");
+      const isLt5M = file.size / 1024 / 1024 < 5;
+
+      if (!isImage) {
+        ElMessage.error("只能上传图片文件!");
+        return false;
+      }
+      if (!isLt5M) {
+        ElMessage.error("图片大小不能超过 5MB!");
+        return false;
+      }
+      return true;
+    },
+
+    // LabDetail.vue 中的上传方法
+    async customImageUpload({ file }: { file: File }) {
+      let loadingInstance = null;
       try {
-        const selectedFile = file;
-        if (!selectedFile.type.startsWith("image/")) {
-          throw new Error("请上传图片文件");
-        }
+        // 显示加载提示
+        loadingInstance = ElLoading.service({
+          lock: true,
+          text: "上传中...",
+          background: "rgba(0, 0, 0, 0.7)",
+        });
 
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (selectedFile.size > maxSize) {
-          throw new Error("图片大小不能超过5MB");
-        }
+        console.log("Uploading file:", file.name, file.type, file.size);
 
-        // 将图片转换为 base64
-        const base64 = await this.fileToBase64(selectedFile);
+        const response = await labAPI.patchLabPhoto(this.labForm.lab_id!, file);
 
-        // 调用后端的部分更新接口（PATCH 或 PUT），更新 photo 字段
-        const updateData = { photo: base64 };
-        const response = await labAPI.editLab(this.labId, updateData);
-        if (response.success) {
-          this.labDetails.photo = base64;
+        if (response.success && response.data) {
+          // 更新本地图片URL
+          this.labForm.lab_image = response.data.lab_image;
           ElMessage.success("图片上传成功");
-          this.editingField.photo = false;
-          onSuccess(response);
+          // 刷新实验室详情
+          await this.fetchLabDetails();
         } else {
-          ElMessage.error("图片上传失败");
-          onError(new Error("图片上传失败"));
+          throw new Error(response.error || "上传失败");
         }
       } catch (error) {
         console.error("Upload error:", error);
-        ElMessage.error(error.message || "图片上传失败");
-        onError(error);
+        ElMessage.error(
+          error instanceof Error ? error.message : "图片上传失败"
+        );
+      } finally {
+        if (loadingInstance) {
+          loadingInstance.close();
+        }
+      }
+    },
+    // 打开器材编辑对话框
+    openEquipmentDialog(index?: number) {
+      this.editingIndex = typeof index === "number" ? index : null;
+      if (this.editingIndex !== null) {
+        // 编辑现有器材，复制所有属性包括图片
+        this.currentEquipment = { ...this.parsedEquipments[this.editingIndex] };
+      } else {
+        // 添加新器材，重置所有字段
+        this.currentEquipment = {
+          name: "",
+          description: "",
+          image: "",
+        };
+      }
+      this.dialogVisible = true;
+    },
+
+    async handleEquipmentImageUpload({ file }: { file: File }, index: number) {
+      try {
+        if (!this.beforeImageUpload(file)) {
+          return;
+        }
+
+        const base64String = await this.fileToBase64(file);
+
+        // 更新器材的图片
+        this.parsedEquipments[index].image = base64String;
+
+        // 保存更新后的器材信息
+        const response = await labAPI.editLab(this.labForm.lab_id!, {
+          safety_equipments: this.stringifyEquipments(this.parsedEquipments),
+        });
+
+        if (response.success) {
+          ElMessage.success("器材图片上传成功");
+        } else {
+          throw new Error(response.error || "保存失败");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        ElMessage.error(
+          error instanceof Error ? error.message : "图片上传失败"
+        );
       }
     },
 
-    fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("图片读取失败"));
-        reader.readAsDataURL(file);
-      });
+    // 保存器材信息
+    // 保存器材信息
+    async saveEquipment() {
+      if (
+        !this.currentEquipment.name.trim() ||
+        !this.currentEquipment.description.trim()
+      ) {
+        ElMessage.error("请填写器材名称和描述");
+        return;
+      }
+
+      try {
+        // 更新器材列表
+        const updatedEquipments = [...this.parsedEquipments];
+        if (this.editingIndex !== null) {
+          updatedEquipments[this.editingIndex] = { ...this.currentEquipment };
+        } else {
+          updatedEquipments.push({ ...this.currentEquipment });
+        }
+
+        // 准备更新数据
+        const equipmentsJson = JSON.stringify(updatedEquipments);
+        console.log("Saving equipments:", equipmentsJson);
+
+        const updateData = {
+          id: this.labForm.lab_id,
+          safety_equipments: equipmentsJson,
+        };
+
+        // 发送更新请求
+        const response = await labAPI.editLab(this.labForm.lab_id!, updateData);
+        console.log("Save response:", response);
+
+        if (response.success) {
+          // 更新本地数据
+          this.parsedEquipments = updatedEquipments;
+          this.labForm.safety_equipments = equipmentsJson;
+
+          ElMessage.success(
+            this.editingIndex !== null ? "器材更新成功" : "器材添加成功"
+          );
+          this.dialogVisible = false;
+
+          // 可以选择是否刷新数据
+          await this.fetchLabDetails();
+        } else {
+          throw new Error(response.error || "保存失败");
+        }
+      } catch (error) {
+        console.error("Save error:", error);
+        ElMessage.error("保存失败，请稍后重试");
+      }
     },
 
-    goBack() {
-      this.$router.go(-1);
+    // 解析器材信息
+    parseEquipments(equipmentsStr: string): Equipment[] {
+      try {
+        if (!equipmentsStr) return [];
+        const parsed = JSON.parse(equipmentsStr);
+        if (!Array.isArray(parsed)) return [];
+        return parsed;
+      } catch (e) {
+        console.error("解析器材信息失败:", e);
+        return [];
+      }
+    },
+
+    // 将器材信息转换为字符串
+    stringifyEquipments(equipments: Equipment[]): string {
+      const cleanEquipments = equipments.map(
+        ({ name, description, image }) => ({
+          name: name.trim(),
+          description: description.trim(),
+          image: image || "",
+        })
+      );
+      return JSON.stringify(cleanEquipments);
+    },
+
+    // 删除器材
+    async removeEquipment(index: number) {
+      try {
+        await this.$confirm("确认删除该器材?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        });
+
+        const updatedEquipments = this.parsedEquipments.filter(
+          (_, i) => i !== index
+        );
+        const equipmentsJson = this.stringifyEquipments(updatedEquipments);
+
+        const response = await labAPI.editLab(this.labForm.lab_id!, {
+          id: this.labForm.lab_id,
+          safety_equipments: equipmentsJson,
+        });
+
+        if (response.success) {
+          // 更新本地数据
+          this.parsedEquipments = updatedEquipments;
+          this.labForm.safety_equipments = equipmentsJson;
+
+          ElMessage.success("删除成功");
+        } else {
+          throw new Error(response.error || "删除失败");
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          console.error("Delete error:", error);
+          ElMessage.error("删除失败，请稍后重试");
+        }
+      }
+    },
+    parseNotes(notesStr: string): SafetyNote[] {
+      try {
+        if (!notesStr) return [];
+        const parsed = JSON.parse(notesStr);
+        if (!Array.isArray(parsed)) return [];
+        return parsed;
+      } catch (e) {
+        console.error("解析安全须知失败:", e);
+        return [];
+      }
+    },
+
+    openNoteDialog(index: number | null) {
+      this.editingNoteIndex = index;
+      if (index !== null) {
+        // Edit existing note
+        this.currentNote = { ...this.parsedNotes[index] };
+      } else {
+        // Add new note
+        this.currentNote = {
+          tag: "",
+          content: "",
+        };
+      }
+      this.noteDialogVisible = true;
+    },
+
+    async saveNote() {
+      if (!this.currentNote.tag.trim() || !this.currentNote.content.trim()) {
+        ElMessage.error("请填写标签和内容");
+        return;
+      }
+
+      try {
+        const updatedNotes = [...this.parsedNotes];
+        if (this.editingNoteIndex !== null) {
+          updatedNotes[this.editingNoteIndex] = { ...this.currentNote };
+        } else {
+          updatedNotes.push({ ...this.currentNote });
+        }
+
+        const notesJson = JSON.stringify(updatedNotes);
+
+        const response = await labAPI.editLab(this.labForm.lab_id!, {
+          safety_notes: notesJson,
+        });
+
+        if (response.success) {
+          this.parsedNotes = updatedNotes;
+          this.labForm.safety_notes = notesJson;
+          ElMessage.success(
+            this.editingNoteIndex !== null ? "须知更新成功" : "须知添加成功"
+          );
+          this.noteDialogVisible = false;
+        } else {
+          throw new Error(response.error || "保存失败");
+        }
+      } catch (error) {
+        console.error("Save error:", error);
+        ElMessage.error("保存失败，请稍后重试");
+      }
+    },
+
+    async removeNote(index: number) {
+      try {
+        await this.$confirm("确认删除该安全须知?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        });
+
+        const updatedNotes = this.parsedNotes.filter((_, i) => i !== index);
+        const notesJson = JSON.stringify(updatedNotes);
+
+        const response = await labAPI.editLab(this.labForm.lab_id!, {
+          safety_notes: notesJson,
+        });
+
+        if (response.success) {
+          this.parsedNotes = updatedNotes;
+          this.labForm.safety_notes = notesJson;
+          ElMessage.success("删除成功");
+        } else {
+          throw new Error(response.error || "删除失败");
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          console.error("Delete error:", error);
+          ElMessage.error("删除失败，请稍后重试");
+        }
+      }
+    },
+    // 打开选择安全员对话框
+    async openManagerDialog() {
+      this.managerDialogVisible = true;
+      await this.fetchAvailableManagers();
+    },
+
+    // 获取可选的安全员列表
+    async fetchAvailableManagers() {
+      this.loadingManagers = true;
+      try {
+        const response = await labAPI.getLabManagers({
+          manager_name: this.searchManagerName,
+        });
+
+        if (response.success && response.data) {
+          this.availableManagers = Array.isArray(response.data)
+            ? response.data
+            : [response.data];
+        } else {
+          throw new Error(response.error || "获取安全员列表失败");
+        }
+      } catch (error) {
+        console.error("获取安全员列表失败:", error);
+        ElMessage.error("获取安全员列表失败");
+      } finally {
+        this.loadingManagers = false;
+      }
+    },
+
+    // 处理安全员搜索
+    handleManagerSearch: _.debounce(async function (this: any) {
+      await this.fetchAvailableManagers();
+    }, 300),
+
+    // 绑定安全员
+    async bindManager(manager: LabManager) {
+      try {
+        const response = await labAPI.bindLabManager({
+          manager_user_id: manager.manager_user_id,
+          lab_id: this.labForm.lab_id!,
+        });
+
+        if (response.success) {
+          this.currentManager = manager;
+          this.managerDialogVisible = false;
+          ElMessage.success("安全员绑定成功");
+          await this.fetchLabDetails(); // 刷新实验室信息
+        } else {
+          throw new Error(response.error || "绑定失败");
+        }
+      } catch (error) {
+        console.error("绑定安全员失败:", error);
+        ElMessage.error("绑定安全员失败，请稍后重试");
+      }
+    },
+
+    // 解除绑定安全员
+    async unbindManager() {
+      try {
+        await this.$confirm("确认解除该安全员的绑定?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning",
+        });
+
+        if (!this.currentManager) {
+          return;
+        }
+
+        const response = await labAPI.unbindLabManager(
+          this.labForm.lab_id!,
+          this.currentManager.manager_user_id
+        );
+
+        if (response.success) {
+          this.currentManager = null;
+          ElMessage.success("解除绑定成功");
+          await this.fetchLabDetails(); // 刷新实验室信息
+        } else {
+          throw new Error(response.error || "解除绑定失败");
+        }
+      } catch (error) {
+        if (error !== "cancel") {
+          console.error("解除绑定失败:", error);
+          ElMessage.error("解除绑定失败，请稍后重试");
+        }
+      }
     },
   },
-};
+});
 </script>
 
 <style scoped>
-.lab-detail {
+.card-main-title {
+  margin-bottom: 20px;
+}
+
+.card-main-title h3 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #303133;
+  margin: 0;
+}
+
+.section-title {
+  font-size: 16px;
+  color: #606266;
+  margin: 0 0 12px 0;
+}
+
+.action-button {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.manager-card {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 4px;
+  position: relative;
+}
+
+.safety-info {
+  margin-bottom: 12px;
+}
+
+.info-label {
+  font-weight: bold;
+  margin-right: 8px;
+  color: #606266;
+}
+
+.search-box {
+  margin-bottom: 16px;
+}
+
+.safety-officer {
+  padding: 0 12px;
+}
+
+.dialog-footer {
+  padding-top: 20px;
+}
+.safety-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.manager-card {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 4px;
+  position: relative;
+}
+
+.info-label {
+  font-weight: bold;
+  margin-right: 8px;
+  color: #606266;
+}
+
+.safety-info {
+  margin-bottom: 12px;
+}
+
+.search-box {
+  margin-bottom: 16px;
+}
+.safety-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.safety-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.safety-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  gap: 12px;
+}
+
+.note-number {
+  min-width: 24px;
+  height: 24px;
+  background-color: #409eff;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.note-tag {
+  min-width: 60px;
+  text-align: center;
+}
+
+.note-content {
+  flex-grow: 1;
+  margin: 0 12px;
+}
+
+.note-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.delete-btn {
+  color: #f56c6c;
+}
+
+.no-notes {
+  text-align: center;
+  color: #909399;
+  padding: 20px;
+}
+.equipment-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.equipment-thumb {
+  width: 100px;
+  height: 100px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.no-image {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+  font-size: 12px;
+}
+
+.equipment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.no-equipment {
+  text-align: center;
+  color: #909399;
   padding: 20px;
 }
 
-.lab-name {
-  margin: 0;
-  font-size: 28px;
-  font-weight: bold;
+.image-upload {
+  margin-top: 8px;
 }
 
-.lab-location {
-  margin: 10px 0 20px 0;
-  font-size: 20px;
-  font-weight: normal;
-  color: #666;
+.lab-detail {
+  padding: 20px;
 }
 
 .lab-card {
   margin-bottom: 20px;
 }
 
-.lab-photo-container {
-  width: 100%;
-  height: auto;
-  background-color: #fafafa;
-  cursor: pointer;
-  text-align: center;
-  position: relative;
+.lab-name {
+  font-size: 24px;
+  margin-bottom: 10px;
 }
 
-.no-photo {
+.lab-location {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.lab-photo-container {
+  position: relative;
+  min-height: 200px;
+  background-color: #f5f5f5;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 300px;
+}
+.selected-file {
+  margin-top: 10px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.dialog-footer {
+  padding-top: 20px;
+}
+.no-photo {
   color: #999;
-  background-color: #f0f0f0;
+  text-align: center;
+  padding: 20px;
+}
+
+.upload-container {
+  margin-top: 10px;
 }
 
 .editable-field {
-  color: #409eff;
   cursor: pointer;
+  color: #409eff;
 }
 
 .editable-field:hover {
   text-decoration: underline;
 }
 
-.precautions-list {
-  list-style-type: decimal;
-  margin-left: 20px;
-}
-
 .loading {
   text-align: center;
-  margin-top: 50px;
+  padding: 20px;
   font-size: 16px;
   color: #666;
+}
+.lab-header {
+  margin-bottom: 20px;
+}
+
+.info-card {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.safety-officer {
+  margin-bottom: 20px;
+}
+
+.safety-info {
+  margin-bottom: 10px;
+}
+
+.safety-equipment,
+.safety-notes {
+  margin-bottom: 20px;
 }
 </style>
