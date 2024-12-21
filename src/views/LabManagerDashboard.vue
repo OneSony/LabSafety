@@ -13,7 +13,6 @@
     >
       <el-table-column prop="name" label="实验室名称" />
       <el-table-column prop="location" label="地点" />
-      <el-table-column prop="manager" label="负责人" />
       <el-table-column label="操作">
         <template #default="scope">
           <el-button
@@ -77,10 +76,10 @@ export default {
         lab_id: null,
         name: "",
         location: "",
-        lab_image: "",
-        // 这里定义为字符串数组，用于安全器材和注意事项
-        safety_equipment_list: [],
-        safety_notes_list: [],
+        // lab_image: "",
+        // // 这里定义为字符串数组，用于安全器材和注意事项
+        // safety_equipment_list: [],
+        // safety_notes_list: [],
       },
     };
   },
@@ -123,9 +122,9 @@ export default {
         lab_id: null,
         name: "",
         location: "",
-        lab_image: "",
-        safety_equipment_list: [],
-        safety_notes_list: [],
+        // lab_image: "",
+        // safety_equipment_list: [],
+        // safety_notes_list: [],
       };
     },
 
@@ -162,39 +161,36 @@ export default {
         return;
       }
 
-      const labData = {
-        name: this.labForm.name,
-        location: this.labForm.location,
-        lab_image: this.labForm.lab_image,
-        safety_equipments: this.labForm.safety_equipment_list,
-        safety_notes: this.labForm.safety_notes_list,
-      };
-
-      const apiCall = this.labForm.lab_id
-        ? labAPI.editLab(this.labForm.lab_id, labData)
-        : labAPI.createLab(labData);
-
       try {
-        const response = await apiCall;
+        let response;
+        const labData = {
+          name: this.labForm.name,
+          location: this.labForm.location,
+        };
+
+        if (this.labForm.lab_id) {
+          // 编辑现有实验室 - 使用 PATCH
+          response = await labAPI.editLab(this.labForm.lab_id, {
+            id: this.labForm.lab_id, // 确保包含 id
+            ...labData,
+          });
+        } else {
+          // 创建新实验室 - 使用 POST
+          response = await labAPI.createLab(labData);
+        }
 
         if (response.success) {
-          ElMessage.success("实验室创建成功！");
+          ElMessage.success(
+            this.labForm.lab_id ? "实验室更新成功！" : "实验室创建成功！"
+          );
           this.isLabDialogVisible = false;
-
-          // 调用 fetchLabs 重新获取实验室列表
           await this.fetchLabs();
-
-          // 跳转到新建实验室的详情页
-          // this.$router.push({
-          //   name: "LabPage",
-          //   params: { id: response.data.id },
-          // });
         } else {
           ElMessage.error(response.error || "保存实验室失败");
         }
       } catch (error) {
+        console.error("Save lab error:", error);
         ElMessage.error("保存实验室失败，请稍后重试！");
-        console.error("Error:", error);
       }
     },
 
@@ -207,13 +203,6 @@ export default {
           lab_id: lab.id,
           name: lab.name,
           location: lab.location,
-          lab_image: lab.lab_image,
-          safety_equipment_list: Array.isArray(lab.safety_equipments)
-            ? lab.safety_equipments
-            : [],
-          safety_notes_list: Array.isArray(lab.safety_notes)
-            ? lab.safety_notes
-            : [],
         };
         this.isLabDialogVisible = true;
       } catch (error) {
