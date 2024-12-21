@@ -441,6 +441,8 @@ export default {
       this.fetchClassList();
     }*/
 
+    console.log("dialogmounted!!!", this.isEditting, this.notice);
+
     await this.fetchClassList();
     if (this.isEditting) {
       this.transformNotice(this.notice);
