@@ -29,12 +29,25 @@
             v-model="item.value"
             placeholder="请输入文本"
             :autosize="{ minRows: 1, maxRows: 6 }"
+            @change="(value) => handleInputChange(item, value)"
           />
         </template>
 
         <template v-if="item.type === 'file'">
-          <p v-if="item.value && !item.uploaded">{{ item.value }}</p>
-          <DownloadLink v-if="item.value && item.uploaded" :url="item.value" />
+          <p
+            v-if="
+              item.value && (!item.uploaded || (item.uploaded && item.modified))
+            "
+          >
+            {{ item.value }}
+          </p>
+          <DownloadLink
+            v-if="
+              item.value &&
+              !(!item.uploaded || (item.uploaded && item.modified))
+            "
+            :url="item.value"
+          />
           <el-upload
             action=""
             :show-file-list="false"
@@ -59,7 +72,7 @@
         <!-- 删除按钮 -->
         <el-button
           type="text"
-          @click="removeItem(index)"
+          @click="removeItem(item, index)"
           style="position: absolute; top: 5px; right: 5px"
           >x</el-button
         >
@@ -128,6 +141,7 @@ export default {
     const classList = ref([]);
     const localClassId = ref(props.class_id);
     const needToChooseClass = localClassId.value === undefined;
+    const removeUploadedItems = ref([]);
 
     console.log("chooseClass", needToChooseClass);
     console.log("is editing", isEditting);
@@ -143,16 +157,31 @@ export default {
         type: selectedType.value,
         value: "",
         file: null,
+        uploaded: false,
+        modified: false,
       });
     };
 
     // 删除条目
-    const removeItem = (index) => {
+    const removeItem = (item, index) => {
       dynamicItems.value.splice(index, 1);
+      if (item.uploaded == true) {
+        removeUploadedItems.value.push(item);
+      }
+    };
+
+    const handleInputChange = (item, value) => {
+      if (item.uploaded == true) {
+        item.modified = true;
+      }
+      console.log("item.modified", item.modified);
     };
 
     // 处理文件上传的变化
     const handleFileChange = (fileObj, item, index) => {
+      if (item.uploaded == true) {
+        item.modified = true;
+      }
       console.log("fileObj", fileObj);
       console.log("item", item);
       console.log("index", index);
@@ -160,9 +189,9 @@ export default {
       const selectedFile = fileObj.raw;
       item.file = selectedFile; // 存储文件对象
 
-      const isLt2M = item.file.size / 1024 / 1024 < 2; // 检查文件大小
+      const isLt2M = item.file.size / 1024 / 1024 < 1; // 检查文件大小
       if (!isLt2M) {
-        ElMessage.error("文件大小不能超过 2MB!");
+        ElMessage.error("文件大小不能超过 1MB!");
         return;
       }
 
@@ -176,6 +205,9 @@ export default {
     };
 
     const handlePhotoChange = (fileObj, item, index) => {
+      if (item.uploaded == true) {
+        item.modified = true;
+      }
       console.log("fileObj", fileObj);
       console.log("item", item);
       console.log("index", index);
@@ -189,9 +221,9 @@ export default {
         return;
       }
 
-      const isLt2M = item.file.size / 1024 / 1024 < 2; // 检查文件大小
+      const isLt2M = item.file.size / 1024 / 1024 < 1; // 检查文件大小
       if (!isLt2M) {
-        ElMessage.error("文件大小不能超过 2MB!");
+        ElMessage.error("文件大小不能超过 1MB!");
         return;
       }
 
@@ -204,43 +236,130 @@ export default {
     };
 
     const submitNoticeForm = async () => {
-      const noticeResult = await noticeAPI.postNotices(
-        sender_id,
-        localClassId.value
-      );
-      console.log("notice", noticeResult);
-      if (noticeResult.success) {
-        ElMessage.success("发送成功");
-      } else {
-        ElMessage.error("发送失败");
-        return;
-      }
-      const notice_id = noticeResult.data.notice.id;
-      // 提交表单
-      console.log(dynamicItems.value);
-      for (let i = 0; i < dynamicItems.value.length; i++) {
-        const formData = new FormData();
-        if (dynamicItems.value[i].type === "text") {
-          formData.append("content_type", "text");
-          formData.append("text_content", dynamicItems.value[i].value);
-        } else if (dynamicItems.value[i].type === "file") {
-          formData.append("content_type", "file");
-          formData.append("file_content", dynamicItems.value[i].file);
-        } else if (dynamicItems.value[i].type === "image") {
-          formData.append("content_type", "image");
-          formData.append("image_content", dynamicItems.value[i].file);
+      if (isEditting == false) {
+        //提交新的notice
+        const noticeResult = await noticeAPI.postNotices(
+          sender_id,
+          localClassId.value
+        );
+        console.log("notice", noticeResult);
+        if (noticeResult.success) {
+          ElMessage.success("发送成功");
+        } else {
+          ElMessage.error("发送失败");
+          return;
         }
-        console.log("formdata", formData);
-        const result = await noticeAPI.postContent(formData);
-        console.log("content", result);
-        if (result.success) {
-          ElMessage.success("提交成功");
-          const notice_content_id = result.data.notice_content.id;
+        const notice_id = noticeResult.data.notice.id;
+        // 提交表单
+        console.log(dynamicItems.value);
+        for (let i = 0; i < dynamicItems.value.length; i++) {
+          const formData = new FormData();
+          if (dynamicItems.value[i].type === "text") {
+            formData.append("content_type", "text");
+            formData.append("text_content", dynamicItems.value[i].value);
+          } else if (dynamicItems.value[i].type === "file") {
+            formData.append("content_type", "file");
+            formData.append("file_content", dynamicItems.value[i].file);
+          } else if (dynamicItems.value[i].type === "image") {
+            formData.append("content_type", "image");
+            formData.append("image_content", dynamicItems.value[i].file);
+          }
+          console.log("formdata", formData);
+          const result = await noticeAPI.postContent(formData);
+          console.log("content", result);
+          if (result.success) {
+            ElMessage.success("提交成功");
+            const notice_content_id = result.data.notice_content.id;
+            //post row
+            const rowResult = await noticeAPI.postContentToNotice(
+              i + 1,
+              notice_id,
+              notice_content_id
+            );
+            console.log("row", rowResult);
+            if (rowResult.success) {
+              ElMessage.success("提交成功");
+            } else {
+              ElMessage.error("提交失败"); //TODO
+              return;
+            }
+          } else {
+            ElMessage.error("提交失败");
+            return;
+          }
+        }
+      } else {
+        //修改老的notice
+        //TODO
+
+        console.log("dynamicItems", dynamicItems.value);
+
+        const notice_id = ref(props.notice.id);
+
+        //删除列表，删除了的条目要记录
+        // TODO
+        console.log("removeUploadedItems", removeUploadedItems.value);
+        for (let i = 0; i < removeUploadedItems.value.length; i++) {
+          const deleteRowResult = await noticeAPI.deleteContentToNotice(
+            removeUploadedItems.value[i].row_id
+          );
+          if (deleteRowResult.success) {
+            ElMessage.success("删除成功");
+          } else {
+            ElMessage.error("删除失败");
+            return; //TODO
+          }
+        }
+
+        for (let i = 0; i < dynamicItems.value.length; i++) {
+          const notice_content_id = ref("");
+          if (dynamicItems.value[i].uploaded == true) {
+            const deleteRowResult = await noticeAPI.deleteContentToNotice(
+              dynamicItems.value[i].row_id
+            );
+            if (deleteRowResult.success) {
+              ElMessage.success("删除成功");
+            } else {
+              ElMessage.error("删除失败");
+              return; //TODO
+            }
+            notice_content_id.value = dynamicItems.value[i].content_id;
+          }
+
+          if (
+            dynamicItems.value[i].uploaded == false ||
+            (dynamicItems.value[i].uploaded == true &&
+              dynamicItems.value[i].modified == true)
+          ) {
+            //post notice content
+            const formData = new FormData();
+            if (dynamicItems.value[i].type === "text") {
+              formData.append("content_type", "text");
+              formData.append("text_content", dynamicItems.value[i].value);
+            } else if (dynamicItems.value[i].type === "file") {
+              formData.append("content_type", "file");
+              formData.append("file_content", dynamicItems.value[i].file);
+            } else if (dynamicItems.value[i].type === "image") {
+              formData.append("content_type", "image");
+              formData.append("image_content", dynamicItems.value[i].file);
+            }
+            console.log("formdata", formData);
+            const result = await noticeAPI.postContent(formData);
+            console.log("content?????!!!!!!!!", result);
+            if (result.success) {
+              ElMessage.success("提交成功");
+              notice_content_id.value = result.data.notice_content.id;
+            } else {
+              ElMessage.error("提交失败");
+              return;
+            }
+          }
+
           //post row
           const rowResult = await noticeAPI.postContentToNotice(
-            i + 1,
-            notice_id,
-            notice_content_id
+            i + 1, //新序号
+            notice_id.value,
+            notice_content_id.value
           );
           console.log("row", rowResult);
           if (rowResult.success) {
@@ -249,9 +368,6 @@ export default {
             ElMessage.error("提交失败"); //TODO
             return;
           }
-        } else {
-          ElMessage.error("提交失败");
-          return;
         }
       }
       console.log("提交成功");
@@ -269,6 +385,8 @@ export default {
       dynamicItems,
       addItem,
       removeItem,
+      removeUploadedItems,
+      handleInputChange,
       handleFileChange,
       handlePhotoChange,
       submitNoticeForm,
@@ -302,31 +420,37 @@ export default {
     transformNotice(notice) {
       console.log("notice!!!||~~", notice);
       for (let i = 0; i < notice.rows.length; i++) {
-        const connect_id = notice.rows[i].id;
+        const row_id = notice.rows[i].id;
         const content = notice.rows[i].notice_content;
         if (content.content_type === "text") {
           this.dynamicItems.push({
             type: "text",
             value: content.text_content,
             file: null,
-            id: connect_id,
+            row_id: row_id,
+            content_id: content.id,
             uploaded: true,
+            modified: false,
           });
         } else if (content.content_type === "file") {
           this.dynamicItems.push({
             type: "file",
             value: content.file_content,
             file: content.file_content,
-            id: connect_id,
+            row_id: row_id,
+            content_id: content.id,
             uploaded: true,
+            modified: false,
           });
         } else if (content.content_type === "image") {
           this.dynamicItems.push({
             type: "image",
             value: content.image_content,
             file: content.image_content,
-            id: connect_id,
+            row_id: row_id,
+            content_id: content.id,
             uploaded: true,
+            modified: false,
           });
         }
       }
