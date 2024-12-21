@@ -1,243 +1,291 @@
 <template>
-  <el-row class="mb-4">
-    <el-col :span="12">
-      <h2>学生管理</h2>
-    </el-col>
-    <el-col :span="12" class="text-right">
-      <el-button type="primary" @click="showCreateDialog">
-        创建学生账号
-      </el-button>
-      <el-button type="success" @click="exportPasswords" v-if="hasNewAccounts">
-        导出密码
-      </el-button>
-    </el-col>
-  </el-row>
-
-  <div class="student-list">
-    <el-table :data="students" v-loading="isLoading">
-      <el-table-column prop="user_id" label="学号" width="120" />
-      <el-table-column prop="real_name" label="姓名" width="120" />
-      <el-table-column prop="department" label="院系" />
-      <el-table-column prop="email" label="邮箱" width="200" />
-      <el-table-column label="操作" width="150">
-        <template #default="scope">
-          <el-button type="primary" link @click="handleEdit(scope.row)">
-            编辑
-          </el-button>
-          <el-button type="danger" link @click="handleDelete(scope.row)">
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <PaginationComponent
-      :total="totalStudents"
-      @page-changed="handlePageChange"
-    />
+  <div class="quick-look">
+    <h3>教师管理</h3>
+    <el-button
+      type="primary"
+      @click="showCreateDialog"
+      style="margin-bottom: 20px"
+    >
+      创建账号
+    </el-button>
+    <el-button type="primary" @click="loadData" style="margin-bottom: 20px">
+      刷新列表
+    </el-button>
+    <!-- 创建账号弹窗 -->
+    <el-dialog
+      title="创建教师账号"
+      v-model="dialogVisible"
+      width="30%"
+      :before-close="handleClose"
+    >
+      <el-form :model="form" ref="form" :rules="rules">
+        <el-form-item label="工号" prop="user_id">
+          <el-input v-model="form.user_id" placeholder="请输入学号"></el-input>
+        </el-form-item>
+        <el-form-item label="姓名" prop="real_name">
+          <el-input
+            v-model="form.real_name"
+            placeholder="请输入姓名"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="随机密码">
+          <el-input v-model="form.password" disabled></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="handleCreate">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
-
-  <!-- 创建学生账号对话框 -->
-  <el-dialog v-model="createDialogVisible" title="创建学生账号" width="500px">
-    <el-form :model="newStudent" label-width="100px">
-      <el-form-item label="学号" required>
-        <el-input v-model="newStudent.user_id" />
-      </el-form-item>
-      <el-form-item label="姓名" required>
-        <el-input v-model="newStudent.real_name" />
-      </el-form-item>
-      <el-form-item label="院系" required>
-        <el-input v-model="newStudent.department" />
-      </el-form-item>
-      <el-form-item label="邮箱">
-        <el-input v-model="newStudent.email" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="createDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="createStudent">创建</el-button>
-      </span>
-    </template>
-  </el-dialog>
+  <el-skeleton :rows="5" animated v-if="!isLoaded"></el-skeleton>
+  <el-table
+    v-if="isLoaded"
+    :data="tableData"
+    style="width: 100%"
+    :row-class-name="tableRowClassName"
+  >
+    <el-table-column prop="user_id" label="学号" width="100" />
+    <el-table-column prop="real_name" label="姓名" width="100" />
+    <el-table-column prop="department" label="院系" width="100" />
+    <el-table-column prop="phone_number" label="联系方式" width="100" />
+    <el-table-column fixed="right" label="操作">
+      <template v-slot="slotProps">
+        <el-button @click="handleView(slotProps.row)" type="text" size="small"
+          >查看</el-button
+        >
+        <el-button @click="handleEdit(slotProps.row)" type="text" size="small"
+          >编辑</el-button
+        >
+      </template>
+    </el-table-column>
+  </el-table>
 </template>
 
 <script>
-import { ElMessage } from "element-plus";
-import PaginationComponent from "./Pagination.vue";
-import { userAPI } from "../utils/api";
+import { userAPI } from "@/utils/api";
 
 export default {
-  name: "StudentPanel",
-  components: { PaginationComponent },
-
+  name: "TeacherPanelAffair",
   data() {
     return {
-      students: [],
-      isLoading: true,
-      totalStudents: 0,
-      currentPage: 1,
-      createDialogVisible: false,
-      hasNewAccounts: false,
-      newStudent: {
+      tableData: [],
+      isLoaded: false,
+      dialogVisible: false,
+      form: {
         user_id: "",
         real_name: "",
-        department: "",
-        email: "",
+      },
+      rules: {
+        user_id: [
+          { required: true, message: "请输入学号", trigger: "blur" },
+          {
+            min: 8,
+            max: 20,
+            message: "长度在 8 到 20 个字符",
+            trigger: "blur",
+          },
+        ],
+        real_name: [
+          { required: true, message: "请输入姓名", trigger: "blur" },
+          {
+            min: 2,
+            max: 20,
+            message: "长度在 2 到 20 个字符",
+            trigger: "blur",
+          },
+        ],
       },
     };
   },
-
-  mounted() {
-    this.fetchStudents();
-  },
-
   methods: {
-    async fetchStudents(page = 1) {
-      this.isLoading = true;
+    async loadData() {
+      this.isLoaded = false;
+      await this.fetchUserList();
+      this.isLoaded = true;
+    },
+
+    async fetchUserList() {
       try {
-        const response = await userAPI.getUserList(page);
-        if (response.success) {
-          // 过滤只显示学生角色的用户
-          this.students = response.data.filter(
-            (user) => user.role === "student"
-          );
-          this.totalStudents = this.students.length;
+        const result = await userAPI.getUserList("", { role: "teacher" });
+        if (result.success) {
+          console.log("Fetched user list:", result.data);
+          this.tableData = result.data;
         } else {
-          ElMessage.error("获取学生列表失败：" + response.error);
+          // 处理特定错误
+          if (result.message.includes("403")) {
+            this.$message.error("没有权限访问教师列表，请确认您的账号权限");
+            // 可能需要登出或重新登录
+            // this.$store.dispatch('logout');
+            // this.$router.push('/login');
+          } else {
+            this.$message.error("获取教师列表失败：" + result.message);
+          }
         }
       } catch (error) {
-        ElMessage.error("获取学生列表失败");
+        console.error("Failed to fetch user list:", error);
+        this.$message.error("系统错误，请稍后重试");
       }
-      this.isLoading = false;
+    },
+
+    handleView(row) {
+      const userData = {
+        user_id: row.user_id,
+        real_name: row.real_name,
+        department: row.department,
+        phone_number: row.phone_number,
+      };
+      console.log("View user:", userData);
+      if (this.$router) {
+        this.$router.push({
+          name: "ViewUser",
+          params: { userId: row.user_id },
+          state: { userData },
+        });
+      } else {
+        console.error("Router instance is not available.");
+      }
+    },
+
+    handleEdit(row) {
+      const userData = {
+        user_id: row.user_id,
+        real_name: row.real_name,
+        department: row.department,
+        phone_number: row.phone_number,
+      };
+      console.log("Edit user:", userData);
+      if (this.$router) {
+        this.$router.push({
+          name: "EditUser",
+          params: { userId: row.user_id },
+          state: { userData },
+        });
+      } else {
+        console.error("Router instance is not available.");
+      }
+    },
+
+    tableRowClassName({ row, rowIndex }) {
+      if (rowIndex === 1) {
+        return "warning-row";
+      } else if (rowIndex === 0) {
+        return "success-row";
+      }
+      return "";
     },
 
     showCreateDialog() {
-      this.createDialogVisible = true;
-      this.newStudent = {
+      // 先生成密码
+      const password = this.generatePassword();
+
+      // 重置表单数据
+      this.form = {
         user_id: "",
         real_name: "",
+        password: password,
+        phone_number: "",
         department: "",
-        email: "",
+        profile_picture: null,
       };
-    },
+      this.imageUrl = "";
 
-    async createStudent() {
-      if (
-        !this.newStudent.user_id ||
-        !this.newStudent.real_name ||
-        !this.newStudent.department
-      ) {
-        ElMessage.warning("请填写必填字段");
-        return;
+      // 确保表单重置
+      if (this.$refs.form) {
+        this.$refs.form.resetFields();
       }
 
+      // 最后再显示对话框
+      this.$nextTick(() => {
+        this.dialogVisible = true;
+      });
+    },
+
+    handleClose() {
+      this.dialogVisible = false;
+      this.$refs.form?.resetFields();
+    },
+
+    generatePassword() {
+      // 生成8位随机密码，包含数字和字母
+      const charset =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let password = "";
+      for (let i = 0; i < 8; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+      return password;
+    },
+
+    async handleCreate() {
+      if (!this.$refs.form) return;
+
       try {
-        // 生成随机密码
-        const password = Math.random().toString(36).slice(-8);
-        const response = await userAPI.register(
-          this.newStudent.user_id,
-          this.newStudent.real_name,
-          password,
-          "student"
+        // 验证表单
+        await this.$refs.form.validate();
+
+        // 第一步：注册用户
+        const registerData = {
+          user_id: this.form.user_id,
+          password: this.form.password,
+          real_name: this.form.real_name, // 在注册时就传入真实姓名
+        };
+
+        console.log("Registering with data:", registerData); // 调试日志
+
+        const registerResult = await userAPI.register(
+          registerData.user_id,
+          registerData.real_name,
+          registerData.password
         );
 
-        if (response.success) {
-          // 更新用户额外信息
-          const formData = new FormData();
-          formData.append("department", this.newStudent.department);
-          if (this.newStudent.email) {
-            formData.append("email", this.newStudent.email);
-          }
-
-          await userAPI.patchUserInfo(formData);
-
-          ElMessage.success("创建成功");
-          this.createDialogVisible = false;
-          this.hasNewAccounts = true;
-
-          // 保存账号密码信息用于导出
-          if (!this.newAccountsInfo) {
-            this.newAccountsInfo = [];
-          }
-          this.newAccountsInfo.push({
-            user_id: this.newStudent.user_id,
-            real_name: this.newStudent.real_name,
-            password: password,
+        if (registerResult.success) {
+          // 显示成功消息
+          this.$message({
+            type: "success",
+            dangerouslyUseHTMLString: true,
+            message: `
+              <div style="text-align: left;">
+                <p>账号创建成功！</p>
+                <p>学号：${this.form.user_id}</p>
+                <p>初始密码：${this.form.password}</p>
+                <p style="color: #ff4949;">请妥善保存密码信息！</p>
+              </div>
+            `,
           });
 
-          await this.fetchStudents();
+          // 关闭弹窗并刷新列表
+          this.dialogVisible = false;
+          if (this.$refs.form) {
+            this.$refs.form.resetFields();
+          }
+          await this.loadData();
         } else {
-          ElMessage.error("创建失败：" + response.error);
+          const errorMsg = registerResult.error || "未知错误";
+          console.error("Registration failed:", errorMsg); // 调试日志
+          this.$message.error("注册失败：" + errorMsg);
         }
       } catch (error) {
-        ElMessage.error("创建失败");
+        console.error("Operation failed:", error);
+        const errorMsg =
+          error.response?.data?.detail || error.message || "未知错误";
+        this.$message.error("操作失败：" + errorMsg);
       }
     },
-
-    async handleDelete(student) {
-      try {
-        const response = await userAPI.deleteUser(student.user_id);
-        if (response.success) {
-          ElMessage.success("删除成功");
-          await this.fetchStudents();
-        } else {
-          ElMessage.error("删除失败：" + response.error);
-        }
-      } catch (error) {
-        ElMessage.error("删除失败");
-      }
-    },
-
-    exportPasswords() {
-      if (!this.newAccountsInfo || this.newAccountsInfo.length === 0) {
-        ElMessage.warning("没有可导出的账号信息");
-        return;
-      }
-
-      // 生成CSV内容
-      const headers = "学号,姓名,密码\n";
-      const content = this.newAccountsInfo
-        .map(
-          (account) =>
-            `${account.user_id},${account.real_name},${account.password}`
-        )
-        .join("\n");
-      const csvContent = headers + content;
-
-      // 创建并下载文件
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "学生账号密码.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // 清空新账号信息
-      this.newAccountsInfo = [];
-      this.hasNewAccounts = false;
-    },
-
-    handlePageChange(page) {
-      this.currentPage = page;
-      this.fetchStudents(page);
-    },
+  },
+  async mounted() {
+    await this.loadData();
   },
 };
 </script>
 
-<style scoped>
-.text-right {
-  text-align: right;
+<style>
+.el-table .warning-row {
+  --el-table-tr-bg-color: var(--el-color-warning-light-9);
 }
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.student-list {
-  margin-top: 1rem;
+.el-table .success-row {
+  --el-table-tr-bg-color: var(--el-color-success-light-9);
 }
 </style>

@@ -1,10 +1,14 @@
-import axios from "axios";
+import axios, { AxiosError, AxiosInstance } from "axios";
 
 // 创建一个axios实例
 const server = axios.create({
   baseURL: "http://111.229.210.27", // 替换为你后端的 URL
 });
 
+const instance: AxiosInstance = axios.create({
+  baseURL: "http://111.229.210.27/api/v1",
+  timeout: 5000,
+});
 // 设置拦截器
 server.interceptors.request.use(
   (config) => {
@@ -73,15 +77,22 @@ const clearTokensAndRedirect = () => {
 
 // 通用响应处理函数
 const handleResponse = (response: any) => {
-  if (
-    response.status === 200 ||
-    response.status === 201 ||
-    response.status === 204
-  ) {
-    return { success: true, data: response.data };
-  } else {
-    return { success: false, error: response.data.detail || "Unknown error" };
+  // axios 的响应总是包装在 data 中
+  const data = response.data;
+
+  // 检查响应状态
+  if (response.status >= 200 && response.status < 300) {
+    return {
+      success: true,
+      data: data,
+      message: data.message || "",
+    };
   }
+
+  return {
+    success: false,
+    error: data.detail || data.message || "Unknown error",
+  };
 };
 
 // 通用错误处理函数
@@ -96,7 +107,23 @@ interface LoginResponse {
   success: boolean;
   role: string;
 }
+// 定义响应数据的接口
+interface UserInfo {
+  user_id: string;
+  email: string;
+  role: string;
+  phone_number: string;
+  profile_picture: string;
+  real_name: string;
+  department: string;
+}
 
+// 定义 API 响应的接口
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+}
 const userAPI = {
   //登陆时存储role和id, realname(usernname)和avatar是在获取用户信息时存储的
   isLoggedIn(): boolean {
@@ -182,11 +209,32 @@ const userAPI = {
   },
 
   register(user_id: string, real_name: string, password: string): Promise<any> {
-    const credentials = { user_id, real_name, password };
+    if (!user_id || !password) {
+      return Promise.reject({
+        success: false,
+        error: "User ID and password are required",
+      });
+    }
+
+    const credentials = {
+      user_id: user_id.trim(),
+      real_name: real_name.trim(),
+      password: password,
+    };
+
+    console.log("Registering with data:", { ...credentials, password: "***" });
+
     return server
       .post("/api/v1/users/register/", credentials)
       .then(handleResponse)
-      .catch(handleError);
+      .catch((error) => {
+        console.error("Registration error details:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+        });
+        return handleError(error);
+      });
   },
 
   logout(): void {
@@ -198,38 +246,74 @@ const userAPI = {
     localStorage.removeItem("avatar");
     window.location.href = "/login"; //todo
   },
+  getUserList: async (
+    userId = "",
+    params = {}
+  ): Promise<ApiResponse<UserInfo[]>> => {
+    try {
+      const response = await instance.get<UserInfo[]>("/users/user-info", {
+        params: {
+          user_id: userId,
+          ...params,
+        },
+      });
 
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      // 正确处理 AxiosError 类型
+      const axiosError = error as AxiosError<{ detail: string }>;
+      return {
+        success: false,
+        message: axiosError.response?.data?.detail || axiosError.message,
+      };
+    }
+  },
   getUserInfo(user_id: string, options?: { role?: string }): Promise<any> {
-    const params: any = {};
+    const params: Record<string, string> = {};
 
-    // 如果提供了 user_id，添加到参数中
-    if (user_id) {
-      params.user_id = user_id;
+    // 只有当 user_id 不为空字符串时才添加
+    if (user_id && user_id.trim()) {
+      params.user_id = user_id.trim();
     }
 
-    // 如果提供了 role，添加到参数中
-    if (options?.role) {
-      params.role = options.role;
+    // 只有当 role 存在且不为空时才添加
+    if (options?.role && options.role.trim()) {
+      params.role = options.role.trim();
     }
+
+    console.log("Requesting user info with params:", params); // 调试日志
 
     return server
       .get("/api/v1/users/user-info", { params })
       .then(handleResponse)
       .then((response) => {
-        console.log("获取用户信息APIIII", response); // 调试信息
-        if (response.success) {
-          if (
-            response.data.length != 0 &&
-            response.data[0].user_id == this.getUserId() //TODO检查
-          ) {
-            const user = response.data[0];
-            localStorage.setItem("username", user.real_name);
-            localStorage.setItem("avatar", user.profile_picture);
+        console.log("User info response:", response);
+
+        if (response.success && response.data) {
+          // 检查是否是当前用户的数据
+          if (Array.isArray(response.data)) {
+            const currentUser = response.data.find(
+              (user) => user.user_id === this.getUserId()
+            );
+            if (currentUser) {
+              localStorage.setItem("username", currentUser.real_name);
+              localStorage.setItem("avatar", currentUser.profile_picture || "");
+            }
+          } else if (response.data.user_id === this.getUserId()) {
+            localStorage.setItem("username", response.data.real_name);
+            localStorage.setItem("avatar", response.data.profile_picture || "");
           }
         }
+
         return response;
       })
-      .catch(handleError);
+      .catch((error) => {
+        console.error("Error fetching user info:", error);
+        return handleError(error);
+      });
   },
 
   patchUserInfo(formData: FormData): Promise<any> {
