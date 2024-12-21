@@ -66,7 +66,7 @@ import ProfilePhoto from "@/components/ProfilePhoto.vue";
 import { userAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { defineComponent } from "vue";
-import { Upload } from '@element-plus/icons-vue'
+import { Upload } from "@element-plus/icons-vue";
 
 interface UserInfo {
   role: string;
@@ -218,13 +218,37 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   padding: 40px;
-  background: radial-gradient(circle at center, 
-    #e6f5f5 0%,
-    #8db6d0 25%,
-    #9bc3b5 50%,
-    #dee9ab 75%,
-    #e6edf5 100%
-  );
+  background: radial-gradient(
+      circle at 20% 20%,
+      rgba(125, 197, 228, 0.8) 0%,
+      rgba(232, 240, 245, 0.4) 35%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(161, 229, 206, 0.8) 0%,
+      rgba(232, 245, 242, 0.4) 35%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(230, 245, 245, 0.8) 0%,
+      rgba(232, 245, 242, 0.4) 45%,
+      transparent 80%
+    ),
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(206, 236, 164, 0.7) 0%,
+      rgba(230, 245, 240, 0.3) 50%,
+      transparent 75%
+    ),
+    radial-gradient(
+      circle at 15% 85%,
+      rgba(230, 245, 242, 0.7) 0%,
+      rgba(232, 245, 245, 0.3) 40%,
+      transparent 75%
+    ),
+    linear-gradient(135deg, #e6f5f5 0%, #e8f0f5 50%, #e6f5f0 100%);
 }
 
 .profile-container {
