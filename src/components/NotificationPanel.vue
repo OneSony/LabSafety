@@ -53,13 +53,17 @@
           :class_id="notice.class_info.class_id"
           :notice="notice"
           @close-dialog="closeEditNoticeDialog(notice)"
+          v-if="notice.noticeEditDialogVisible"
         />
       </el-dialog>
     </el-col>
   </el-row>
 
   <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
-    <NoticeDialog @close-dialog="closeNoticeDialog" />
+    <NoticeDialog
+      @close-dialog="closeNoticeDialog"
+      v-if="noticeDialogVisible"
+    />
   </el-dialog>
 </template>
 

@@ -35,7 +35,7 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/class/:classId", // 动态路径，classId 作为参数
+    path: "/course/:courseId/class/:classId", // 动态路径，classId 作为参数
     name: "class-page",
     component: ClassPage,
     props: true, // 将 classId 作为 prop 传递到组件

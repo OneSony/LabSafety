@@ -54,7 +54,7 @@ export default {
     const userName = ref("");
 
     const fetchUserName = async () => {
-      userName.value = (await userAPI.getUsername()) || "";
+      userName.value = (await userAPI.getUsername()) || "未知";
     };
 
     fetchUserName();
@@ -67,7 +67,7 @@ export default {
 
     watch(route, async () => {
       userPhoto.value = (await userAPI.getAvatar()) || "";
-      userName.value = (await userAPI.getUsername()) || "";
+      userName.value = (await userAPI.getUsername()) || "未知";
       const role = userAPI.getRole();
       switch (role) {
         case "student":
