@@ -134,7 +134,7 @@ export default defineComponent({
       const result = await userAPI.getUserInfo(this.userInfo.id);
       console.log("User info!!:", result);
       if (result.success) {
-        this.userInfo.username = result.data[0].username || "";
+        this.userInfo.username = result.data[0].real_name || "";
         this.userInfo.email = result.data[0].email || "";
         this.userInfo.phone = result.data[0].phone_number || "";
         this.userInfo.department = result.data[0].department || "";

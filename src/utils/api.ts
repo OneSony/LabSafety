@@ -98,6 +98,7 @@ interface LoginResponse {
 }
 
 const userAPI = {
+  //登陆时存储role和id, realname(usernname)和avatar是在获取用户信息时存储的
   isLoggedIn(): boolean {
     const token = localStorage.getItem("accessToken");
     return !!token;
@@ -114,26 +115,12 @@ const userAPI = {
       return ""; // 如果没有 userId，返回 null
     }
 
-    try {
-      // 获取用户信息并提取头像 URL
-      const result = await this.getUserInfo(userId);
-      if (result.success) {
-        const userAvatar = result.data[0].profile_picture;
-        const real_name = result.data[0].real_name;
-        if (real_name) {
-          localStorage.setItem("username", real_name);
-        }
-        if (userAvatar) {
-          // 如果获取到头像 URL，存储到 localStorage
-          localStorage.setItem("avatar", userAvatar);
-          return userAvatar;
-        }
-      }
-      return ""; // 如果没有头像，返回 null
-    } catch (error) {
-      console.error("获取用户信息失败:", error);
-      return ""; // 如果获取用户信息失败，返回 null
+    // 获取用户信息并提取头像 URL
+    const result = await this.getUserInfo(userId);
+    if (result.success) {
+      return localStorage.getItem("avatar") || ""; // 如果有头像，返回头像
     }
+    return ""; // 如果没有头像，返回 null
   },
 
   async getUsername(): Promise<string> {
@@ -148,25 +135,11 @@ const userAPI = {
       return ""; // 如果没有 userId，返回 null
     }
 
-    try {
-      // 获取用户信息并提取头像 URL
-      const result = await this.getUserInfo(userId);
-      if (result.success) {
-        const userAvatar = result.data[0].profile_picture;
-        const real_name = result.data[0].real_name;
-        if (userAvatar) {
-          localStorage.setItem("avatar", userAvatar);
-        }
-        if (real_name) {
-          localStorage.setItem("username", real_name);
-          return real_name;
-        }
-      }
-      return ""; // 如果没有头像，返回 null
-    } catch (error) {
-      console.error("获取用户信息失败:", error);
-      return ""; // 如果获取用户信息失败，返回 null
+    const result = await this.getUserInfo(userId);
+    if (result.success) {
+      return localStorage.getItem("username") || ""; // 如果有头像，返回头像
     }
+    return ""; // 如果没有头像，返回 null
   },
 
   getUserId(): string | null {
@@ -190,7 +163,6 @@ const userAPI = {
           localStorage.setItem("refreshToken", refresh);
           localStorage.setItem("role", role);
           localStorage.setItem("userId", user_id);
-          //localStorage.setItem("username", username); //TODO
           return {
             success: true,
             role,
@@ -243,6 +215,20 @@ const userAPI = {
     return server
       .get("/api/v1/users/user-info", { params })
       .then(handleResponse)
+      .then((response) => {
+        console.log("获取用户信息APIIII", response); // 调试信息
+        if (response.success) {
+          if (
+            response.data.length != 0 &&
+            response.data[0].user_id == this.getUserId() //TODO检查
+          ) {
+            const user = response.data[0];
+            localStorage.setItem("username", user.real_name);
+            localStorage.setItem("avatar", user.profile_picture);
+          }
+        }
+        return response;
+      })
       .catch(handleError);
   },
 

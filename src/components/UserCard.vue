@@ -97,7 +97,7 @@ export default defineComponent({
       const res = await userAPI.getUserInfo(props.userId);
       console.log("get profile", res);
       if (res.success) {
-        user.value.username = res.data[0].username;
+        user.value.username = res.data[0].real_name;
         user.value.avatarUrl = res.data[0].profile_picture;
         user.value.role = res.data[0].role;
         user.value.email = res.data[0].email;
