@@ -423,9 +423,20 @@ export interface BindManagerRequest {
   lab_id: number;
 }
 
+export interface BindManagerResponse {
+  manager_user_id: string;
+  lab_id: number;
+}
+
 export interface ManagerResponse {
   success: boolean;
   data?: LabManager | LabManager[];
+  error?: string;
+}
+
+export interface BindManagerApiResponse {
+  success: boolean;
+  data?: BindManagerResponse;
   error?: string;
 }
 
@@ -559,7 +570,6 @@ const labAPI = {
         return handleError(error);
       });
   },
-  // 获取实验室安全员列表
   async getLabManagers(params: {
     lab_id?: number;
     manager_name?: string;
@@ -573,9 +583,10 @@ const labAPI = {
         queryParams.append("manager_name", params.manager_name);
       }
 
-      const response = await axios.get<LabManager[]>(
-        `/api/v1/labs/managers?${queryParams.toString()}`
-      );
+      const url = `/api/v1/labs/managers${
+        queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`;
+      const response = await axios.get<LabManager[]>(url);
 
       return {
         success: true,
@@ -591,9 +602,11 @@ const labAPI = {
   },
 
   // 绑定实验室安全员
-  async bindLabManager(request: BindManagerRequest): Promise<ManagerResponse> {
+  async bindLabManager(
+    request: BindManagerRequest
+  ): Promise<BindManagerApiResponse> {
     try {
-      const response = await axios.post<LabManager>(
+      const response = await axios.post<BindManagerResponse>(
         "/api/v1/labs/managers",
         request
       );
@@ -611,7 +624,7 @@ const labAPI = {
     }
   },
 
-  // 可选：解绑实验室安全员
+  // 解绑实验室安全员
   async unbindLabManager(
     lab_id: number,
     manager_user_id: string

@@ -63,3 +63,10 @@ export interface ManagerResponse {
   data?: LabManager | LabManager[];
   error?: string;
 }
+export interface UpdateLabRequest {
+  name?: string;
+  location?: string;
+  safety_equipments?: string;
+  safety_notes?: string;
+  // ... 其他可更新的字段
+}
