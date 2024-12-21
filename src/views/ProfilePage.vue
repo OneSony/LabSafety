@@ -1,52 +1,63 @@
 <template>
-  <div class="profile">
-    <div style="display: flex; align-items: center; gap: 20px">
-      <h2 style="margin: 0">编辑个人信息</h2>
-      <el-tag type="success">{{ userInfo.role_str }}</el-tag>
-    </div>
-
-    <el-form :model="userInfo" label-width="120px" style="margin-top: 40px">
-      <el-form-item label="头像">
-        <el-upload
-          ref="upload"
-          class="avatar-uploader"
-          action=""
-          :auto-upload="false"
-          :show-file-list="false"
-          :on-change="handleFileChange"
-        >
-          <el-button size="small" type="primary">选择头像</el-button>
-        </el-upload>
-        <div class="avatar-preview">
-          <ProfilePhoto :url="userInfoForm.avatar" size="120px" />
+  <div class="page-container">
+    <div class="profile-container">
+      <!-- 左侧头像区域 -->
+      <div class="avatar-section">
+        <div class="avatar-wrapper">
+          <el-upload
+            ref="upload"
+            class="avatar-uploader"
+            action=""
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleFileChange"
+          >
+            <div class="avatar-content">
+              <ProfilePhoto :url="userInfoForm.avatar" size="200px" />
+              <div class="upload-overlay">
+                <el-icon class="upload-icon"><Upload /></el-icon>
+                <span>更换头像</span>
+              </div>
+            </div>
+          </el-upload>
         </div>
-      </el-form-item>
-      <el-form-item label="姓名">
-        <el-input v-model="userInfo.username" :disabled="true" />
-      </el-form-item>
-      <el-form-item :label="userInfo.role === 'student' ? '学号' : '工号'">
-        <el-input v-model="userInfo.id" :disabled="true" />
-      </el-form-item>
-      <el-form-item label="院系">
-        <el-input v-model="userInfo.department" :disabled="true" />
-      </el-form-item>
-      <el-form-item label="手机">
-        <el-input v-model="userInfoForm.phone" />
-      </el-form-item>
-      <el-form-item label="邮箱">
-        <el-input v-model="userInfoForm.email" />
-      </el-form-item>
-      <el-form-item label="密码">
-        <el-input
-          v-model="password"
-          type="password"
-          placeholder="请输入新密码"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="saveProfile">保存</el-button>
-      </el-form-item>
-    </el-form>
+        <h2 class="username">{{ userInfo.username }}</h2>
+        <el-tag type="success" class="role-tag">{{ userInfo.role_str }}</el-tag>
+      </div>
+
+      <!-- 右侧信息区域 -->
+      <div class="info-section">
+        <h2 class="section-title">个人信息</h2>
+        <el-form :model="userInfo" label-width="120px">
+          <el-form-item :label="userInfo.role === 'student' ? '学号' : '工号'">
+            <el-input v-model="userInfo.id" :disabled="true" />
+          </el-form-item>
+          <el-form-item label="院系">
+            <el-input v-model="userInfo.department" :disabled="true" />
+          </el-form-item>
+          <el-form-item label="手机">
+            <el-input v-model="userInfoForm.phone" />
+          </el-form-item>
+          <el-form-item label="邮箱">
+            <el-input v-model="userInfoForm.email" />
+          </el-form-item>
+          <el-form-item label="密码">
+            <el-input
+              v-model="password"
+              type="password"
+              placeholder="请输入新密码"
+            />
+          </el-form-item>
+        </el-form>
+
+        <!-- 保存按钮 -->
+        <div class="save-button-container">
+          <el-button type="primary" @click="saveProfile" class="save-button">
+            保存修改
+          </el-button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -55,6 +66,7 @@ import ProfilePhoto from "@/components/ProfilePhoto.vue";
 import { userAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { defineComponent } from "vue";
+import { Upload } from '@element-plus/icons-vue'
 
 interface UserInfo {
   role: string;
@@ -70,6 +82,7 @@ interface UserInfo {
 export default defineComponent({
   components: {
     ProfilePhoto,
+    Upload,
   },
   name: "UserProfile",
   data() {
@@ -199,6 +212,144 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  background: radial-gradient(circle at center, 
+    #e6f5f5 0%,
+    #8db6d0 25%,
+    #9bc3b5 50%,
+    #dee9ab 75%,
+    #e6edf5 100%
+  );
+}
+
+.profile-container {
+  display: flex;
+  width: 1000px;
+  top: -20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.avatar-section {
+  width: 300px;
+  background: linear-gradient(135deg, #e0f2f1 0%, #e8f5f2 100%);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin-bottom: 20px;
+}
+
+.avatar-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.avatar-content:hover .upload-overlay {
+  opacity: 1;
+}
+
+.upload-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.username {
+  font-size: 24px;
+  margin: 20px 0 10px;
+  color: #333;
+}
+
+.role-tag {
+  font-size: 14px;
+}
+
+.info-section {
+  flex: 1;
+  padding: 40px;
+  background: white;
+}
+
+.section-title {
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 24px;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 25px;
+}
+
+:deep(.el-input__wrapper) {
+  background-color: #f5f7fa;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+:deep(.el-input__wrapper.is-disabled) {
+  background-color: #f0f2f5;
+}
+
+.save-button-container {
+  margin-top: 40px;
+  text-align: right;
+}
+
+.save-button {
+  padding: 12px 30px;
+  font-size: 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.save-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #5a71d9 0%, #6a4494 100%);
+}
+
+.save-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #4a61c9 0%, #5a3484 100%);
+}
 .profile {
   max-width: 600px;
   margin: 0 auto;
