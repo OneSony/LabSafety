@@ -277,6 +277,7 @@ export default defineComponent({
       } as LabForm,
       // editForm: {} as Partial<LabForm>,
       editingField: {} as Record<string, boolean>,
+      editingIndex: null as number | null,
       loading: false,
       dialogVisible: false,
       error: null as string | null,
@@ -313,35 +314,37 @@ export default defineComponent({
         console.log("API response:", response);
 
         if (response.success && response.data) {
-          if (Array.isArray(response.data)) {
-            const lab = response.data.find((lab) => lab.id === labId);
-            if (lab) {
-              this.labForm = {
-                lab_id: lab.id,
-                name: lab.name,
-                location: lab.location,
-                lab_image: lab.lab_image || "",
-                safety_equipments: lab.safety_equipments || "",
-                safety_notes: lab.safety_notes || "",
-              };
-            } else {
-              this.error = "未找到该实验室";
-            }
-          } else {
+          const lab = Array.isArray(response.data)
+            ? response.data.find((l) => l.id === labId)
+            : response.data;
+
+          if (lab) {
+            console.log("Lab data:", lab);
+            console.log("Safety equipments:", lab.safety_equipments);
+
             this.labForm = {
-              lab_id: response.data.id,
-              name: response.data.name,
-              location: response.data.location,
-              lab_image: response.data.lab_image || "",
-              safety_equipments: response.data.safety_equipments || "",
-              safety_notes: response.data.safety_notes || "",
+              lab_id: lab.id,
+              name: lab.name,
+              location: lab.location,
+              lab_image: lab.lab_image || "",
+              safety_equipments: lab.safety_equipments || "[]",
+              safety_notes: lab.safety_notes || "",
             };
+
+            // 尝试解析设备信息
+            try {
+              this.parsedEquipments = this.parseEquipments(
+                lab.safety_equipments
+              );
+              console.log("Parsed equipments:", this.parsedEquipments);
+            } catch (e) {
+              console.error("Error parsing equipments:", e);
+              this.parsedEquipments = [];
+            }
           }
-        } else {
-          this.error = response.error || "获取实验室详情失败";
         }
       } catch (error) {
-        console.error("Error fetching lab details:", error);
+        console.error("Error in fetchLabDetails:", error);
         this.error =
           error instanceof Error ? error.message : "获取实验室详情失败";
       } finally {
@@ -476,15 +479,8 @@ export default defineComponent({
         );
       }
     },
-    parseEquipments(equipmentsStr: string): Equipment[] {
-      try {
-        return JSON.parse(equipmentsStr || "[]");
-      } catch (e) {
-        console.error("解析设备信息失败:", e);
-        return [];
-      }
-    },
 
+    // 保存设备信息
     // 保存设备信息
     async saveEquipment() {
       if (
@@ -496,7 +492,7 @@ export default defineComponent({
       }
 
       try {
-        // 处理设备列表
+        // 更新设备列表
         const updatedEquipments = [...this.parsedEquipments];
         if (this.editingIndex !== null) {
           updatedEquipments[this.editingIndex] = { ...this.currentEquipment };
@@ -504,23 +500,31 @@ export default defineComponent({
           updatedEquipments.push({ ...this.currentEquipment });
         }
 
-        // 准备要发送的数据
+        // 准备更新数据
+        const equipmentsJson = JSON.stringify(updatedEquipments);
+        console.log("Saving equipments:", equipmentsJson);
+
         const updateData = {
           id: this.labForm.lab_id,
-          safety_equipments: JSON.stringify(updatedEquipments),
+          safety_equipments: equipmentsJson,
         };
-
-        console.log("Updating equipment with data:", updateData);
 
         // 发送更新请求
         const response = await labAPI.editLab(this.labForm.lab_id!, updateData);
+        console.log("Save response:", response);
 
         if (response.success) {
+          // 更新本地数据
+          this.parsedEquipments = updatedEquipments;
+          this.labForm.safety_equipments = equipmentsJson;
+
           ElMessage.success(
             this.editingIndex !== null ? "设备更新成功" : "设备添加成功"
           );
           this.dialogVisible = false;
-          this.parsedEquipments = updatedEquipments;
+
+          // 可以选择是否刷新数据
+          await this.fetchLabDetails();
         } else {
           throw new Error(response.error || "保存失败");
         }
@@ -528,6 +532,31 @@ export default defineComponent({
         console.error("Save error:", error);
         ElMessage.error("保存失败，请稍后重试");
       }
+    },
+
+    // 解析设备信息
+    parseEquipments(equipmentsStr: string): Equipment[] {
+      try {
+        if (!equipmentsStr) return [];
+        const parsed = JSON.parse(equipmentsStr);
+        if (!Array.isArray(parsed)) return [];
+        return parsed;
+      } catch (e) {
+        console.error("解析设备信息失败:", e);
+        return [];
+      }
+    },
+
+    // 将设备信息转换为字符串
+    stringifyEquipments(equipments: Equipment[]): string {
+      const cleanEquipments = equipments.map(
+        ({ name, description, image }) => ({
+          name: name.trim(),
+          description: description.trim(),
+          image: image || "",
+        })
+      );
+      return JSON.stringify(cleanEquipments);
     },
 
     // 删除设备
@@ -539,23 +568,22 @@ export default defineComponent({
           type: "warning",
         });
 
-        // 创建新的设备列表（排除要删除的设备）
         const updatedEquipments = this.parsedEquipments.filter(
           (_, i) => i !== index
         );
+        const equipmentsJson = this.stringifyEquipments(updatedEquipments);
 
-        // 准备要发送的数据
-        const updateData = {
+        const response = await labAPI.editLab(this.labForm.lab_id!, {
           id: this.labForm.lab_id,
-          safety_equipments: JSON.stringify(updatedEquipments),
-        };
-
-        // 发送更新请求
-        const response = await labAPI.editLab(this.labForm.lab_id!, updateData);
+          safety_equipments: equipmentsJson,
+        });
 
         if (response.success) {
-          ElMessage.success("删除成功");
+          // 更新本地数据
           this.parsedEquipments = updatedEquipments;
+          this.labForm.safety_equipments = equipmentsJson;
+
+          ElMessage.success("删除成功");
         } else {
           throw new Error(response.error || "删除失败");
         }
@@ -565,17 +593,6 @@ export default defineComponent({
           ElMessage.error("删除失败，请稍后重试");
         }
       }
-    },
-
-    // 将设备转换为字符串
-    stringifyEquipments(equipments: Equipment[]): string {
-      return JSON.stringify(
-        equipments.map(({ name, description, image }) => ({
-          name,
-          description,
-          image,
-        }))
-      );
     },
   },
 });
