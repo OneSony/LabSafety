@@ -263,6 +263,14 @@ const courseAPI = {
       .catch(handleError);
   },
 
+  getEnroll(course_id: number): Promise<any> {
+    const params = { course_id: course_id };
+    return server
+      .get("/api/v1/courses/enroll", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   postEnroll(
     student_ids: string[],
     course_code: string,
