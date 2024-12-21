@@ -1,13 +1,14 @@
 <template>
   <Transition name="fade">
-    <Vue3Lottie
-      v-if="isLoading"
-      :animation-data="loadingAnimation"
-      :height="200"
-      :width="200"
-      :loop="true"
-      :autoPlay="true"
-    />
+    <div v-if="isLoading" class="loading-container">
+      <Vue3Lottie
+        :animation-data="loadingAnimation"
+        :height="200"
+        :width="200"
+        :loop="true"
+        :autoPlay="true"
+      />
+    </div>
   </Transition>
   <div class="page-container">
     <div class="dashboard">
@@ -121,6 +122,20 @@ export default {
 </script>
 
 <style scoped>
+.loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: white; /* 或者与你的页面背景色匹配 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* 过渡动画效果 */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s ease;
@@ -129,21 +144,6 @@ export default {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-/* 添加loading时的背景遮罩 */
-.Vue3Lottie {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 9999;
-  background-color: rgba(255, 255, 255, 0.9);
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 .page-container {
   background: radial-gradient(

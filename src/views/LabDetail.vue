@@ -687,7 +687,15 @@ export default defineComponent({
         ElMessage.error("保存失败，请稍后重试");
       }
     },
-
+    editEquipment(index: number) {
+      try {
+        // 直接调用已有的 openEquipmentDialog 方法，传入索引
+        this.openEquipmentDialog(index);
+      } catch (error) {
+        console.error("编辑器材失败:", error);
+        ElMessage.error("编辑器材失败，请稍后重试");
+      }
+    },
     // 解析器材信息
     parseEquipments(equipmentsStr: string): Equipment[] {
       try {

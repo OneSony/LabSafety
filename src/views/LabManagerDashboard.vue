@@ -1,73 +1,162 @@
 <template>
   <div class="lab-manager-dashboard">
-    <h2>实验室管理控制台</h2>
+    <!-- 页面标题区域 -->
+    <div class="dashboard-header">
+      <div class="title-section">
+        <h2 class="main-title">实验室管理控制台</h2>
+      </div>
+      <el-button
+        type="primary"
+        class="create-button"
+        @click="openCreateLabDialog"
+      >
+        <el-icon class="mr-2"><Plus /></el-icon>
+        创建实验室
+      </el-button>
+    </div>
 
-    <!-- 实验室管理 -->
-    <el-button type="primary" @click="openCreateLabDialog">
-      创建实验室
-    </el-button>
-    <el-table
-      :data="labs"
-      style="width: 100%; margin-top: 20px"
-      @row-click="goToLabDetail"
-    >
-      <el-table-column prop="name" label="实验室名称" />
-      <el-table-column prop="location" label="地点" />
-      <el-table-column label="操作">
-        <template #default="scope">
-          <el-button
-            @click.stop="editLab(scope.row)"
-            type="primary"
-            size="small"
-          >
-            编辑
-          </el-button>
-          <el-button
-            @click.stop="deleteLab(scope.row.id)"
-            type="danger"
-            size="small"
-          >
-            删除
-          </el-button>
-          <el-button
-            @click.stop="openNotificationEditor(scope.row)"
-            type="info"
-            size="small"
-          >
-            通知
-          </el-button>
+    <!-- 实验室列表卡片 -->
+    <div class="lab-list-container">
+      <el-card class="lab-table-card">
+        <template #header>
+          <div class="card-header">
+            <span>实验室列表</span>
+            <div class="header-actions">
+              <el-input
+                v-model="searchQuery"
+                placeholder="搜索实验室..."
+                class="search-input"
+                clearable
+              >
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+            </div>
+          </div>
         </template>
-      </el-table-column>
-    </el-table>
+
+        <el-table
+          :data="filteredLabs"
+          style="width: 100%"
+          @row-click="goToLabDetail"
+          :header-cell-style="{ background: '#f5f7fa' }"
+          border
+          stripe
+          highlight-current-row
+        >
+          <el-table-column prop="name" label="实验室名称" min-width="200">
+            <template #default="scope">
+              <div class="lab-name-cell">
+                <el-icon class="mr-2"><School /></el-icon>
+                {{ scope.row.name }}
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="location" label="地点" min-width="200">
+            <template #default="scope">
+              <div class="lab-location-cell">
+                <el-icon class="mr-2"><Location /></el-icon>
+                {{ scope.row.location }}
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="250" fixed="right">
+            <template #default="scope">
+              <div class="action-buttons">
+                <el-button
+                  @click.stop="editLab(scope.row)"
+                  type="primary"
+                  size="small"
+                  class="action-button"
+                >
+                  <el-icon class="mr-1"><Edit /></el-icon>
+                  编辑
+                </el-button>
+                <el-button
+                  @click.stop="deleteLab(scope.row.id)"
+                  type="danger"
+                  size="small"
+                  class="action-button"
+                >
+                  <el-icon class="mr-1"><Delete /></el-icon>
+                  删除
+                </el-button>
+                <el-button
+                  @click.stop="openNotificationEditor(scope.row)"
+                  type="info"
+                  size="small"
+                  class="action-button"
+                >
+                  <el-icon class="mr-1"><Bell /></el-icon>
+                  通知
+                </el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </div>
 
     <!-- 创建/编辑实验室弹窗 -->
     <el-dialog
       v-model="isLabDialogVisible"
       :title="labForm.lab_id ? '编辑实验室' : '创建实验室'"
+      width="500px"
       @closed="handleDialogClosed"
       :before-close="handleBeforeClose"
+      destroy-on-close
     >
-      <el-form :model="labForm">
+      <el-form :model="labForm" label-position="top" class="lab-form">
         <el-form-item label="实验室名称" :required="true">
-          <el-input v-model="labForm.name" placeholder="请输入实验室名称" />
+          <el-input
+            v-model="labForm.name"
+            placeholder="请输入实验室名称"
+            clearable
+          />
         </el-form-item>
         <el-form-item label="地点" :required="true">
-          <el-input v-model="labForm.location" placeholder="请输入实验室地点" />
+          <el-input
+            v-model="labForm.location"
+            placeholder="请输入实验室地点"
+            clearable
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="handleCancel">取消</el-button>
-        <el-button type="primary" @click="saveLab">保存</el-button>
+        <div class="dialog-footer">
+          <el-button @click="handleCancel">取消</el-button>
+          <el-button type="primary" @click="saveLab">保存</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script>
+import { ref } from "vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import { labAPI } from "../utils/api";
+import {
+  Plus,
+  Edit,
+  Delete,
+  Bell,
+  Search,
+  School,
+  Location,
+} from "@element-plus/icons-vue";
 
 export default {
+  components: {
+    Plus,
+    Edit,
+    Delete,
+    Bell,
+    Search,
+    School,
+    Location,
+  },
   data() {
     return {
       labs: [],
@@ -82,6 +171,17 @@ export default {
         // safety_notes_list: [],
       },
     };
+  },
+  computed: {
+    filteredLabs() {
+      if (!this.searchQuery) return this.labs;
+      const query = this.searchQuery.toLowerCase();
+      return this.labs.filter(
+        (lab) =>
+          lab.name.toLowerCase().includes(query) ||
+          lab.location.toLowerCase().includes(query)
+      );
+    },
   },
   methods: {
     fetchLabs() {
@@ -266,6 +366,113 @@ export default {
 </script>
 
 <style scoped>
+.lab-manager-dashboard {
+  padding: 24px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 64px);
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title-section {
+  flex: 1;
+}
+
+.main-title {
+  font-size: 24px;
+  color: #303133;
+  margin: 0;
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.create-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+}
+
+.lab-list-container {
+  background: transparent;
+}
+
+.lab-table-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.search-input {
+  width: 240px;
+}
+
+.lab-name-cell,
+.lab-location-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+}
+
+.lab-form {
+  padding: 20px 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
 .lab-manager-dashboard {
   padding: 20px;
 }

@@ -13,7 +13,10 @@
             :on-change="handleFileChange"
           >
             <div class="avatar-content">
-              <ProfilePhoto :url="userInfoForm.avatar" size="200px" />
+              <ProfilePhoto
+                :url="userInfoForm.avatar || defaultAvatar"
+                size="200px"
+              />
               <div class="upload-overlay">
                 <el-icon class="upload-icon"><Upload /></el-icon>
                 <span>更换头像</span>
@@ -67,6 +70,7 @@ import { userAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { defineComponent } from "vue";
 import { Upload } from "@element-plus/icons-vue";
+import defaultAvatar from "@/assets/default-avatar.png";
 
 interface UserInfo {
   role: string;
@@ -90,7 +94,7 @@ export default defineComponent({
       userInfo: {
         role: "",
         role_str: "",
-        avatar: "",
+        avatar: defaultAvatar, // 添加默认头像
         username: "",
         id: "",
         email: "",
@@ -100,7 +104,7 @@ export default defineComponent({
       userInfoForm: {
         email: "",
         phone: "",
-        avatar: "",
+        avatar: defaultAvatar, // 添加默认头像
       } as UserInfo,
       password: "" as string,
       file: null as File | null,
@@ -151,7 +155,7 @@ export default defineComponent({
         this.userInfo.email = result.data[0].email || "";
         this.userInfo.phone = result.data[0].phone_number || "";
         this.userInfo.department = result.data[0].department || "";
-        this.userInfo.avatar = result.data[0].profile_picture || "";
+        this.userInfo.avatar = result.data[0].profile_picture || defaultAvatar;
 
         this.userInfoForm.email = this.userInfo.email;
         this.userInfoForm.phone = this.userInfo.phone;
