@@ -1,65 +1,70 @@
 <template>
   <div class="page-container">
-    <div class="login-container">
-      <!-- 左侧欢迎区域 -->
-      <div class="welcome-section">
-        <h1 class="welcome-title">WELCOME</h1>
-        <div class="welcome-image">
-          <img src="../assets/welcome.png" alt="Welcome" />
+    <div class="page-container">
+      <div class="login-container">
+        <!-- 左侧欢迎区域 -->
+        <div class="welcome-section">
+          <h1 class="welcome-title">WELCOME</h1>
+          <div class="welcome-image">
+            <img src="../assets/welcome.png" alt="Welcome" />
+          </div>
         </div>
-      </div>
 
-      <!-- 右侧登录表单 -->
-      <div class="form-section">
-        <h2 class="login-title">Login</h2>
-        <el-form
-          :model="loginForm"
-          @submit.prevent="handleLogin"
-          label-width="0"
-        >
-          <el-form-item prop="user_id">
-            <el-input
-              v-model="loginForm.user_id"
-              placeholder="your account"
-              class="custom-input"
-            ></el-input>
-          </el-form-item>
+        <!-- 右侧登录表单 -->
+        <div class="form-section">
+          <h2 class="login-title">Login</h2>
+          <el-form
+            :model="loginForm"
+            @submit.prevent="handleLogin"
+            label-width="0"
+          >
+            <el-form-item prop="user_id">
+              <el-input
+                v-model="loginForm.user_id"
+                placeholder="your account"
+                class="custom-input"
+              ></el-input>
+            </el-form-item>
 
-          <el-form-item prop="password">
-            <el-input
-              type="password"
-              v-model="loginForm.password"
-              placeholder="your password"
-              class="custom-input"
-            ></el-input>
-          </el-form-item>
+            <el-form-item prop="password">
+              <el-input
+                type="password"
+                v-model="loginForm.password"
+                placeholder="your password"
+                class="custom-input"
+              ></el-input>
+            </el-form-item>
 
-          <el-form-item>
-            <el-button type="primary" @click="handleLogin" class="login-button"
-              >Login</el-button
-            >
-            <!-- <el-button @click="isDialogVisible = true" class="register-button"
+            <el-form-item>
+              <el-button
+                type="primary"
+                @click="handleLogin"
+                class="login-button"
+                >Login</el-button
+              >
+              <!-- <el-button @click="isDialogVisible = true" class="register-button"
               >注册</el-button
             > -->
-          </el-form-item>
-        </el-form>
-
-        <!-- 注册对话框 -->
-        <el-dialog v-model="isDialogVisible" title="注册" width="400px">
-          <!-- 注册表单内容保持不变 -->
-          <p>页面会被弃用, 应使用TeachingAffair注册账号</p>
-          <el-form
-            :model="registerForm"
-            @submit.prevent="handleRegister"
-            label-width="80px"
-          >
-            <!-- 注册表单项保持不变 -->
+            </el-form-item>
           </el-form>
-          <template #footer>
-            <el-button @click="isDialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="handleRegister">注册</el-button>
-          </template>
-        </el-dialog>
+
+          <!-- 注册对话框 -->
+          <el-dialog v-model="isDialogVisible" title="注册" width="400px">
+            <!-- 注册表单内容保持不变 -->
+            <p>页面会被弃用, 应使用TeachingAffair注册账号</p>
+            <el-form
+              :model="registerForm"
+              @submit.prevent="handleRegister"
+              label-width="80px"
+            >
+              <!-- 注册表单项保持不变 -->
+            </el-form>
+            <template #footer>
+              <el-button @click="isDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="handleRegister">注册</el-button>
+            </template>
+          </el-dialog>
+        </div>
       </div>
     </div>
   </div>
@@ -156,7 +161,23 @@ export default {
 </script>
 
 <style scoped>
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(
+    circle at center,
+    #e6f5f5 0%,
+    #e8f0f5 25%,
+    #e6f5f0 50%,
+    #e8f5f2 75%,
+    #e6f5f0 100%
+  );
+}
+
 .login-container {
+  top: -20px;
   width: 300px;
   margin: 100px auto;
   padding: 20px;
@@ -244,7 +265,6 @@ export default {
   flex-direction: column;
   justify-content: center;
 }
-
 .login-title {
   color: #666;
   font-size: 2em;
@@ -260,14 +280,65 @@ export default {
 }
 
 .login-button {
-  width: 100%;
+  width: 80%;
+  height: 50px;
   padding: 12px;
   border-radius: 8px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
   color: white;
   font-weight: 500;
+  font-size: 16px;
   margin-bottom: 15px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #5a71d9 0%, #6a4494 100%);
+}
+
+.login-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #4a61c9 0%, #5a3484 100%);
+}
+
+.login-button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.5s ease, opacity 0.3s ease;
+}
+
+.login-button:hover::after {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.login-title {
+  color: #666;
+  font-size: 2em;
+  margin-bottom: 40px;
+}
+
+.custom-input :deep(.el-input__wrapper) {
+  background-color: #f5f7fa;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
 }
 
 .register-button {
