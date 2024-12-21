@@ -1,19 +1,23 @@
 <template>
   <el-form label-width="120px">
     <el-form-item label="选择课堂">
-      <el-select
-        v-model="localClassId"
-        placeholder="选择地点"
-        style="width: 100%"
-        :disabled="isEditting || !needToChooseClass"
-      >
-        <el-option
-          v-for="classItem in classList"
-          :key="classItem.class_id"
-          :label="classItem.name"
-          :value="classItem.class_id"
-        ></el-option>
-      </el-select>
+      <el-row gutter="20" style="width: 100%">
+        <el-col :span="24">
+          <el-select
+            v-model="localClassId"
+            placeholder="选择课堂"
+            style="width: 100%"
+            :disabled="isEditting || !needToChooseClass"
+          >
+            <el-option
+              v-for="classItem in classList"
+              :key="classItem.class_id"
+              :label="classItem.name"
+              :value="classItem.class_id"
+            ></el-option>
+          </el-select>
+        </el-col>
+      </el-row>
     </el-form-item>
 
     <div
@@ -23,77 +27,116 @@
     >
       <el-form-item :label="'条目 ' + (index + 1)">
         <!-- 根据条目的 type 动态渲染不同的输入框 -->
-        <template v-if="item.type === 'text'">
-          <el-input
-            type="textarea"
-            v-model="item.value"
-            placeholder="请输入文本"
-            :autosize="{ minRows: 1, maxRows: 6 }"
-            @change="(value) => handleInputChange(item, value)"
-          />
-        </template>
+        <el-row gutter="20" style="width: 100%">
+          <el-col :span="24" v-if="item.type === 'text'">
+            <el-input
+              type="textarea"
+              v-model="item.value"
+              placeholder="请输入文本"
+              :autosize="{ minRows: 1, maxRows: 6 }"
+              @change="(value) => handleInputChange(item, value)"
+            />
+          </el-col>
 
-        <template v-if="item.type === 'file'">
-          <p
-            v-if="
-              item.value && (!item.uploaded || (item.uploaded && item.modified))
-            "
-          >
-            {{ item.value }}
-          </p>
-          <DownloadLink
-            v-if="
-              item.value &&
-              !(!item.uploaded || (item.uploaded && item.modified))
-            "
-            :url="item.value"
-          />
-          <el-upload
-            action=""
-            :show-file-list="false"
-            :auto-upload="false"
-            :on-change="(fileObj) => handleFileChange(fileObj, item, index)"
-          >
-            <el-button size="small" type="primary">点击上传</el-button>
-          </el-upload>
-        </template>
-        <template v-if="item.type === 'image'">
-          <ImageBox v-if="item.value" :src="item.value" />
-          <el-upload
-            action=""
-            :auto-upload="false"
-            :show-file-list="false"
-            :on-change="(fileObj) => handlePhotoChange(fileObj, item, index)"
-          >
-            <el-button size="small" type="primary">上传图片</el-button>
-          </el-upload>
-        </template>
+          <el-col :span="18" v-if="item.type === 'file'">
+            <p v-if="!item.value" style="margin: 0">未上传</p>
+            <p
+              v-if="
+                item.value &&
+                (!item.uploaded || (item.uploaded && item.modified))
+              "
+              style="margin: 0"
+            >
+              {{ item.value }}
+            </p>
+            <DownloadLink
+              v-if="
+                item.value &&
+                !(!item.uploaded || (item.uploaded && item.modified))
+              "
+              :url="item.value"
+            />
+          </el-col>
+          <el-col :span="6" v-if="item.type === 'file'">
+            <el-upload
+              action=""
+              :show-file-list="false"
+              :auto-upload="false"
+              :on-change="(fileObj) => handleFileChange(fileObj, item, index)"
+            >
+              <el-button size="small" type="primary" v-if="!item.uploaded"
+                >上传文件</el-button
+              >
+              <el-button size="small" type="primary" v-else>重新上传</el-button>
+            </el-upload>
+          </el-col>
 
-        <!-- 删除按钮 -->
-        <el-button
-          type="text"
-          @click="removeItem(item, index)"
-          style="position: absolute; top: 5px; right: 5px"
-          >x</el-button
-        >
+          <el-col :span="18" v-if="item.type === 'image'">
+            <p v-if="!item.value" style="margin: 0">未上传</p>
+            <ImageBox v-if="item.value" :src="item.value" />
+          </el-col>
+          <el-col :span="6" v-if="item.type === 'image'">
+            <el-upload
+              action=""
+              :auto-upload="false"
+              :show-file-list="false"
+              :on-change="(fileObj) => handlePhotoChange(fileObj, item, index)"
+            >
+              <el-button size="small" type="primary" v-if="!item.uploaded"
+                >上传图片</el-button
+              >
+              <el-button size="small" type="primary" v-else>重新上传</el-button>
+            </el-upload>
+          </el-col>
+        </el-row>
+        <el-row gutter="20" style="width: 100%">
+          <el-col :span="24">
+            <el-button
+              size="small"
+              @click="moveItemUp(index)"
+              :disabled="index === 0"
+              >上移</el-button
+            >
+            <el-button
+              size="small"
+              @click="moveItemDown(index)"
+              :disabled="index === dynamicItems.length - 1"
+              >下移</el-button
+            >
+            <el-button
+              size="small"
+              type="danger"
+              @click="removeItem(item, index)"
+              >删除</el-button
+            >
+          </el-col>
+        </el-row>
       </el-form-item>
     </div>
 
-    <el-form-item label="选择输入类型">
-      <el-select v-model="selectedType" placeholder="请选择输入类型">
-        <el-option label="文本框" value="text"></el-option>
-        <el-option label="文件上传" value="file"></el-option>
-        <el-option label="图片" value="image"></el-option>
-      </el-select>
-    </el-form-item>
-    <el-form-item>
-      <el-button type="primary" @click="addItem">添加条目</el-button>
+    <el-divider></el-divider>
+
+    <el-form-item label="新增条目类型">
+      <el-row gutter="20" style="width: 100%">
+        <el-col :span="18">
+          <el-select v-model="selectedType" placeholder="请选择输入类型">
+            <el-option label="文本" value="text"></el-option>
+            <el-option label="上传文件" value="file"></el-option>
+            <el-option label="上传图片" value="image"></el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="6">
+          <el-button size="small" type="primary" @click="addItem"
+            >添加条目</el-button
+          >
+        </el-col>
+      </el-row>
     </el-form-item>
 
     <!-- 自定义底部按钮 -->
     <div class="dialog-footer">
       <el-button @click="closeDialog">取消</el-button>
-      <el-button type="primary" @click="submitNoticeForm">保存</el-button>
+      <el-button type="primary" @click="submitNoticeForm">提交</el-button>
     </div>
   </el-form>
 </template>
@@ -290,14 +333,11 @@ export default {
         }
       } else {
         //修改老的notice
-        //TODO
-
         console.log("dynamicItems", dynamicItems.value);
 
         const notice_id = ref(props.notice.id);
 
-        //删除列表，删除了的条目要记录
-        // TODO
+        //删除被去除的
         console.log("removeUploadedItems", removeUploadedItems.value);
         for (let i = 0; i < removeUploadedItems.value.length; i++) {
           const deleteRowResult = await noticeAPI.deleteContentToNotice(
@@ -407,6 +447,16 @@ export default {
     }
   },
   methods: {
+    moveItemUp(index) {
+      const temp = this.dynamicItems[index];
+      this.dynamicItems.splice(index, 1);
+      this.dynamicItems.splice(index - 1, 0, temp);
+    },
+    moveItemDown(index) {
+      const temp = this.dynamicItems[index];
+      this.dynamicItems.splice(index, 1);
+      this.dynamicItems.splice(index + 1, 0, temp);
+    },
     async fetchClassList() {
       const res = await classAPI.getClassList();
       console.log("class", res);
