@@ -117,13 +117,15 @@ const userAPI = {
     try {
       // 获取用户信息并提取头像 URL
       const result = await this.getUserInfo(userId);
-      console.log("获取用户信息成功!~:", result); // 调试信息
       if (result.success) {
         const userAvatar = result.data[0].profile_picture;
+        const real_name = result.data[0].real_name;
+        if (real_name) {
+          localStorage.setItem("username", real_name);
+        }
         if (userAvatar) {
           // 如果获取到头像 URL，存储到 localStorage
           localStorage.setItem("avatar", userAvatar);
-          console.log("获取到头像 URL:", userAvatar); // 调试信息
           return userAvatar;
         }
       }
@@ -134,8 +136,37 @@ const userAPI = {
     }
   },
 
-  getUsername(): string | null {
-    return localStorage.getItem("username");
+  async getUsername(): Promise<string> {
+    console.log("获取用户名"); // 调试信息
+    const username = localStorage.getItem("username");
+    if (username) {
+      return username; // 如果本地存储有头像，直接返回
+    }
+
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      return ""; // 如果没有 userId，返回 null
+    }
+
+    try {
+      // 获取用户信息并提取头像 URL
+      const result = await this.getUserInfo(userId);
+      if (result.success) {
+        const userAvatar = result.data[0].profile_picture;
+        const real_name = result.data[0].real_name;
+        if (userAvatar) {
+          localStorage.setItem("avatar", userAvatar);
+        }
+        if (real_name) {
+          localStorage.setItem("username", real_name);
+          return real_name;
+        }
+      }
+      return ""; // 如果没有头像，返回 null
+    } catch (error) {
+      console.error("获取用户信息失败:", error);
+      return ""; // 如果获取用户信息失败，返回 null
+    }
   },
 
   getUserId(): string | null {
@@ -146,8 +177,8 @@ const userAPI = {
     return localStorage.getItem("role");
   },
 
-  login(username: string, password: string): Promise<any> {
-    const credentials = { username, password };
+  login(user_id: string, password: string): Promise<any> {
+    const credentials = { user_id, password };
     return server
       .post("/api/v1/users/login/", credentials)
       .then((response) => {
@@ -159,7 +190,7 @@ const userAPI = {
           localStorage.setItem("refreshToken", refresh);
           localStorage.setItem("role", role);
           localStorage.setItem("userId", user_id);
-          localStorage.setItem("username", username); //TODO
+          //localStorage.setItem("username", username); //TODO
           return {
             success: true,
             role,
@@ -178,8 +209,8 @@ const userAPI = {
       });
   },
 
-  register(user_id: string, username: string, password: string): Promise<any> {
-    const credentials = { user_id, username, password };
+  register(user_id: string, real_name: string, password: string): Promise<any> {
+    const credentials = { user_id, real_name, password };
     return server
       .post("/api/v1/users/register/", credentials)
       .then(handleResponse)

@@ -51,7 +51,13 @@ export default {
     console.log("login status??", isUserInfoVisible);
     console.log("api??", userAPI.isLoggedIn());
 
-    const userName = ref(userAPI.getUsername() || "未登录");
+    const userName = ref("");
+
+    const fetchUserName = async () => {
+      userName.value = (await userAPI.getUsername()) || "未登录";
+    };
+
+    fetchUserName();
     const roleText = ref("");
     const userPhoto = ref("");
 
@@ -63,7 +69,7 @@ export default {
     watch(route, async () => {
       userPhoto.value = (await userAPI.getAvatar()) || "";
       console.log("photo: ", userPhoto.value);
-      userName.value = userAPI.getUsername() || "未登录";
+      userName.value = (await userAPI.getUsername()) || "未登录";
       const role = userAPI.getRole();
       switch (role) {
         case "student":
