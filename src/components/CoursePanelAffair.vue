@@ -7,8 +7,13 @@
     >
       创建课程
     </el-button>
+    <el-button type="primary" @click="loadData" style="margin-bottom: 20px">
+      刷新列表
+    </el-button>
   </div>
+  <el-skeleton :rows="5" animated v-if="!isLoaded"></el-skeleton>
   <el-table
+    v-if="isLoaded"
     :data="tableData"
     style="width: 100%"
     :row-class-name="tableRowClassName"
@@ -18,7 +23,7 @@
     <el-table-column prop="course_sequence" label="课序号" width="100" />
     <el-table-column prop="department" label="开课院系" width="180" />
     <el-table-column prop="class_count" label="课堂数" width="100" />
-    <el-table-column prop="name" label="学生人数" width="100" />
+    <el-table-column prop="student_count" label="学生人数" width="100" />
     <el-table-column fixed="right" label="操作">
       <template v-slot="slotProps">
         <el-button
@@ -45,9 +50,18 @@ export default {
   data() {
     return {
       tableData: [],
+      isLoaded: false,
     };
   },
   methods: {
+    async loadData() {
+      this.isLoaded = false;
+      await this.fetchCourseList();
+      await this.fetchEnollmentCount();
+      await this.fetchClassLists();
+      this.isLoaded = true;
+    },
+
     handleRowClick(row) {
       const inputCourseData = {
         course_id: row.id,
@@ -91,6 +105,18 @@ export default {
       }
     },
 
+    async fetchEnollmentCount() {
+      for (let i = 0; i < this.tableData.length; i++) {
+        const result = await courseAPI.getEnroll(this.tableData[i].id);
+        console.log("Enrollment count:", result);
+        if (result.success) {
+          this.tableData[i].student_count = result.data.length;
+        } else {
+          console.error("Failed to fetch enrollment count:", result.message);
+        }
+      }
+    },
+
     async fetchClassLists() {
       for (let i = 0; i < this.tableData.length; i++) {
         const result = await classAPI.getClassList(this.tableData[i].id);
@@ -104,8 +130,7 @@ export default {
     },
   },
   async mounted() {
-    await this.fetchCourseList();
-    await this.fetchClassLists();
+    await this.loadData();
   },
 };
 </script>

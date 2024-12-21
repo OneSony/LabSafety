@@ -2,11 +2,13 @@
   <div class="dashboard">
     <SidebarMenu @updateCurrentComponent="updateComponent" />
     <div class="content">
-      <component
-        :is="currentComponent"
-        :classItem="classItem"
-        @show-class-panel="toClassPage"
-      />
+      <keep-alive>
+        <component
+          :is="currentComponent"
+          :classItem="classItem"
+          @show-class-panel="toClassPage"
+        />
+      </keep-alive>
     </div>
   </div>
 </template>
