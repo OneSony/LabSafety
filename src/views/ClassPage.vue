@@ -40,11 +40,22 @@
     </el-dialog>
 
     <el-dialog title="上课学生" v-model="studentDialogVisible" width="40%">
-      <el-table :data="studentList" border style="width: 100%">
-        <el-table-column fixed prop="id" label="学号"></el-table-column>
+      <el-button type="primary" @click="fetchEnrolledStudents">刷新</el-button>
+      <el-table
+        :data="studentList"
+        border
+        style="width: 100%"
+        v-if="isEnrolledStudentsLoaded"
+      >
+        <el-table-column fixed prop="student_id" label="学号"></el-table-column>
         <el-table-column prop="name" label="姓名"></el-table-column>
         <el-table-column prop="department" label="院系"></el-table-column>
       </el-table>
+      <el-skeleton
+        :rows="3"
+        animated
+        v-if="!isEnrolledStudentsLoaded"
+      ></el-skeleton>
       <div class="dialog-footer">
         <el-button @click="studentDialogVisible = false">关闭</el-button>
       </div>
@@ -503,7 +514,7 @@
 </template>
 
 <script>
-import { classAPI, labAPI, userAPI, noticeAPI } from "@/utils/api";
+import { classAPI, labAPI, userAPI, noticeAPI, courseAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
 import UserCard from "@/components/UserCard.vue";
@@ -514,6 +525,10 @@ export default {
   name: "ClassPage",
   props: {
     classId: {
+      type: Number,
+      required: true,
+    },
+    courseId: {
       type: Number,
       required: true,
     },
@@ -544,10 +559,11 @@ export default {
 
       basicForm: {
         class_name: "",
-        class_id: "",
+        class_id: Number,
         teachers_str: "",
         date: "",
         lab_name: "",
+        lab_id: Number,
         tags: [],
       },
 
@@ -593,8 +609,10 @@ export default {
       studentDialogVisible: false,
       copyDialogVisible: false,
       isLocationEditing: false,
+      isEnrolledStudentsLoaded: false,
       isTeacher: localStorage.getItem("role") === "teacher",
       class_id: Number(this.classId),
+      course_id: Number(this.courseId),
       name: "",
       date: "",
       newComment: "",
@@ -621,7 +639,7 @@ export default {
     };
   },
   mounted() {
-    console.log("class id:", this.class_id);
+    console.log("classiid:", this.class_id, this.course_id);
     this.fetchClassBasicInfo();
     this.fetchComments();
     this.fetchNotices();
@@ -681,25 +699,9 @@ export default {
     },
     openStudentDialog() {
       this.studentDialogVisible = true;
-      this.studentList = [
-        {
-          id: "2018000000",
-          name: "张三",
-          department: "计算机科学与技术",
-        },
-        {
-          id: "2018000001",
-          name: "李四",
-          department: "软件工程",
-        },
-        {
-          id: "2018000002",
-          name: "王五",
-          department: "信息安全",
-        },
-      ];
-      //studentList = [];
-      //TODO
+      if (this.isEnrolledStudentsLoaded === false) {
+        this.fetchEnrolledStudents();
+      }
     },
     addTag(tagType) {
       const tagKey = `new${
@@ -757,27 +759,49 @@ export default {
             ElMessage.error("修改失败");
           }
         });
-      //TODO
+
+      if (this.basicForm.lab_id != this.basicInfo.lab_id) {
+        if (this.basicInfo.lab_id != "") {
+          const deleteResult = await classAPI.deleteLocation(
+            this.class_id,
+            this.basicInfo.lab_id
+          );
+          if (deleteResult.success) {
+            console.log("删除地点成功");
+          } else {
+            ElMessage.error("删除地点失败");
+            return;
+          }
+        }
+        if (this.basicForm.lab_id != "") {
+          const addResult = await classAPI.postLocation(
+            this.class_id,
+            this.basicForm.lab_id
+          );
+          if (addResult.success) {
+            ElMessage.success("成功");
+            console.log("添加地点成功");
+          } else {
+            ElMessage.error("添加地点失败");
+          }
+        }
+      }
     },
     async fetchLabs() {
       const result = await labAPI.getLabs(); // 获取地点的 API
       if (result.success) {
-        console.log(result.data);
         this.labs = result.data; // 假设返回的数据结构是 { success: true, data: [...] }
       } else {
         ElMessage.error("加载地点失败");
       }
     },
     async openBasicDialog() {
-      console.log("here", this.basicDialogVisible);
       await this.fetchLabs();
       this.basicForm = { ...this.basicInfo };
       this.basicDialogVisible = true;
-      console.log("here", this.basicDialogVisible);
     },
 
     async fetchClassBasicInfo() {
-      console.log("class id:", this.class_id);
       this.basicInfo.class_id = Number(this.class_id);
       const result1 = await classAPI.getClass(this.class_id); // 获取课程信息的 API
       if (result1.success) {
@@ -785,7 +809,6 @@ export default {
           ElMessage.error("课程不存在");
           this.$router.push("/");
         } else {
-          console.log("课程信息:", result1.data[0]);
           this.basicInfo.class_name = result1.data[0].name;
           this.basicInfo.date = result1.data[0].start_time;
         }
@@ -823,15 +846,13 @@ export default {
       }
 
       const result3 = await classAPI.getLocations(this.class_id); // 获取地点信息的 API
-      console.log("地点信息:", result3);
       if (result3.success) {
         if (result3.data.length === 0) {
           this.basicInfo.lab_name = "未知";
         } else {
           this.basicInfo.lab_id = result3.data[0].lab_id;
-          const result = await labAPI.getLabs(this.basicInfo.location);
+          const result = await labAPI.getLabs(this.basicInfo.lab_id);
           if (result.success) {
-            console.log("地点信息:", result.data[0]);
             this.basicInfo.lab_name = result.data[0].name;
           } else {
             ElMessage.error("获取地点信息失败");
@@ -841,18 +862,16 @@ export default {
         ElMessage.error("获取地点信息失败");
       }
 
-      console.log("basic info:!!", this.basicInfo);
+      console.log("basic info:", this.basicInfo);
     },
 
     fetchComments() {
       classAPI.getComments(this.class_id).then((response) => {
-        console.log("评论信息:", response);
         if (response.success) {
           if (response.data.length === 0) {
             this.commentList = [];
           } else {
             this.commentList = response.data;
-            console.log("评论区信息:", this.commentList);
           }
         } else {
           ElMessage.error("获取评论失败");
@@ -877,11 +896,34 @@ export default {
     async fetchNotices() {
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
-        console.log("notice!!", result.data);
         this.noticeList = result.data;
       } else {
         ElMessage.error("获取通知失败");
       }
+    },
+
+    async fetchEnrolledStudents() {
+      this.isEnrolledStudentsLoaded = false;
+      const result = await courseAPI.getEnroll(this.course_id);
+      if (result.success) {
+        console.log("students!!", result.data);
+        this.studentList = result.data;
+        for (let i = 0; i < this.studentList.length; i++) {
+          const result = await userAPI.getUserInfo(
+            this.studentList[i].student_id
+          );
+          if (result.success) {
+            console.log("学生信息:", result.data[0]);
+            this.studentList[i].name = result.data[0].real_name;
+            this.studentList[i].department = result.data[0].department;
+          } else {
+            ElMessage.error("获取学生信息失败");
+          }
+        }
+      } else {
+        ElMessage.error("获取学生失败");
+      }
+      this.isEnrolledStudentsLoaded = true;
     },
   },
 };

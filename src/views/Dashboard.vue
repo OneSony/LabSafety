@@ -54,8 +54,12 @@ export default {
     );
 
     // 切换到 ClassPanel
-    const toClassPage = (class_id) => {
-      router.push({ name: "class-page", params: { classId: class_id } });
+    const toClassPage = (class_id, course_id) => {
+      console.log("Selected class dashboard:", class_id, course_id);
+      router.push({
+        name: "class-page",
+        params: { classId: class_id, courseId: course_id },
+      });
     };
 
     const updateComponent = (componentName) => {
