@@ -227,13 +227,18 @@
               :class_id="class_id"
               :notice="notice"
               @close-dialog="closeEditNoticeDialog(notice)"
+              v-if="notice.noticeEditDialogVisible"
             />
           </el-dialog>
         </el-col>
       </el-row>
     </el-card>
     <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
-      <NoticeDialog :class_id="class_id" @close-dialog="closeNoticeDialog" />
+      <NoticeDialog
+        :class_id="class_id"
+        @close-dialog="closeNoticeDialog"
+        v-if="noticeDialogVisible"
+      />
     </el-dialog>
 
     <el-card class="card">
@@ -638,19 +643,19 @@ export default {
       goBack,
     };
   },
-  mounted() {
+  async mounted() {
     console.log("classiid:", this.class_id, this.course_id);
-    this.fetchClassBasicInfo();
-    this.fetchComments();
-    this.fetchNotices();
+    await this.fetchClassBasicInfo();
+    await this.fetchComments();
+    await this.fetchNotices();
     console.log("basic:", this.basicInfo);
     //TODO
   },
   methods: {
-    closeNoticeDialog() {
+    async closeNoticeDialog() {
       console.log("关闭通知对话框");
       this.noticeDialogVisible = false;
-      this.fetchNotices();
+      await this.fetchNotices();
     },
     closeEditNoticeDialog(notice) {
       console.log("关闭通知对话框");
@@ -664,7 +669,7 @@ export default {
       console.log(result);
       if (result.success) {
         console.log("删除成功");
-        this.fetchNotices();
+        await this.fetchNotices();
       } else {
         console.log("删除失败");
       }
@@ -897,6 +902,7 @@ export default {
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
         this.noticeList = result.data;
+        console.log("通知??!!:", this.noticeList);
       } else {
         ElMessage.error("获取通知失败");
       }
