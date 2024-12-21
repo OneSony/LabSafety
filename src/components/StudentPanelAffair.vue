@@ -5,6 +5,7 @@
       type="primary"
       @click="showCreateDialog"
       style="margin-bottom: 20px"
+      destroy-on-close
     >
       创建账号
     </el-button>
@@ -17,6 +18,7 @@
       v-model="dialogVisible"
       width="30%"
       :before-close="handleClose"
+      destroy-on-close
     >
       <el-form :model="form" ref="form" :rules="rules">
         <el-form-item label="学号" prop="user_id">
@@ -276,6 +278,11 @@ export default {
     },
   },
   async mounted() {
+    window.addEventListener("error", (event) => {
+      if (event.message.includes("ResizeObserver loop")) {
+        event.stopImmediatePropagation();
+      }
+    });
     await this.loadData();
   },
 };
