@@ -5,11 +5,8 @@
       @submit.prevent="handleLogin"
       label-width="80px"
     >
-      <el-form-item label="用户名" prop="username">
-        <el-input
-          v-model="loginForm.username"
-          placeholder="请输入用户名"
-        ></el-input>
+      <el-form-item label="id" prop="user_id">
+        <el-input v-model="loginForm.user_id" placeholder="请输入id"></el-input>
       </el-form-item>
       <el-form-item label="密码" prop="password">
         <el-input
@@ -36,10 +33,10 @@
                 placeholder="请输入学号"
               ></el-input>
             </el-form-item>
-            <el-form-item label="用户名" prop="username">
+            <el-form-item label="姓名" prop="real_name">
               <el-input
-                v-model="registerForm.username"
-                placeholder="请输入用户名"
+                v-model="registerForm.real_name"
+                placeholder="请输入姓名"
               ></el-input>
             </el-form-item>
             <el-form-item label="密码" prop="password">
@@ -86,13 +83,13 @@ export default {
 
   setup() {
     const loginForm = ref({
-      username: "",
+      user_id: "",
       password: "",
     });
 
     const registerForm = ref({
       user_id: "",
-      username: "",
+      real_name: "",
       password: "",
     });
 
@@ -114,8 +111,8 @@ export default {
 
   methods: {
     async handleLogin() {
-      const { username, password } = this.loginForm;
-      const result = await userAPI.login(username, password);
+      const { user_id, password } = this.loginForm;
+      const result = await userAPI.login(user_id, password);
 
       if (result.success) {
         // 登录成功
@@ -130,15 +127,15 @@ export default {
     },
 
     async handleRegister() {
-      const { user_id, username, password } = this.registerForm; // 使用 `this.loginForm` 访问表单数据
-      const result = await userAPI.register(user_id, username, password);
+      const { user_id, real_name, password } = this.registerForm; // 使用 `this.loginForm` 访问表单数据
+      const result = await userAPI.register(user_id, real_name, password);
 
       console.log("rrr status", result);
       if (result.success) {
         ElMessage.success("注册成功！");
         console.log("rrr status");
 
-        this.loginForm.username = this.registerForm.username;
+        this.loginForm.user_id = this.registerForm.user_id;
         this.loginForm.password = this.registerForm.password;
         this.isDialogVisible = false;
         this.handleLogin();
