@@ -457,13 +457,38 @@ const labAPI = {
     labId: number,
     labData: Partial<UpdateLabRequest>
   ): Promise<LabResponse> {
-    const data: UpdateLabRequest = {
-      lab_id: labId,
+    const data = {
+      id: labId, // 确保传入 id 字段
       ...labData,
     };
 
+    console.log("Sending update request with data:", data);
+
     return server
       .patch("/api/v1/labs/lab", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  async updateLabEquipments(
+    labId: number,
+    equipmentsJson: string,
+    equipmentImage?: File
+  ): Promise<LabResponse> {
+    const formData = new FormData();
+    formData.append("id", String(labId));
+    formData.append("safety_equipments", equipmentsJson);
+
+    if (equipmentImage) {
+      formData.append("lab_image", equipmentImage);
+    }
+
+    return server
+      .patch("/api/v1/labs/lab", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
       .then(handleResponse)
       .catch(handleError);
   },

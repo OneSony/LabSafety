@@ -9,7 +9,12 @@ export interface LabForm {
   safety_notes: string;
   [key: string]: string | number | null; // 添加索引签名
 }
-
+export interface Equipment {
+  name: string;
+  description: string;
+  image?: string; // base64 string
+  isEditing?: boolean;
+}
 export interface Lab {
   id: number;
   name: string;
@@ -25,6 +30,13 @@ export interface LabResponse {
   error?: string;
 }
 
+export interface UploadResponse {
+  success: boolean;
+  data?: {
+    url: string;
+  };
+  error?: string;
+}
 export interface EditingField {
   [key: string]: boolean;
 }
