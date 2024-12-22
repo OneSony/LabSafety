@@ -1,6 +1,11 @@
 <template>
-  <el-form v-model="noticeForm" label-width="120px">
-    <el-form-item label="选择课堂">
+  <el-form
+    ref="form"
+    :model="noticeForm"
+    label-width="120px"
+    :rules="formRules"
+  >
+    <el-form-item label="选择课堂" prop="class_id">
       <el-row gutter="20" style="width: 100%">
         <el-col :span="24">
           <el-select
@@ -25,7 +30,10 @@
       :key="index"
       class="dynamic-item"
     >
-      <el-form-item :label="'条目 ' + (index + 1)">
+      <el-form-item
+        :label="'条目 ' + (index + 1)"
+        :prop="'dynamicItems[' + index + '].value'"
+      >
         <!-- 根据条目的 type 动态渲染不同的输入框 -->
         <el-row gutter="20" style="width: 100%">
           <el-col :span="24" v-if="item.type === 'text'">
@@ -156,6 +164,7 @@ import {
 import { noticeAPI, userAPI, classAPI } from "@/utils/api";
 import ImageBox from "@/components/ImageBox.vue";
 import DownloadLink from "@/components/DownloadLink.vue";
+const form = ref(null);
 export default {
   name: "DynamicForm",
   props: {
@@ -191,32 +200,16 @@ export default {
       dynamicItems: [],
     });
 
+    const formRules = ref({
+      class_id: [{ required: true, message: "请选择课堂", trigger: "change" }],
+    });
+
     console.log("chooseClass", needToChooseClass);
     console.log("is editing", isEditting);
     console.log("class_id", localClassId.value);
 
     const sender_id = userAPI.getUserId();
     const selectedType = ref("text"); // 当前选中的输入类型
-    // 添加条目
-    const addItem = () => {
-      console.log("selectedType", noticeForm.value.dynamicItems);
-      // 根据选中的类型添加新的条目
-      noticeForm.value.dynamicItems.push({
-        type: selectedType.value,
-        value: "",
-        file: null,
-        uploaded: false,
-        modified: false,
-      });
-    };
-
-    // 删除条目
-    const removeItem = (item, index) => {
-      noticeForm.value.dynamicItems.splice(index, 1);
-      if (item.uploaded == true) {
-        removeUploadedItems.value.push(item);
-      }
-    };
 
     const handleInputChange = (item, value) => {
       if (item.uploaded == true) {
@@ -283,13 +276,50 @@ export default {
       reader.readAsDataURL(selectedFile);
     };
 
-    const submitNoticeForm = async () => {
-      if (isEditting == false) {
-        const dynamicItems = ref(noticeForm.value.dynamicItems);
+    const closeDialog = () => {
+      emit("close-dialog");
+    };
+
+    return {
+      sender_id,
+      formRules,
+      noticeForm,
+      isEditting,
+      selectedType,
+      removeUploadedItems,
+      handleInputChange,
+      handleFileChange,
+      handlePhotoChange,
+      closeDialog,
+      localClassId,
+      classList,
+      needToChooseClass,
+    };
+  },
+  async mounted() {
+    await this.fetchClassList();
+    if (this.isEditting) {
+      this.transformNotice(this.notice);
+    }
+  },
+  methods: {
+    async submitNoticeForm() {
+      this.$refs.form.validate(async (valid) => {
+        console.log("valid", valid);
+        if (!valid) {
+          ElMessage.error("请检查表单是否填写正确");
+          return;
+        }
+      });
+
+      console.log("here", this.isEditting);
+
+      if (this.isEditting == false) {
+        const dynamicItems = ref(this.noticeForm.dynamicItems);
         //提交新的notice
         const noticeResult = await noticeAPI.postNotices(
-          sender_id,
-          localClassId.value
+          this.sender_id,
+          this.noticeForm.class_id
         );
         console.log("notice", noticeResult);
         if (noticeResult.success) {
@@ -339,16 +369,16 @@ export default {
         }
       } else {
         //修改老的notice
-        console.log("dynamicItems", noticeForm.value.dynamicItems);
-        const dynamicItems = ref(noticeForm.value.dynamicItems);
+        console.log("dynamicItems", this.noticeForm.dynamicItems);
+        const dynamicItems = ref(this.noticeForm.dynamicItems);
 
-        const notice_id = ref(props.notice.id);
+        const notice_id = ref(this.notice.id);
 
         //删除被去除的
-        console.log("removeUploadedItems", removeUploadedItems.value);
-        for (let i = 0; i < removeUploadedItems.value.length; i++) {
+        console.log("removeUploadedItems", this.removeUploadedItems);
+        for (let i = 0; i < this.removeUploadedItems.length; i++) {
           const deleteRowResult = await noticeAPI.deleteContentToNotice(
-            removeUploadedItems.value[i].row_id
+            this.removeUploadedItems[i].row_id
           );
           if (deleteRowResult.success) {
             ElMessage.success("删除成功");
@@ -418,44 +448,67 @@ export default {
         }
       }
       console.log("提交成功");
-      noticeForm.value.dynamicItems = [];
-      closeDialog();
-    };
+      this.noticeForm.dynamicItems = [];
+      this.closeDialog();
 
-    const closeDialog = () => {
-      emit("close-dialog");
-    };
+      //TODO
+    },
+    generateRules() {
+      const rules = {};
 
-    return {
-      noticeForm,
-      isEditting,
-      selectedType,
-      addItem,
-      removeItem,
-      removeUploadedItems,
-      handleInputChange,
-      handleFileChange,
-      handlePhotoChange,
-      submitNoticeForm,
-      closeDialog,
-      localClassId,
-      classList,
-      needToChooseClass,
-    };
-  },
-  async mounted() {
-    /*if (this.needToChooseClass) {
-      this.fetchClassList();
-    }*/
+      rules.class_id = [
+        { required: true, message: "请选择课堂", trigger: "change" },
+      ];
 
-    console.log("dialogmounted!!!", this.isEditting, this.notice);
+      this.noticeForm.dynamicItems.forEach((item, index) => {
+        const prop = `dynamicItems[${index}].value`; // 对应的 prop
+        let rule = [];
 
-    await this.fetchClassList();
-    if (this.isEditting) {
-      this.transformNotice(this.notice);
-    }
-  },
-  methods: {
+        // 根据 item 的类型来添加不同的规则
+        if (item.type === "text") {
+          rule.push({
+            required: true,
+            message: "请填写文本",
+            trigger: "blur",
+          });
+        }
+
+        if (item.type === "file" || item.type === "image") {
+          rule.push({
+            required: true,
+            message: "请上传文件",
+            trigger: "change",
+          });
+        }
+
+        // 将规则动态添加到 rules 中
+        rules[prop] = rule;
+      });
+
+      // 更新 formRules
+      this.formRules = rules;
+      console.log("formRules", this.formRules);
+    },
+    addItem() {
+      // 根据选中的类型添加新的条目
+      this.noticeForm.dynamicItems.push({
+        type: this.selectedType,
+        value: "",
+        file: null,
+        uploaded: false,
+        modified: false,
+      });
+      this.generateRules();
+    },
+
+    // 删除条目
+    removeItem(item, index) {
+      this.noticeForm.dynamicItems.splice(index, 1);
+      if (item.uploaded == true) {
+        this.removeUploadedItems.push(item);
+      }
+      this.generateRules();
+    },
     moveItemUp(index) {
       const temp = this.noticeForm.dynamicItems[index];
       this.noticeForm.dynamicItems.splice(index, 1);
