@@ -62,7 +62,7 @@
     </el-dialog>
 
     <div
-      class="header"
+      class="header-box"
       style="
         display: flex;
         flex-direction: row;
@@ -203,7 +203,7 @@
       </div>
     </el-dialog>
 
-    <el-card class="card">
+    <div class="box">
       <h3>通知</h3>
       <el-button
         v-if="isTeacher"
@@ -256,7 +256,7 @@
           </el-dialog>
         </el-col>
       </el-row>
-    </el-card>
+    </div>
     <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
       <NoticeDialog
         :class_id="class_id"
@@ -265,7 +265,7 @@
       />
     </el-dialog>
 
-    <el-card class="card">
+    <div class="box">
       <h3>实验内容</h3>
       <el-button
         v-if="isTeacher"
@@ -376,7 +376,7 @@
           </el-col>
         </el-row>
       </div>
-    </el-card>
+    </div>
     <el-dialog
       title="添加实验内容"
       v-model="experimentDialogVisible"
@@ -495,7 +495,7 @@
       </div>
     </el-dialog>
 
-    <el-card class="card">
+    <div class="box">
       <h3>实验文件</h3>
       <el-button
         v-if="isTeacher"
@@ -506,9 +506,9 @@
         添加文件
       </el-button>
       <p>表格</p>
-    </el-card>
+    </div>
 
-    <el-card class="comment-card">
+    <div class="header-box">
       <h3>评论区</h3>
 
       <div class="comment-list">
@@ -542,7 +542,7 @@
           >提交评论</el-button
         >
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -974,7 +974,16 @@ export default {
   margin-bottom: 20px;
 }
 
-.header {
+.box {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+.header-box {
   background-color: #f9f9f9;
   padding: 15px;
   border-radius: 8px;
