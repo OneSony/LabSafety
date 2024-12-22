@@ -15,6 +15,7 @@
     </div>
 
     <!-- 显示更多课程卡片，点击切换显示/隐藏 -->
+    <el-divider v-if="item.isVisible"></el-divider>
     <div v-if="item.isVisible">
       <el-skeleton :rows="3" animated v-if="item.isLoaded === false" />
       <el-empty
@@ -29,7 +30,10 @@
           class="sub-course-card"
           @click="handleClassCardClick(item, classItem, $event)"
         >
-          <DateBox :dateStr="classItem.start_time"></DateBox>
+          <DateBox
+            :dateStr="classItem.start_time"
+            style="margin-bottom: 5px; margin-left: 10px"
+          ></DateBox>
           <el-card class="class-card">
             <div class="class-content">
               <div class="class-title">
@@ -140,7 +144,7 @@ export default {
 
 .sub-course-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-direction: column;
   margin-top: 20px;
 }
@@ -152,6 +156,10 @@ export default {
   box-shadow: 0 0px 0px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   position: relative;
+}
+
+.class-card:last-child {
+  margin-bottom: 0;
 }
 
 .class-card h4 {
