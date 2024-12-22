@@ -5,6 +5,8 @@ import "element-plus/dist/index.css";
 import App from "./App.vue";
 import router from "./router";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
+import _ from "lodash";
+
 // 保存原始的 console.error
 const originalConsoleError = console.error;
 
@@ -20,7 +22,21 @@ console.error = (...args: any[]) => {
 
 // 创建 Vue 应用
 const app = createApp(App);
+const debounced = _.debounce((msg: string) => {
+  if (
+    msg.includes("ResizeObserver") ||
+    msg.includes("ResizeObserver loop completed with undelivered notifications")
+  ) {
+    return;
+  }
+  console.error(msg);
+}, 100);
 
+app.config.errorHandler = (err) => {
+  if (err instanceof Error) {
+    debounced(err.message);
+  }
+};
 app.use(ElementPlus);
 app.use(Vue3Lottie, { name: "Vue3Lottie" });
 

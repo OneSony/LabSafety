@@ -48,6 +48,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/login",
     component: UserLogin,
+    // component: TeachingAffairs,
   },
   {
     path: "/dashboard",

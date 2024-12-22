@@ -1,5 +1,6 @@
 <template>
   <div class="quick-look">
+    <h3>课程管理</h3>
     <el-button
       type="primary"
       @click="navigateToCreateCourse"
