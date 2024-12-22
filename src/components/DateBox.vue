@@ -74,13 +74,15 @@ export default {
       ];
       const weekdayName = daysOfWeek[dayOfWeek];
 
+      const padZero = (num) => String(num).padStart(2, "0");
+
       // 返回包含年、月、日、星期几等信息的对象
       return {
         year: date.getFullYear(), // 获取年份
         month: date.getMonth() + 1, // 获取月份 (月份从0开始，所以要加1)
         day: date.getDate(), // 获取日期
-        hour: date.getHours(), // 获取小时
-        minute: date.getMinutes(), // 获取分钟
+        hour: padZero(date.getHours()), // 获取小时并确保是两位数
+        minute: padZero(date.getMinutes()), // 获取分钟并确保是两位数
         weekday: weekdayName, // 获取星期几的中文名称
       };
     },
@@ -108,7 +110,6 @@ export default {
 
 <style scoped>
 .date-display {
-  background-color: red;
   display: flex;
   flex-direction: row;
   align-items: center;
