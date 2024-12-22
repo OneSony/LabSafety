@@ -214,6 +214,13 @@
       >
         添加通知
       </el-button>
+      <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
+      <p
+        v-if="noticeList.length === 0 && noticeLoaded"
+        style="text-align: center; color: #ccc"
+      >
+        暂无通知
+      </p>
       <el-row gutter="20">
         <el-col
           :xs="24"
@@ -222,7 +229,13 @@
           v-for="(notice, index) in noticeList"
           :key="index"
           :span="8"
-          style="position: relative; display: flex; flex-direction: column"
+          style="
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+          "
+          class="notice-item"
         >
           <el-button
             type="text"
@@ -276,7 +289,6 @@
       >
         添加内容
       </el-button>
-      <el-divider></el-divider>
       <div
         v-for="(experiment, index) in experimentInfos"
         :key="index"
@@ -297,84 +309,7 @@
           style="position: absolute; top: 70px; right: 20px; z-index: 1000"
           >删除</el-button
         >
-        <el-row>
-          <el-col :span="24">
-            <h4>
-              <span class="experiment-index">{{ index + 1 }}.</span>
-              <!-- 显示数字序号 -->
-              {{ experiment.title }}
-            </h4>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>预估时间：</strong>{{ experiment.estimatedTime }}
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>安全标签：</strong>
-            <el-tag
-              v-for="(tag, i) in experiment.safetyTags"
-              :key="i"
-              type="danger"
-              class="tag"
-            >
-              {{ tag }}
-            </el-tag>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>实验方式：</strong>
-            <el-tag
-              v-for="(tag, i) in experiment.experimentTags"
-              :key="i"
-              type="primary"
-              class="tag"
-            >
-              {{ tag }}
-            </el-tag>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>作业形式：</strong>
-            <el-tag
-              v-for="(tag, i) in experiment.submissionTags"
-              :key="i"
-              type="success"
-              class="tag"
-            >
-              {{ tag }}
-            </el-tag>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>其他标签：</strong>
-            <el-tag
-              v-for="(tag, i) in experiment.otherTags"
-              :key="i"
-              type="info"
-              class="tag"
-            >
-              {{ tag }}
-            </el-tag>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="24">
-            <strong>实验描述：</strong>
-            <p>{{ experiment.description }}</p>
-          </el-col>
-        </el-row>
+        <ExperimentCard :experiment="experiment" :index="index" />
       </div>
     </div>
     <el-dialog
@@ -391,21 +326,16 @@
       />
     </el-dialog>
 
-    <div class="box">
-      <h3>实验文件</h3>
-      <el-button
-        v-if="isTeacher"
-        type="primary"
-        class="card-btn"
-        style="position: absolute; top: 20px; right: 20px"
-      >
-        添加文件
-      </el-button>
-      <p>表格</p>
-    </div>
-
     <div class="header-box">
       <h3>评论区</h3>
+
+      <el-skeleton :rows="3" animated v-if="!commentLoaded" />
+      <p
+        v-if="commentList.length === 0 && commentLoaded"
+        style="text-align: center; color: #ccc"
+      >
+        暂无讨论
+      </p>
 
       <div class="comment-list">
         <div
@@ -451,6 +381,7 @@ import NoticeCard from "@/components/NoticeCard.vue";
 import NoticeDialog from "@/components/NoticeDialog.vue";
 import DateBox from "@/components/DateBox.vue";
 import ExperimentDialog from "@/components/ExperimentDialog.vue";
+import ExperimentCard from "@/components/ExperimentCard.vue";
 
 export default {
   name: "ClassPage",
@@ -470,6 +401,7 @@ export default {
     NoticeDialog,
     DateBox,
     ExperimentDialog,
+    ExperimentCard,
   },
   data() {
     return {
@@ -542,6 +474,9 @@ export default {
       studentList: [],
       copyList: [],
       noticeList: [],
+      noticeLoaded: false,
+      experimentLoaded: false,
+      commentLoaded: false,
       myUserId: userAPI.getUserId(),
     };
   },
@@ -772,6 +707,7 @@ export default {
     },
 
     fetchComments() {
+      this.commentLoaded = false;
       classAPI.getComments(this.class_id).then((response) => {
         if (response.success) {
           if (response.data.length === 0) {
@@ -783,6 +719,7 @@ export default {
           ElMessage.error("获取评论失败");
         }
       });
+      this.commentLoaded = true;
     },
 
     submitComment() {
@@ -800,6 +737,7 @@ export default {
     },
 
     async fetchNotices() {
+      this.noticeLoaded = false;
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
         this.noticeList = result.data;
@@ -807,6 +745,7 @@ export default {
       } else {
         ElMessage.error("获取通知失败");
       }
+      this.noticeLoaded = true;
     },
 
     async fetchEnrolledStudents() {
@@ -862,23 +801,16 @@ export default {
   margin-bottom: 20px;
 }
 
-.card {
-  margin-bottom: 20px;
-  padding: 20px;
-  position: relative;
-}
-
 .experiment-item {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-bottom: 20px;
-  margin-top: 20px;
   position: relative;
 }
 
-.experiment-item:not(:last-child) {
-  border-bottom: 1px solid #ccc; /* 给每个实验项添加分割线，除了最后一个 */
+.experiment-item:last-child {
+  margin-bottom: 0;
 }
 
 .comment-card {
