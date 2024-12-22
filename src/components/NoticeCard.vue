@@ -1,11 +1,12 @@
 <template>
   <el-card :body-style="{ padding: '20px' }" class="card">
-    <el-row>
-      <UserCard :userId="notice.sender" />
-    </el-row>
+    <DateBox :dateStr="notice.updated_at" textColor="#666" font-size="12px" />
     <h3 v-if="needToShowClass" style="margin-top: 10px; margin-bottom: 10px">
       {{ this.notice.class_info.name }}
     </h3>
+    <el-row>
+      <UserCard :userId="notice.sender" />
+    </el-row>
     <el-row v-for="(content, index) in notice.rows" :key="index">
       <ImageBox
         v-if="content.notice_content.content_type === 'image'"
@@ -36,6 +37,7 @@ import { ElCard, ElButton, ElDivider } from "element-plus";
 import UserCard from "./UserCard.vue";
 import ImageBox from "./ImageBox.vue";
 import DownloadLink from "@/components/DownloadLink.vue";
+import DateBox from "./DateBox.vue";
 export default {
   name: "NoticeCard",
   components: {
@@ -43,6 +45,7 @@ export default {
     UserCard,
     ImageBox,
     DownloadLink,
+    DateBox,
   },
   props: {
     notice: {

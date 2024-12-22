@@ -82,17 +82,41 @@
           v-if="isTeacher"
           type="primary"
           class="card-btn"
-          style="position: absolute; top: 20px; right: 20px"
+          style="position: absolute; top: 20px; right: 20px; z-index: 1000"
           @click="openBasicDialog"
         >
           编辑基本信息
         </el-button>
-        <h2>{{ this.basicInfo.class_name }}</h2>
-        <p><strong>课程ID:</strong> {{ this.basicInfo.class_id }}</p>
-        <p><strong>教师:</strong> {{ this.basicInfo.teachers_str }}</p>
-        <p><strong>上课时间:</strong> {{ this.basicInfo.date }}</p>
-        <p><strong>地点:</strong> {{ this.basicInfo.lab_name }}</p>
-        <p><strong>概览:</strong> 这里是课程的概览</p>
+        <el-row>
+          <el-col :span="24">
+            <h2>{{ this.basicInfo.class_name }}</h2>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="4"> 教师 </el-col>
+          <el-col :span="20">
+            {{ this.basicInfo.teachers_str }}
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="4"> 上课时间 </el-col>
+          <el-col :span="20">
+            <DateBox
+              :dateStr="this.basicInfo.date"
+              v-if="this.basicInfo.date"
+            />
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="4"> 地点 </el-col>
+          <el-col :span="20">
+            {{ this.basicInfo.lab_name }}
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="4"> 概览 </el-col>
+          <el-col :span="20"> 这里是课程的概览 </el-col>
+        </el-row>
       </div>
       <div
         style="
@@ -496,7 +520,11 @@
           <UserCard :userId="comment.sender_id" />
           <div class="comment-details">
             {{ comment.content }}
-            <span class="comment-time">{{ comment.sent_time }}</span>
+            <DateBox
+              :dateStr="comment.sent_time"
+              :textColor="'#666'"
+              :fontSize="'12px'"
+            />
           </div>
         </div>
       </div>
@@ -525,6 +553,7 @@ import { useRouter } from "vue-router";
 import UserCard from "@/components/UserCard.vue";
 import NoticeCard from "@/components/NoticeCard.vue";
 import NoticeDialog from "@/components/NoticeDialog.vue";
+import DateBox from "@/components/DateBox.vue";
 
 export default {
   name: "ClassPage",
@@ -542,6 +571,7 @@ export default {
     UserCard,
     NoticeCard,
     NoticeDialog,
+    DateBox,
   },
   data() {
     return {
