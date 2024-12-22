@@ -1,4 +1,15 @@
 <template>
+  <Transition name="fade">
+    <div v-if="isLoading" class="loading-container">
+      <Vue3Lottie
+        :animation-data="loadingAnimation"
+        :height="200"
+        :width="200"
+        :loop="true"
+        :autoPlay="true"
+      />
+    </div>
+  </Transition>
   <div class="lab-detail">
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -372,12 +383,14 @@
 </template>
 
 <script lang="ts">
+import { ref } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import { defineComponent } from "vue";
 import { ElMessage, ElLoading, ElMessageBox } from "element-plus";
 import { labAPI } from "../utils/api";
 import _ from "lodash";
 import type { Lab, LabForm, LabManager, UpdateLabRequest } from "../types/lab";
+import loadingAnimation from "@/assets/loading.json";
 
 interface Equipment {
   name: string;
@@ -432,9 +445,20 @@ export default defineComponent({
       managerDialogVisible: false,
       searchManagerName: "",
       loadingManagers: false,
+      isLoading: true,
     };
   },
-
+  setup() {
+    return {
+      loadingAnimation,
+    };
+  },
+  mounted() {
+    // 在组件挂载后设置一个定时器来关闭加载动画
+    setTimeout(() => {
+      this.isLoading = false;
+    }, 1500); // 1.5秒后关闭动画
+  },
   watch: {
     id: {
       immediate: true,
@@ -970,6 +994,29 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: white; /* 或者与你的页面背景色匹配 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* 过渡动画效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 .section-title {
   font-size: 16px;
   color: #606266;

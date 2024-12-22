@@ -74,34 +74,18 @@ export default {
 </script>
 
 <style scoped>
+@supports not (backdrop-filter: blur(10px)) {
+  .sidebar-wrapper {
+    background: rgba(255, 255, 255, 0.95);
+  }
+}
 .sidebar-wrapper {
   position: relative;
-  height: 100vh;
-  width: 200px;
+  background: rgba(255, 255, 255, 0.6); /* 半透明背景 */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1000;
 }
-
-.sidebar-wrapper::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
-  z-index: -1;
-}
-
-.sidebar-menu {
-  height: 100%;
-  width: 100%;
-  background: transparent;
-  border: none;
-}
-
 :deep(.el-menu) {
   background-color: transparent !important;
   border-right: none !important;
@@ -114,7 +98,14 @@ export default {
 }
 
 :deep(.el-sub-menu__title:hover) {
-  background-color: rgba(255, 255, 255, 0.5) !important;
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 子菜单弹出层样式 */
+:deep(.el-menu--popup) {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 :deep(.el-menu-item) {
@@ -128,26 +119,53 @@ export default {
 }
 
 :deep(.el-menu-item.is-active) {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(255, 255, 255, 0.4) 100%
-  ) !important;
+  background: rgba(64, 158, 255, 0.1) !important;
   color: #409eff !important;
-  backdrop-filter: blur(4px);
 }
 
+/* 美化图标和文字间距 */
+:deep(.el-menu-item .el-icon),
+:deep(.el-sub-menu__title .el-icon) {
+  margin-right: 12px;
+  font-size: 18px;
+  vertical-align: middle;
+}
+
+/* 添加阴影和边框效果 */
+.sidebar-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.1)
+  );
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 768px) {
+  .sidebar-wrapper {
+    width: 60px;
+    transition: width 0.3s;
+  }
+
+  .sidebar-wrapper:hover {
+    width: 200px;
+  }
+}
+
+/* 保持内容间距一致 */
 :deep(.el-sub-menu__title),
 :deep(.el-menu-item) {
   height: 50px;
   line-height: 50px;
-  padding: 0 20px !important;
+  padding: 0 16px !important;
 }
 
-:deep(.el-icon) {
-  margin-right: 8px;
-  font-size: 18px;
-}
 .sidebar-menu {
   height: 100vh;
   width: 200px;
