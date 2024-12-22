@@ -83,8 +83,6 @@ export default {
       experiment: {
         ...this.input_experiment,
         isVisible: false,
-        isLoaded: false,
-        classList: [],
       },
     };
   },
@@ -96,8 +94,6 @@ export default {
     input_experiment(newExperiment) {
       this.experiment = newExperiment;
       this.isVisible = false; // 默认初始化为 false
-      this.isLoaded = false; // 默认初始化为 false
-      this.classList = []; // 默认初始化为空数组
       console.log("new exp", newExperiment);
     },
   },

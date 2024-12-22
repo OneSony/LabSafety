@@ -38,7 +38,7 @@ import PaginationComponent from "./Pagination.vue";
 import { courseAPI } from "../utils/api";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
-import { userAPI } from "../utils/api";
+import { userAPI, classAPI } from "../utils/api";
 
 export default {
   name: "CoursePanel",
@@ -60,15 +60,31 @@ export default {
   methods: {
     async fetchCourses() {
       const response = await courseAPI.getCourseList(); // 调用 API 获取课程数据
-      console.log("Response:", response);
+      console.log("course list:", response);
       if (response.success === false) {
         ElMessage.error("获取课程失败：" + response.error);
         console.error("Error fetching courses:", response.error);
       } else {
         const courses = response.data; // 假设 API 返回的数据存储在 `data` 字段中
+
+        for (let i = 0; i < courses.length; i++) {
+          courses[i].isLoaded = false;
+          courses[i].classList = [];
+
+          // 获取课程的实验列表
+          const classResponse = await classAPI.getClassList(courses[i].id);
+          console.log("dashBoardClassResponse", classResponse);
+          if (classResponse.success) {
+            courses[i].classList = classResponse.data;
+            courses[i].isLoaded = true;
+          } else {
+            ElMessage.error("获取课程实验失败：" + classResponse.error);
+            console.error("Error fetching class list:", classResponse.error);
+          }
+        }
+
         this.experimentNum = courses.length; // 设置课程数量
         this.allExperiments = courses;
-        console.log("All experiments:", this.allExperiments);
       }
       this.isLoading = false;
     },
