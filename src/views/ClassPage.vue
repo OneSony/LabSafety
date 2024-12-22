@@ -110,7 +110,12 @@
         <el-row>
           <el-col :span="4"> 地点 </el-col>
           <el-col :span="20">
-            {{ this.basicInfo.lab_name }}
+            <router-link
+              :to="{ path: '/lab/' + this.basicInfo.lab_id }"
+              style="cursor: pointer"
+            >
+              {{ this.basicInfo.lab_name }}
+            </router-link>
           </el-col>
         </el-row>
         <el-row>
