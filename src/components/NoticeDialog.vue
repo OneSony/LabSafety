@@ -304,15 +304,26 @@ export default {
   },
   methods: {
     async submitNoticeForm() {
-      this.$refs.form.validate(async (valid) => {
-        console.log("valid", valid);
-        if (!valid) {
-          ElMessage.error("请检查表单是否填写正确");
-          return;
-        }
+      const valid = await new Promise((resolve) => {
+        this.$refs.form.validate((valid) => {
+          resolve(valid); // 结果返回
+        });
       });
 
-      console.log("here", this.isEditting);
+      console.log("valid", valid);
+      if (!valid) {
+        console.log("请检查表单是否填写正确");
+        ElMessage.error("请检查表单是否填写正确");
+        return;
+      }
+
+      // 验证通过后继续执行的代码
+      console.log("表单验证通过，可以继续执行");
+
+      if (this.noticeForm.dynamicItems.length == 0) {
+        ElMessage.error("请添加内容");
+        return;
+      }
 
       if (this.isEditting == false) {
         const dynamicItems = ref(this.noticeForm.dynamicItems);
@@ -323,7 +334,7 @@ export default {
         );
         console.log("notice", noticeResult);
         if (noticeResult.success) {
-          ElMessage.success("发送成功");
+          console.log("notice发送成功");
         } else {
           ElMessage.error("发送失败");
           return;
@@ -347,7 +358,7 @@ export default {
           const result = await noticeAPI.postContent(formData);
           console.log("content", result);
           if (result.success) {
-            ElMessage.success("提交成功");
+            console.log("content发送成功");
             const notice_content_id = result.data.notice_content.id;
             //post row
             const rowResult = await noticeAPI.postContentToNotice(
@@ -357,7 +368,7 @@ export default {
             );
             console.log("row", rowResult);
             if (rowResult.success) {
-              ElMessage.success("提交成功");
+              console.log("row发送成功");
             } else {
               ElMessage.error("提交失败"); //TODO
               return;
@@ -381,7 +392,7 @@ export default {
             this.removeUploadedItems[i].row_id
           );
           if (deleteRowResult.success) {
-            ElMessage.success("删除成功");
+            console.log("row删除成功");
           } else {
             ElMessage.error("删除失败");
             return; //TODO
@@ -395,7 +406,7 @@ export default {
               dynamicItems.value[i].row_id
             );
             if (deleteRowResult.success) {
-              ElMessage.success("删除成功");
+              console.log("old row删除成功");
             } else {
               ElMessage.error("删除失败");
               return; //TODO
@@ -422,9 +433,8 @@ export default {
             }
             console.log("formdata", formData);
             const result = await noticeAPI.postContent(formData);
-            console.log("content?????!!!!!!!!", result);
             if (result.success) {
-              ElMessage.success("提交成功");
+              console.log("content发送成功");
               notice_content_id.value = result.data.notice_content.id;
             } else {
               ElMessage.error("提交失败");
@@ -440,7 +450,7 @@ export default {
           );
           console.log("row", rowResult);
           if (rowResult.success) {
-            ElMessage.success("提交成功");
+            console.log("row发送成功");
           } else {
             ElMessage.error("提交失败"); //TODO
             return;
@@ -450,8 +460,6 @@ export default {
       console.log("提交成功");
       this.noticeForm.dynamicItems = [];
       this.closeDialog();
-
-      //TODO
     },
     generateRules() {
       const rules = {};
