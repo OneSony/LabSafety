@@ -334,10 +334,31 @@ export default defineComponent({
       this.courseData.department = inputCourseData?.department || "";
 
       //TODO 获取学生
-      /*const result = await courseAPI.getEnrolledStudents(
-        this.courseData.course_code,
-        this.courseData.course_sequence
-      );*/
+      const result1 = await courseAPI.getEnroll(this.courseData.course_id!);
+      console.log("result1", result1);
+      if (result1.success) {
+        this.studentList = [] as Student[];
+        for (let i = 0; i < result1.data.length; i++) {
+          this.studentList.push({
+            student_id: result1.data[i].student_id,
+          } as Student);
+        }
+
+        //TODO 获取userinfo！！
+        for (let i = 0; i < this.studentList.length; i++) {
+          const resultInfo = await userAPI.getUserInfo(
+            this.studentList[i].student_id
+          );
+          console.log("result2", resultInfo);
+          if (resultInfo.success) {
+            this.studentList[i].student_name = resultInfo.data[0].real_name;
+          } else {
+            ElMessage.error("加载学生失败");
+          }
+        }
+      } else {
+        ElMessage.error("加载学生失败");
+      }
 
       //获取class
       const result2 = await classAPI.getClassList(this.courseData.course_id!);
