@@ -1,15 +1,4 @@
 <template>
-  <Transition name="fade">
-    <div v-if="isLoading" class="loading-container">
-      <Vue3Lottie
-        :animation-data="loadingAnimation"
-        :height="200"
-        :width="200"
-        :loop="true"
-        :autoPlay="true"
-      />
-    </div>
-  </Transition>
   <div class="page-container">
     <div class="dashboard">
       <SidebarMenu @updateCurrentComponent="updateComponent" />
@@ -102,12 +91,6 @@ export default {
       isTeacher,
       loadingAnimation,
     };
-  },
-  mounted() {
-    // 在组件挂载后设置一个定时器来关闭加载动画
-    setTimeout(() => {
-      this.isLoading = false;
-    }, 1500); // 1.5秒后关闭动画
   },
   methods: {
     navigateToCreateCourse() {
