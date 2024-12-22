@@ -1,59 +1,66 @@
 <template>
-  <el-card
-    class="experiment-card"
-    v-for="(item, index) in experiments"
-    :key="index"
-    @click="handleCardClick(item)"
-  >
+  <el-card class="experiment-card" @click="handleCardClick">
     <div class="card-content">
       <div class="info">
-        <h3>{{ item.name }}</h3>
-        <p>课程号 {{ item.course_code }} - {{ item.course_sequence }}</p>
-        <p>开课院系 {{ item.department }}</p>
+        <h3>{{ experiment.name }}</h3>
+        <p>
+          课程号 {{ experiment.course_code }} - {{ experiment.course_sequence }}
+        </p>
+        <p>开课院系 {{ experiment.department }}</p>
       </div>
-      <el-progress :percentage="item.progress" type="circle"></el-progress>
+      <el-progress
+        :percentage="experiment.progress"
+        type="circle"
+      ></el-progress>
     </div>
 
     <!-- 显示更多课程卡片，点击切换显示/隐藏 -->
-    <el-divider v-if="item.isVisible"></el-divider>
-    <div v-if="item.isVisible">
-      <el-skeleton :rows="3" animated v-if="item.isLoaded === false" />
+    <el-divider v-if="experiment.isVisible"></el-divider>
+    <div v-if="experiment.isVisible">
+      <el-skeleton :rows="3" animated v-if="experiment.isLoaded === false" />
       <el-empty
         description="没有课程"
         :image-size="100"
-        v-if="item.classList.length === 0 && item.isLoaded === true"
+        v-if="experiment.classList.length === 0 && experiment.isLoaded === true"
       />
       <div v-else>
         <div
-          v-for="(classItem, index) in item.classList"
+          v-for="(classItem, index) in experiment.classList"
           :key="index"
           class="sub-course-card"
-          @click="handleClassCardClick(item, classItem, $event)"
         >
-          <DateBox
-            :dateStr="classItem.start_time"
-            style="margin-bottom: 5px; margin-left: 10px"
-          ></DateBox>
-          <el-card class="class-card">
-            <div class="class-content">
-              <div class="class-title">
-                <h4>{{ classItem.name }}</h4>
-                <p>生物医学馆</p>
+          <router-link
+            :to="{
+              name: 'class-page',
+              params: { classId: classItem.class_id, courseId: experiment.id },
+            }"
+            style="text-decoration: none; width: 100%"
+          >
+            <DateBox
+              :dateStr="classItem.start_time"
+              style="margin-bottom: 5px; margin-left: 10px"
+            ></DateBox>
+            <el-card class="class-card">
+              <div class="class-content">
+                <div class="class-title">
+                  <h4>{{ classItem.name }}</h4>
+                  <p>生物医学馆</p>
+                </div>
+                <div class="content-box">
+                  <p>通知</p>
+                  <p>0</p>
+                </div>
+                <div class="content-box">
+                  <p>实验数</p>
+                  <p>0</p>
+                </div>
+                <div class="content-box">
+                  <p>预估时间</p>
+                  <p>0</p>
+                </div>
               </div>
-              <div class="content-box">
-                <p>通知</p>
-                <p>0</p>
-              </div>
-              <div class="content-box">
-                <p>实验数</p>
-                <p>0</p>
-              </div>
-              <div class="content-box">
-                <p>预估时间</p>
-                <p>0</p>
-              </div>
-            </div>
-          </el-card>
+            </el-card>
+          </router-link>
         </div>
       </div>
     </div>
@@ -66,54 +73,58 @@ import DateBox from "./DateBox.vue";
 
 export default {
   props: {
-    experiments: Array,
+    input_experiment: {
+      type: Object,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      experiment: {
+        ...this.input_experiment,
+        isVisible: false,
+        isLoaded: false,
+        classList: [],
+      },
+    };
   },
   components: {
     DateBox,
   },
   watch: {
     // 监听 experiments 的变化，当传递新的数据时重新初始化
-    experiments(newExperiments) {
-      newExperiments.forEach((item) => {
-        item.isVisible = false; // 默认初始化为 false
-        item.isLoaded = false; // 默认初始化为 false
-        item.classList = []; // 默认初始化为空数组
-      });
-      console.log("new exp", newExperiments);
+    input_experiment(newExperiment) {
+      this.experiment = newExperiment;
+      this.isVisible = false; // 默认初始化为 false
+      this.isLoaded = false; // 默认初始化为 false
+      this.classList = []; // 默认初始化为空数组
+      console.log("new exp", newExperiment);
     },
   },
   methods: {
     // 处理课程卡片点击事件
-    async handleCardClick(course) {
-      console.log("Course card clicked:", course);
+    async handleCardClick() {
       // 切换课程卡片的显示状态
-      course.isVisible = !course.isVisible;
-
+      this.experiment.isVisible = !this.experiment.isVisible;
+      console.log("Card clicked:", this.experiment);
       // 仅在 classList 为空时请求数据
-      if (course.isVisible && course.isLoaded === false) {
+      if (this.experiment.isVisible && this.experiment.isLoaded === false) {
         console.log("请求数据");
-        const response = await classAPI.getClassList(course.id);
-        console.log("course.id", course.id);
+        const response = await classAPI.getClassList(this.experiment.id);
+        console.log("course.id", this.experiment.id);
         if (response.success) {
           console.log("获取课程列表成功:", response.data);
-          course.classList = response.data; // 假设返回的数据是 class 列表
-          for (let i = 0; i < course.classList.length; i++) {
+          this.experiment.classList = response.data; // 假设返回的数据是 class 列表
+          for (let i = 0; i < this.experiment.classList.length; i++) {
             //TODO
             //获取每个课程的通知数量，实验数量，预估时间，地点，老师
           }
-          console.log("course.classList", course.classList);
+          console.log("course.classList", this.experiment.classList);
         } else {
           this.$message.error("获取课程列表失败");
         }
-        course.isLoaded = true; // 设置为 true，避免重复请求
+        this.experiment.isLoaded = true; // 设置为 true，避免重复请求
       }
-    },
-
-    // 处理 class card 的点击事件
-    handleClassCardClick(item, classItem, event) {
-      console.log("Class card clicked:", classItem, item.id);
-      event.stopPropagation(); // 防止触发父级课程卡片点击事件
-      this.$emit("class-clicked", classItem.class_id, item.id); // 将选中的 class 传递给父组件
     },
   },
 };
