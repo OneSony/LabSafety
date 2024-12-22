@@ -521,6 +521,13 @@ const classAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
+  postExperiment(formData: FormData): Promise<any> {
+    return server
+      .post("/api/v1/classes/experiments/", formData)
+      .then(handleResponse)
+      .catch(handleError);
+  },
 };
 interface CreateLabRequest {
   name: string;
