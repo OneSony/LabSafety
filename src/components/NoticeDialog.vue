@@ -1,10 +1,10 @@
 <template>
-  <el-form label-width="120px">
+  <el-form v-model="noticeForm" label-width="120px">
     <el-form-item label="选择课堂">
       <el-row gutter="20" style="width: 100%">
         <el-col :span="24">
           <el-select
-            v-model="localClassId"
+            v-model="noticeForm.class_id"
             placeholder="选择课堂"
             style="width: 100%"
             :disabled="isEditting || !needToChooseClass"
@@ -21,7 +21,7 @@
     </el-form-item>
 
     <div
-      v-for="(item, index) in dynamicItems"
+      v-for="(item, index) in noticeForm.dynamicItems"
       :key="index"
       class="dynamic-item"
     >
@@ -100,7 +100,7 @@
             <el-button
               size="small"
               @click="moveItemDown(index)"
-              :disabled="index === dynamicItems.length - 1"
+              :disabled="index === noticeForm.dynamicItems.length - 1"
               >下移</el-button
             >
             <el-button
@@ -186,17 +186,22 @@ export default {
     const needToChooseClass = localClassId.value === undefined;
     const removeUploadedItems = ref([]);
 
+    const noticeForm = ref({
+      class_id: localClassId.value,
+      dynamicItems: [],
+    });
+
     console.log("chooseClass", needToChooseClass);
     console.log("is editing", isEditting);
     console.log("class_id", localClassId.value);
 
     const sender_id = userAPI.getUserId();
     const selectedType = ref("text"); // 当前选中的输入类型
-    const dynamicItems = ref([]); // 用于保存动态添加的条目
     // 添加条目
     const addItem = () => {
+      console.log("selectedType", noticeForm.value.dynamicItems);
       // 根据选中的类型添加新的条目
-      dynamicItems.value.push({
+      noticeForm.value.dynamicItems.push({
         type: selectedType.value,
         value: "",
         file: null,
@@ -207,7 +212,7 @@ export default {
 
     // 删除条目
     const removeItem = (item, index) => {
-      dynamicItems.value.splice(index, 1);
+      noticeForm.value.dynamicItems.splice(index, 1);
       if (item.uploaded == true) {
         removeUploadedItems.value.push(item);
       }
@@ -280,6 +285,7 @@ export default {
 
     const submitNoticeForm = async () => {
       if (isEditting == false) {
+        const dynamicItems = ref(noticeForm.value.dynamicItems);
         //提交新的notice
         const noticeResult = await noticeAPI.postNotices(
           sender_id,
@@ -333,7 +339,8 @@ export default {
         }
       } else {
         //修改老的notice
-        console.log("dynamicItems", dynamicItems.value);
+        console.log("dynamicItems", noticeForm.value.dynamicItems);
+        const dynamicItems = ref(noticeForm.value.dynamicItems);
 
         const notice_id = ref(props.notice.id);
 
@@ -411,7 +418,7 @@ export default {
         }
       }
       console.log("提交成功");
-      dynamicItems.value = [];
+      noticeForm.value.dynamicItems = [];
       closeDialog();
     };
 
@@ -420,9 +427,9 @@ export default {
     };
 
     return {
+      noticeForm,
       isEditting,
       selectedType,
-      dynamicItems,
       addItem,
       removeItem,
       removeUploadedItems,
@@ -450,14 +457,14 @@ export default {
   },
   methods: {
     moveItemUp(index) {
-      const temp = this.dynamicItems[index];
-      this.dynamicItems.splice(index, 1);
-      this.dynamicItems.splice(index - 1, 0, temp);
+      const temp = this.noticeForm.dynamicItems[index];
+      this.noticeForm.dynamicItems.splice(index, 1);
+      this.noticeForm.dynamicItems.splice(index - 1, 0, temp);
     },
     moveItemDown(index) {
-      const temp = this.dynamicItems[index];
-      this.dynamicItems.splice(index, 1);
-      this.dynamicItems.splice(index + 1, 0, temp);
+      const temp = this.noticeForm.dynamicItems[index];
+      this.noticeForm.dynamicItems.splice(index, 1);
+      this.noticeForm.dynamicItems.splice(index + 1, 0, temp);
     },
     async fetchClassList() {
       const res = await classAPI.getClassList();
@@ -475,7 +482,7 @@ export default {
         const row_id = notice.rows[i].id;
         const content = notice.rows[i].notice_content;
         if (content.content_type === "text") {
-          this.dynamicItems.push({
+          this.noticeForm.dynamicItems.push({
             type: "text",
             value: content.text_content,
             file: null,
@@ -485,7 +492,7 @@ export default {
             modified: false,
           });
         } else if (content.content_type === "file") {
-          this.dynamicItems.push({
+          this.noticeForm.dynamicItems.push({
             type: "file",
             value: content.file_content,
             file: content.file_content,
@@ -495,7 +502,7 @@ export default {
             modified: false,
           });
         } else if (content.content_type === "image") {
-          this.dynamicItems.push({
+          this.noticeForm.dynamicItems.push({
             type: "image",
             value: content.image_content,
             file: content.image_content,
