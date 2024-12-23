@@ -97,7 +97,7 @@ export default {
     },
 
     async fetchCourseList() {
-      const result = await courseAPI.getCourseList();
+      const result = await courseAPI.getCourseList(false);
       if (result.success) {
         console.log("Fetched course list:", result.data);
         this.tableData = result.data;
