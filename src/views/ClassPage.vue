@@ -236,8 +236,8 @@
           :xs="24"
           :sm="12"
           :md="8"
-          v-for="(notice, index) in noticeList"
-          :key="index"
+          v-for="notice in noticeList"
+          :key="notice.id"
           :span="8"
           style="
             position: relative;
@@ -745,6 +745,19 @@ export default {
         console.log("通知??!!:", this.noticeList);
       } else {
         ElMessage.error("获取通知失败");
+      }
+
+      if (this.basicInfo.lab_id) {
+        const result2 = await noticeAPI.getNotices(
+          undefined,
+          this.basicInfo.lab_id
+        );
+        if (result2.success) {
+          this.noticeList.push(...result2.data);
+          console.log("lab 通知??!!:", this.noticeList);
+        } else {
+          ElMessage.error("获取通知失败");
+        }
       }
       this.noticeLoaded = true;
     },

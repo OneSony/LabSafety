@@ -1,15 +1,4 @@
 <template>
-  <Transition name="fade">
-    <div v-if="isLoading" class="loading-container">
-      <Vue3Lottie
-        :animation-data="loadingAnimation"
-        :height="200"
-        :width="200"
-        :loop="true"
-        :autoPlay="true"
-      />
-    </div>
-  </Transition>
   <div class="lab-detail">
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
@@ -182,6 +171,87 @@
           </el-row>
         </el-card>
       </el-col>
+
+      <!-- 通知已写好勿动 -->
+      <div class="box">
+        <h3>通知</h3>
+        <el-button
+          v-if="isManager"
+          type="primary"
+          class="card-btn"
+          style="position: absolute; top: 20px; right: 20px"
+          @click="noticeDialogVisible = true"
+        >
+          添加通知
+        </el-button>
+        <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
+        <p
+          v-if="noticeList.length === 0 && noticeLoaded"
+          style="text-align: center; color: #ccc"
+        >
+          暂无通知
+        </p>
+        <el-row gutter="20">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            v-for="notice in noticeList"
+            :key="notice.id"
+            :span="8"
+            style="
+              position: relative;
+              display: flex;
+              flex-direction: column;
+              margin-bottom: 20px;
+            "
+            class="notice-item"
+          >
+            <el-button
+              type="text"
+              @click="deleteNotification(notice)"
+              v-if="notice.sender === myUserId"
+              style="position: absolute; right: 25px; top: 15px; z-index: 1000"
+            >
+              删除
+            </el-button>
+            <el-button
+              type="text"
+              @click="notice.noticeEditDialogVisible = true"
+              v-if="notice.sender === myUserId"
+              style="position: absolute; right: 65px; top: 15px; z-index: 1000"
+            >
+              编辑
+            </el-button>
+            <NoticeCard :notice="notice" />
+            <el-dialog
+              title="编辑通知"
+              v-model="notice.noticeEditDialogVisible"
+              width="40%"
+              @close="fetchNotices"
+            >
+              <NoticeDialog
+                :lab_id="Number(id)"
+                :notice="notice"
+                @close-dialog="notice.noticeEditDialogVisible = false"
+                v-if="notice.noticeEditDialogVisible"
+              />
+            </el-dialog>
+          </el-col>
+        </el-row>
+      </div>
+      <el-dialog
+        title="添加通知"
+        v-model="noticeDialogVisible"
+        width="40%"
+        @close="fetchNotices"
+      >
+        <NoticeDialog
+          :lab_id="Number(id)"
+          @close-dialog="noticeDialogVisible = false"
+          v-if="noticeDialogVisible"
+        />
+      </el-dialog>
 
       <!-- 第二张卡片：安全器材 -->
       <el-col :span="24">
@@ -403,10 +473,12 @@ import { ref } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import { defineComponent } from "vue";
 import { ElMessage, ElLoading, ElMessageBox } from "element-plus";
-import { labAPI } from "../utils/api";
+import { labAPI, noticeAPI, userAPI } from "../utils/api";
 import _ from "lodash";
 import type { Lab, LabForm, LabManager, UpdateLabRequest } from "../types/lab";
 import loadingAnimation from "@/assets/loading.json";
+import NoticeCard from "@/components/NoticeCard.vue";
+import NoticeDialog from "@/components/NoticeDialog.vue";
 
 interface Equipment {
   name: string;
@@ -462,8 +534,16 @@ export default defineComponent({
       searchManagerName: "",
       loadingManagers: false,
       isLoading: true,
-      isManager: localStorage.getItem("role") === "manager",
+      noticeDialogVisible: false,
+      isManager: userAPI.getRole() === "manager",
+      noticeLoaded: false,
+      noticeList: [],
+      myUserId: userAPI.getUserId(),
     };
+  },
+  components: {
+    NoticeCard,
+    NoticeDialog,
   },
   setup() {
     return {
@@ -472,9 +552,12 @@ export default defineComponent({
   },
   mounted() {
     // 在组件挂载后设置一个定时器来关闭加载动画
-    setTimeout(() => {
+    /*setTimeout(() => {
       this.isLoading = false;
-    }, 1500); // 1.5秒后关闭动画
+    }, 1500); // 1.5秒后关闭动画*/
+
+    this.fetchLabDetails();
+    this.fetchNotices();
   },
   watch: {
     id: {
@@ -1006,6 +1089,31 @@ export default defineComponent({
         }
       }
     },
+
+    async fetchNotices() {
+      this.noticeLoaded = false;
+      const result = await noticeAPI.getNotices(undefined, Number(this.id));
+      if (result.success) {
+        this.noticeList = result.data;
+        console.log("通知??!!:", this.noticeList);
+      } else {
+        ElMessage.error("获取通知失败");
+      }
+      this.noticeLoaded = true;
+    },
+
+    async deleteNotification(notice: any) {
+      // 在这里添加删除通知的逻辑
+      console.log("删除通知:", notice);
+      const result = await noticeAPI.deleteNotice(notice.id);
+      console.log(result);
+      if (result.success) {
+        console.log("删除成功");
+        await this.fetchNotices();
+      } else {
+        console.log("删除失败");
+      }
+    },
   },
 });
 </script>
@@ -1352,5 +1460,16 @@ export default defineComponent({
 .safety-equipment,
 .safety-notes {
   margin-bottom: 20px;
+}
+
+.box {
+  width: 100%;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  position: relative;
 }
 </style>

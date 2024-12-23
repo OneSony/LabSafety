@@ -27,7 +27,7 @@
               教师
             </el-tag>
             <el-tag
-              v-else-if="user.role === 'mamager'"
+              v-else-if="user.role === 'manager'"
               type="warning"
               class="user-tag"
               size="small"
@@ -80,6 +80,11 @@ export default defineComponent({
       required: true,
     },
   },
+  watch: {
+    userId: function () {
+      this.getUserInfo();
+    },
+  },
   setup(props) {
     // 使用 `ref` 创建响应式数据
     const user = ref({
@@ -94,6 +99,7 @@ export default defineComponent({
 
     // 获取用户信息函数
     const getUserInfo = async () => {
+      console.log("USERCARDD", props.userId);
       const res = await userAPI.getUserInfo(props.userId);
       console.log("get profile", res);
       if (res.success) {
