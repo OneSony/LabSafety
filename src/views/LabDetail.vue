@@ -176,6 +176,7 @@
       <div class="box">
         <h3>通知</h3>
         <el-button
+          v-if="isManager"
           type="primary"
           class="card-btn"
           style="position: absolute; top: 20px; right: 20px"
@@ -1462,6 +1463,7 @@ export default defineComponent({
 }
 
 .box {
+  width: 100%;
   background-color: white;
   padding: 20px;
   border-radius: 8px;
