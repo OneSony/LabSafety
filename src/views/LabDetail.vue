@@ -16,11 +16,7 @@
 
     <div class="lab-header">
       <h2 class="lab-name">
-        <span
-          v-if="!editingField.name"
-          @click="startEditing('name')"
-          class="editable-field"
-        >
+        <span v-if="!editingField.name" @click="startEditing('name')">
           {{ labForm.name || "未命名实验室" }}
         </span>
         <el-input
@@ -33,11 +29,7 @@
       </h2>
 
       <h3 class="lab-location">
-        <span
-          v-if="!editingField.location"
-          @click="startEditing('location')"
-          class="editable-field"
-        >
+        <span v-if="!editingField.location" @click="startEditing('location')">
           {{ labForm.location || "未设置地点" }}
         </span>
         <el-input
@@ -80,7 +72,9 @@
                   accept="image/*"
                   :before-upload="beforeImageUpload"
                 >
-                  <el-button type="primary">上传照片</el-button>
+                  <el-button v-if="isManager" type="primary"
+                    >上传照片</el-button
+                  >
                 </el-upload>
               </div>
             </el-col>
@@ -91,6 +85,7 @@
                 <h4 class="section-title">实验室安全员</h4>
                 <div class="action-button">
                   <el-button
+                    v-if="isManager"
                     type="primary"
                     size="small"
                     @click="openManagerDialog"
@@ -119,6 +114,7 @@
                     </div>
                     <div class="manager-actions">
                       <el-button
+                        v-if="isManager"
                         type="danger"
                         size="small"
                         @click="unbindManager(manager)"
@@ -159,6 +155,7 @@
                     <el-table-column fixed="right" label="操作" width="120">
                       <template #default="{ row }">
                         <el-button
+                          v-if="isManager"
                           type="primary"
                           size="small"
                           @click="bindManager(row)"
@@ -172,7 +169,9 @@
 
                   <template #footer>
                     <span class="dialog-footer">
-                      <el-button @click="managerDialogVisible = false"
+                      <el-button
+                        v-if="isManager"
+                        @click="managerDialogVisible = false"
                         >关闭</el-button
                       >
                     </span>
@@ -191,6 +190,7 @@
             <div class="equipment-header">
               <h3>安全器材</h3>
               <el-button
+                v-if="isManager"
                 type="primary"
                 size="small"
                 @click="openEquipmentDialog"
@@ -221,9 +221,10 @@
               </el-table-column>
               <el-table-column label="器材名称" prop="name" width="180" />
               <el-table-column label="器材描述" prop="description" />
-              <el-table-column label="操作" width="200" align="center">
+              <el-table-column width="200" align="center">
                 <template #default="{ $index }">
                   <el-button
+                    v-if="isManager"
                     type="primary"
                     size="small"
                     @click="editEquipment($index)"
@@ -231,6 +232,7 @@
                     编辑
                   </el-button>
                   <el-button
+                    v-if="isManager"
                     type="danger"
                     size="small"
                     @click="removeEquipment($index)"
@@ -283,7 +285,7 @@
                     :on-change="handleImageChange"
                     accept="image/*"
                   >
-                    <el-button type="primary">
+                    <el-button v-if="isManager" type="primary">
                       {{ currentEquipment.image ? "更换图片" : "选择图片" }}
                     </el-button>
                   </el-upload>
@@ -292,8 +294,13 @@
 
               <template #footer>
                 <span class="dialog-footer">
-                  <el-button @click="dialogVisible = false">取消</el-button>
-                  <el-button type="primary" @click="saveEquipment"
+                  <el-button v-if="isManager" @click="dialogVisible = false"
+                    >取消</el-button
+                  >
+                  <el-button
+                    v-if="isManager"
+                    type="primary"
+                    @click="saveEquipment"
                     >确定</el-button
                   >
                 </span>
@@ -310,6 +317,7 @@
             <div class="safety-header">
               <h3>安全须知</h3>
               <el-button
+                v-if="isManager"
                 type="primary"
                 size="small"
                 @click="openNoteDialog(null)"
@@ -329,10 +337,14 @@
                 <el-tag class="note-tag" size="small">{{ note.tag }}</el-tag>
                 <span class="note-content">{{ note.content }}</span>
                 <div class="note-actions">
-                  <el-button type="text" @click="openNoteDialog(index)"
+                  <el-button
+                    v-if="isManager"
+                    type="text"
+                    @click="openNoteDialog(index)"
                     >编辑</el-button
                   >
                   <el-button
+                    v-if="isManager"
                     type="text"
                     class="delete-btn"
                     @click="removeNote(index)"
@@ -370,8 +382,12 @@
               </el-form>
               <template #footer>
                 <span class="dialog-footer">
-                  <el-button @click="noteDialogVisible = false">取消</el-button>
-                  <el-button type="primary" @click="saveNote">确定</el-button>
+                  <el-button v-if="isManager" @click="noteDialogVisible = false"
+                    >取消</el-button
+                  >
+                  <el-button v-if="isManager" type="primary" @click="saveNote"
+                    >确定</el-button
+                  >
                 </span>
               </template>
             </el-dialog>
@@ -446,6 +462,7 @@ export default defineComponent({
       searchManagerName: "",
       loadingManagers: false,
       isLoading: true,
+      isManager: localStorage.getItem("role") === "manager",
     };
   },
   setup() {

@@ -30,6 +30,12 @@
             placeholder="请输入姓名"
           ></el-input>
         </el-form-item>
+        <el-form-item label="院系">
+          <el-input
+            v-model="form.department"
+            placeholder="请输入院系"
+          ></el-input>
+        </el-form-item>
         <el-form-item label="随机密码">
           <el-input v-model="form.password" disabled></el-input>
         </el-form-item>
@@ -68,6 +74,7 @@
 
 <script>
 import { userAPI } from "@/utils/api";
+import { ElMessage } from "element-plus";
 
 export default {
   name: "StudentPanelAffair",
@@ -79,6 +86,7 @@ export default {
       form: {
         user_id: "",
         real_name: "",
+        department: "",
       },
       rules: {
         user_id: [
@@ -110,25 +118,12 @@ export default {
     },
 
     async fetchUserList() {
-      try {
-        const result = await userAPI.getUserList("", { role: "student" });
-        if (result.success) {
-          console.log("Fetched user list:", result.data);
-          this.tableData = result.data;
-        } else {
-          // 处理特定错误
-          if (result.message.includes("403")) {
-            this.$message.error("没有权限访问学生列表，请确认您的账号权限");
-            // 可能需要登出或重新登录
-            // this.$store.dispatch('logout');
-            // this.$router.push('/login');
-          } else {
-            this.$message.error("获取学生列表失败：" + result.message);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch user list:", error);
-        this.$message.error("系统错误，请稍后重试");
+      const result = await userAPI.getUserInfo("", "student");
+      if (result.success) {
+        console.log("Fetched user list:", result.data);
+        this.tableData = result.data;
+      } else {
+        ElMessage.error("获取学生列表失败");
       }
     },
 
@@ -222,33 +217,36 @@ export default {
     },
 
     async handleCreate() {
-      if (!this.$refs.form) return;
+      const valid = await new Promise((resolve) => {
+        this.$refs.form.validate((valid) => {
+          resolve(valid); // 结果返回
+        });
+      });
 
-      try {
-        // 验证表单
-        await this.$refs.form.validate();
+      console.log("valid", valid);
+      if (!valid) {
+        console.log("请检查表单是否填写正确");
+        ElMessage.error("请检查表单是否填写正确");
+        return;
+      }
 
-        // 第一步：注册用户
-        const registerData = {
-          user_id: this.form.user_id,
-          password: this.form.password,
-          real_name: this.form.real_name, // 在注册时就传入真实姓名
-        };
+      // 验证通过后继续执行的代码
+      console.log("表单验证通过，可以继续执行");
 
-        console.log("Registering with data:", registerData); // 调试日志
+      const formDate = new FormData();
+      formDate.append("user_id", this.form.user_id);
+      formDate.append("password", this.form.password);
+      formDate.append("real_name", this.form.real_name);
+      formDate.append("department", this.form.department);
 
-        const registerResult = await userAPI.register(
-          registerData.user_id,
-          registerData.real_name,
-          registerData.password
-        );
+      const registerResult = await userAPI.register(formDate, "student");
 
-        if (registerResult.success) {
-          // 显示成功消息
-          this.$message({
-            type: "success",
-            dangerouslyUseHTMLString: true,
-            message: `
+      if (registerResult.success) {
+        // 显示成功消息
+        this.$message({
+          type: "success",
+          dangerouslyUseHTMLString: true,
+          message: `
               <div style="text-align: left;">
                 <p>账号创建成功！</p>
                 <p>学号：${this.form.user_id}</p>
@@ -256,24 +254,18 @@ export default {
                 <p style="color: #ff4949;">请妥善保存密码信息！</p>
               </div>
             `,
-          });
+        });
 
-          // 关闭弹窗并刷新列表
-          this.dialogVisible = false;
-          if (this.$refs.form) {
-            this.$refs.form.resetFields();
-          }
-          await this.loadData();
-        } else {
-          const errorMsg = registerResult.error || "未知错误";
-          console.error("Registration failed:", errorMsg); // 调试日志
-          this.$message.error("注册失败：" + errorMsg);
+        // 关闭弹窗并刷新列表
+        this.dialogVisible = false;
+        if (this.$refs.form) {
+          this.$refs.form.resetFields();
         }
-      } catch (error) {
-        console.error("Operation failed:", error);
-        const errorMsg =
-          error.response?.data?.detail || error.message || "未知错误";
-        this.$message.error("操作失败：" + errorMsg);
+        await this.loadData();
+      } else {
+        const errorMsg = registerResult.error || "未知错误";
+        console.error("Registration failed:", errorMsg); // 调试日志
+        ElMessage.error("注册失败：" + errorMsg);
       }
     },
   },

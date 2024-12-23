@@ -61,76 +61,78 @@
       </div>
     </el-dialog>
 
-    <div
-      class="header"
-      style="
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        align-items: stretch;
-      "
-    >
-      <div
-        style="
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          width: 60%;
-        "
-      >
+    <div class="header-box">
+      <div class="info-section">
         <el-button
           v-if="isTeacher"
           type="primary"
-          class="card-btn"
-          style="position: absolute; top: 20px; right: 20px; z-index: 1000"
+          class="edit-button"
           @click="openBasicDialog"
         >
           编辑基本信息
         </el-button>
-        <el-row>
-          <el-col :span="24">
-            <h2>{{ this.basicInfo.class_name }}</h2>
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 教师 </el-col>
-          <el-col :span="20">
-            {{ this.basicInfo.teachers_str }}
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 上课时间 </el-col>
-          <el-col :span="20">
-            <DateBox
-              :dateStr="this.basicInfo.date"
-              v-if="this.basicInfo.date"
-            />
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 地点 </el-col>
-          <el-col :span="20">
-            <router-link
-              :to="{ path: '/lab/' + this.basicInfo.lab_id }"
-              style="cursor: pointer"
-            >
-              {{ this.basicInfo.lab_name }}
-            </router-link>
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 概览 </el-col>
-          <el-col :span="20"> 这里是课程的概览 </el-col>
-        </el-row>
+
+        <div class="class-title">
+          <h2>{{ this.basicInfo.class_name }}</h2>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-user"></i>
+              教师
+            </div>
+            <div class="info-content">
+              {{ this.basicInfo.teachers_str }}
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-time"></i>
+              上课时间
+            </div>
+            <div class="info-content">
+              <DateBox
+                :dateStr="this.basicInfo.date"
+                v-if="this.basicInfo.date"
+              />
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-location"></i>
+              地点
+            </div>
+            <div class="info-content">
+              <el-tooltip
+                effect="dark"
+                content="点击查看实验室详情"
+                placement="top"
+                v-if="basicInfo.lab_id"
+              >
+                <span @click="goToLab(basicInfo.lab_id)" class="lab-link">
+                  {{ basicInfo.lab_name }}
+                </span>
+              </el-tooltip>
+              <span v-else>{{ basicInfo.lab_name }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-document"></i>
+              概览
+            </div>
+            <div class="info-content">
+              {{ this.basicInfo.overview || "这里是课程的概览" }}
+            </div>
+          </div>
+        </div>
       </div>
-      <div
-        style="
-          border-left: 1px solid #ccc;
-          padding-left: 20px;
-          padding-right: 20px;
-        "
-      >
-        <p>实验室地图</p>
+      <div class="map-section">
+        <p class="map-text">实验室地图</p>
         <img src="https://via.placeholder.com/150" alt="实验室地图" />
       </div>
     </div>
@@ -208,7 +210,7 @@
       </div>
     </el-dialog>
 
-    <el-card class="card">
+    <div class="box">
       <h3>通知</h3>
       <el-button
         v-if="isTeacher"
@@ -219,6 +221,13 @@
       >
         添加通知
       </el-button>
+      <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
+      <p
+        v-if="noticeList.length === 0 && noticeLoaded"
+        style="text-align: center; color: #ccc"
+      >
+        暂无通知
+      </p>
       <el-row gutter="20">
         <el-col
           :xs="24"
@@ -227,7 +236,13 @@
           v-for="(notice, index) in noticeList"
           :key="index"
           :span="8"
-          style="position: relative; display: flex; flex-direction: column"
+          style="
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+          "
+          class="notice-item"
         >
           <el-button
             type="text"
@@ -261,7 +276,7 @@
           </el-dialog>
         </el-col>
       </el-row>
-    </el-card>
+    </div>
     <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
       <NoticeDialog
         :class_id="class_id"
@@ -270,18 +285,17 @@
       />
     </el-dialog>
 
-    <el-card class="card">
+    <div class="box">
       <h3>实验内容</h3>
       <el-button
         v-if="isTeacher"
         type="primary"
         class="card-btn"
         style="position: absolute; top: 20px; right: 20px"
-        @click="experimentDialogVisible = true"
+        @click="openExperimentDialog(null, null)"
       >
         添加内容
       </el-button>
-      <el-divider></el-divider>
       <div
         v-for="(experiment, index) in experimentInfos"
         :key="index"
@@ -302,219 +316,33 @@
           style="position: absolute; top: 70px; right: 20px; z-index: 1000"
           >删除</el-button
         >
-        <el-row>
-          <el-col :span="24">
-            <h4>
-              <span class="experiment-index">{{ index + 1 }}.</span>
-              <!-- 显示数字序号 -->
-              {{ experiment.title }}
-            </h4>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>预估时间：</strong>{{ experiment.estimatedTime }}
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>安全标签：</strong>
-            <el-tag
-              v-for="(tag, i) in experiment.safetyTags"
-              :key="i"
-              type="danger"
-              class="tag"
-            >
-              {{ tag }}
-            </el-tag>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>实验方式：</strong>
-            <el-tag
-              v-for="(tag, i) in experiment.experimentTags"
-              :key="i"
-              type="primary"
-              class="tag"
-            >
-              {{ tag }}
-            </el-tag>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>作业形式：</strong>
-            <el-tag
-              v-for="(tag, i) in experiment.assignmentTags"
-              :key="i"
-              type="success"
-              class="tag"
-            >
-              {{ tag }}
-            </el-tag>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="12">
-            <strong>其他标签：</strong>
-            <el-tag
-              v-for="(tag, i) in experiment.otherTags"
-              :key="i"
-              type="info"
-              class="tag"
-            >
-              {{ tag }}
-            </el-tag>
-          </el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="24">
-            <strong>实验描述：</strong>
-            <p>{{ experiment.description }}</p>
-          </el-col>
-        </el-row>
+        <ExperimentCard :experiment="experiment" :index="index" />
       </div>
-    </el-card>
+    </div>
     <el-dialog
       title="添加实验内容"
       v-model="experimentDialogVisible"
-      width="40%"
+      width="80%"
       @close="resetExperimentForm"
     >
-      <el-form :model="experimentForm" label-width="80px" ref="experimentForm">
-        <el-form-item label="实验名称" prop="title">
-          <el-input v-model="experimentForm.title"></el-input>
-        </el-form-item>
-        <el-form-item label="预估时间" prop="estimatedTime">
-          <el-input v-model="experimentForm.estimatedTime"></el-input>
-        </el-form-item>
-        <el-form-item label="安全标签" prop="safetyTags">
-          <div class="tags-container">
-            <el-tag
-              v-for="(tag, index) in experimentForm.safetyTags"
-              :key="index"
-              closable
-              @close="removeTag('safetyTags', index)"
-            >
-              {{ tag }}
-            </el-tag>
-          </div>
-          <el-checkbox-group v-model="experimentForm.safetyTags">
-            <el-checkbox label="明火"></el-checkbox>
-            <el-checkbox label="腐蚀性试剂"></el-checkbox>
-            <el-checkbox label="高温"></el-checkbox>
-            <el-checkbox label="有毒气体"></el-checkbox>
-            <el-checkbox label="易燃"></el-checkbox>
-          </el-checkbox-group>
-          <el-input
-            v-model="newSafetyTag"
-            placeholder="输入新标签"
-            @keyup.enter="addTag('safetyTags')"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="实验方式" prop="experimentTags">
-          <div class="tags-container">
-            <el-tag
-              v-for="(tag, index) in experimentForm.experimentTags"
-              :key="index"
-              closable
-              @close="removeTag('experimentTags', index)"
-            >
-              {{ tag }}
-            </el-tag>
-          </div>
-          <el-checkbox-group v-model="experimentForm.experimentTags">
-            <el-checkbox label="个人"></el-checkbox>
-            <el-checkbox label="小组"></el-checkbox>
-            <el-checkbox label="全班"></el-checkbox>
-            <el-checkbox label="其他"></el-checkbox>
-          </el-checkbox-group>
-          <el-input
-            v-model="newExperimentTag"
-            placeholder="输入新标签"
-            @keyup.enter="addTag('experimentTags')"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="作业形式" prop="assignmentTags">
-          <div class="tags-container">
-            <el-tag
-              v-for="(tag, index) in experimentForm.assignmentTags"
-              :key="index"
-              closable
-              @close="removeTag('assignmentTags', index)"
-            >
-              {{ tag }}
-            </el-tag>
-          </div>
-          <el-checkbox-group v-model="experimentForm.assignmentTags">
-            <el-checkbox label="纸质报告"></el-checkbox>
-            <el-checkbox label="上交产物"></el-checkbox>
-            <el-checkbox label="口头报告"></el-checkbox>
-          </el-checkbox-group>
-          <el-input
-            v-model="newAssignmentTag"
-            placeholder="输入新标签"
-            @keyup.enter="addTag('assignmentTags')"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="其他标签" prop="otherTags">
-          <div class="tags-container">
-            <el-tag
-              v-for="(tag, index) in experimentForm.otherTags"
-              :key="index"
-              closable
-              @close="removeTag('otherTags', index)"
-            >
-              {{ tag }}
-            </el-tag>
-          </div>
-          <el-checkbox-group v-model="experimentForm.otherTags">
-            <el-checkbox label="注意通风"></el-checkbox>
-            <el-checkbox label="无特殊要求"></el-checkbox>
-          </el-checkbox-group>
-          <el-input
-            v-model="newOtherTag"
-            placeholder="输入新标签"
-            @keyup.enter="addTag('otherTags')"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="实验描述" prop="description">
-          <el-input
-            type="textarea"
-            v-model="experimentForm.description"
-            :autosize="{ minRows: 2, maxRows: 6 }"
-          ></el-input>
-        </el-form-item>
-      </el-form>
-      <!-- 自定义底部按钮 -->
-      <div class="dialog-footer">
-        <el-button @click="experimentDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitExperimentForm">保存</el-button>
-      </div>
+      <ExperimentDialog
+        @close-dialog="closeExperimentDialog"
+        :input_experiment="experimentForm"
+        :class_id="basicInfo.class_id"
+        v-if="experimentDialogVisible"
+      />
     </el-dialog>
 
-    <el-card class="card">
-      <h3>实验文件</h3>
-      <el-button
-        v-if="isTeacher"
-        type="primary"
-        class="card-btn"
-        style="position: absolute; top: 20px; right: 20px"
-      >
-        添加文件
-      </el-button>
-      <p>表格</p>
-    </el-card>
-
-    <el-card class="comment-card">
+    <div class="header-box" style="display: flex; flex-direction: column">
       <h3>评论区</h3>
+
+      <el-skeleton :rows="3" animated v-if="!commentLoaded" />
+      <p
+        v-if="commentList.length === 0 && commentLoaded"
+        style="text-align: center; color: #ccc"
+      >
+        暂无讨论
+      </p>
 
       <div class="comment-list">
         <div
@@ -547,7 +375,7 @@
           >提交评论</el-button
         >
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -559,6 +387,8 @@ import UserCard from "@/components/UserCard.vue";
 import NoticeCard from "@/components/NoticeCard.vue";
 import NoticeDialog from "@/components/NoticeDialog.vue";
 import DateBox from "@/components/DateBox.vue";
+import ExperimentDialog from "@/components/ExperimentDialog.vue";
+import ExperimentCard from "@/components/ExperimentCard.vue";
 
 export default {
   name: "ClassPage",
@@ -577,13 +407,11 @@ export default {
     NoticeCard,
     NoticeDialog,
     DateBox,
+    ExperimentDialog,
+    ExperimentCard,
   },
   data() {
     return {
-      newSafetyTag: "",
-      newExperimentTag: "",
-      newAssignmentTag: "",
-      newOtherTag: "",
       labs: [],
       basicInfo: {
         class_name: "",
@@ -607,24 +435,13 @@ export default {
         tags: [],
       },
 
-      experimentForm: {
-        title: "",
-        estimatedTime: "",
-        safetyTags: [],
-        experimentTags: [],
-        assignmentTags: [],
-        otherTags: [],
-        description: "",
-        photos: [],
-      },
-
       experimentInfos: [
         {
           title: "化学实验一",
           estimatedTime: "2小时",
           safetyTags: ["明火", "腐蚀性试剂"],
           experimentTags: ["个人"],
-          assignmentTags: ["纸质报告"],
+          submissionTags: ["纸质报告"],
           otherTags: ["注意通风"],
           description: "这是一个化学实验，涉及到高温和有毒气体。",
           photos: [
@@ -637,7 +454,7 @@ export default {
           estimatedTime: "1小时",
           safetyTags: ["生物危险"],
           experimentTags: ["小组"],
-          assignmentTags: ["上交产物"],
+          submissionTags: ["上交产物"],
           otherTags: ["无特殊要求"],
           description: "这是一项生物实验，需要小组合作。",
           photos: [],
@@ -664,6 +481,9 @@ export default {
       studentList: [],
       copyList: [],
       noticeList: [],
+      noticeLoaded: false,
+      experimentLoaded: false,
+      commentLoaded: false,
       myUserId: userAPI.getUserId(),
     };
   },
@@ -687,6 +507,11 @@ export default {
     //TODO
   },
   methods: {
+    async closeExperimentDialog() {
+      console.log("关闭通知对话框");
+      this.experimentDialogVisible = false;
+      //await this.
+    },
     async closeNoticeDialog() {
       console.log("关闭通知对话框");
       this.noticeDialogVisible = false;
@@ -743,42 +568,25 @@ export default {
         this.fetchEnrolledStudents();
       }
     },
-    addTag(tagType) {
-      const tagKey = `new${
-        tagType.charAt(0).toUpperCase() + tagType.slice(1, -1)
-      }`;
-      // 根据传入的标签类型判断
-      if (this[tagKey].trim()) {
-        this.experimentForm[tagType].push(this[tagKey].trim()); // 更新相应的标签数组
-        this[tagKey] = ""; // 清空输入框
-      }
-    },
-
-    // 通用的删除标签函数
-    removeTag(tagType, index) {
-      this.experimentForm[tagType].splice(index, 1); // 删除指定索引的标签
-    },
     resetExperimentForm() {
       this.experimentForm = {
         title: "",
         estimatedTime: "",
         safetyTags: [],
         experimentTags: [],
-        assignmentTags: [],
+        submissionTags: [],
         otherTags: [],
         description: "",
         photos: [],
       };
     },
-    submitExperimentForm() {
-      console.log("submit experiment form");
-      console.log(this.experimentForm);
-      this.experimentDialogVisible = false;
-      //TODO
-    },
     openExperimentDialog(index, experiment) {
+      if (index == null && experiment == null) {
+        this.resetExperimentForm();
+      } else {
+        this.experimentForm = { ...experiment };
+      }
       console.log("open experiment dialog", index, experiment);
-      this.experimentForm = { ...experiment };
       this.experimentDialogVisible = true;
     },
     async submitBasicForm() {
@@ -906,6 +714,7 @@ export default {
     },
 
     fetchComments() {
+      this.commentLoaded = false;
       classAPI.getComments(this.class_id).then((response) => {
         if (response.success) {
           if (response.data.length === 0) {
@@ -917,6 +726,7 @@ export default {
           ElMessage.error("获取评论失败");
         }
       });
+      this.commentLoaded = true;
     },
 
     submitComment() {
@@ -934,6 +744,7 @@ export default {
     },
 
     async fetchNotices() {
+      this.noticeLoaded = false;
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
         this.noticeList = result.data;
@@ -941,6 +752,7 @@ export default {
       } else {
         ElMessage.error("获取通知失败");
       }
+      this.noticeLoaded = true;
     },
 
     async fetchEnrolledStudents() {
@@ -966,11 +778,143 @@ export default {
       }
       this.isEnrolledStudentsLoaded = true;
     },
+    goToLab(labId) {
+      this.$router.push(`/lab/${labId}`);
+    },
   },
 };
 </script>
 
 <style scoped>
+.header-box {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 24px;
+}
+
+.info-section {
+  position: relative;
+  flex: 1;
+  min-width: 0; /* 防止flex子项溢出 */
+}
+
+.map-section {
+  width: 500px;
+  padding-left: 24px;
+  border-left: 1px solid #dcdfe6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.map-text {
+  font-size: 16px;
+  color: #606266;
+  margin-bottom: 20px;
+}
+.map-section h4 {
+  align-self: flex-start;
+  margin: 0 0 16px 0;
+  color: #606266;
+  font-size: 16px;
+}
+
+.lab-map {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  border-radius: 4px;
+}
+.edit-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.class-title {
+  margin-bottom: 24px;
+  padding-right: 120px;
+}
+
+.class-title h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.info-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.info-item:hover {
+  background-color: #f2f6fc;
+}
+
+.info-label {
+  width: 100px;
+  color: #606266;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-content {
+  flex: 1;
+  color: #303133;
+}
+
+.lab-link {
+  cursor: pointer;
+  color: #409eff;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.lab-link:hover {
+  color: #66b1ff;
+}
+
+@media (max-width: 768px) {
+  .header-box {
+    flex-direction: column;
+  }
+
+  .map-section {
+    width: 100%;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #dcdfe6;
+    padding-top: 24px;
+  }
+
+  .info-grid {
+    gap: 12px;
+  }
+
+  .info-item {
+    flex-direction: column;
+  }
+
+  .info-label {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}
 .class-panel {
   padding: 20px;
 }
@@ -979,17 +923,21 @@ export default {
   margin-bottom: 20px;
 }
 
-.header {
+.box {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  position: relative;
+}
+
+.header-box {
   background-color: #f9f9f9;
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 20px;
-}
-
-.card {
-  margin-bottom: 20px;
-  padding: 20px;
-  position: relative;
 }
 
 .experiment-item {
@@ -997,12 +945,11 @@ export default {
   flex-direction: column;
   gap: 10px;
   margin-bottom: 20px;
-  margin-top: 20px;
   position: relative;
 }
 
-.experiment-item:not(:last-child) {
-  border-bottom: 1px solid #ccc; /* 给每个实验项添加分割线，除了最后一个 */
+.experiment-item:last-child {
+  margin-bottom: 0;
 }
 
 .comment-card {
