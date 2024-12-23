@@ -207,33 +207,19 @@ const userAPI = {
       });
   },
 
-  register(user_id: string, real_name: string, password: string): Promise<any> {
-    if (!user_id || !password) {
-      return Promise.reject({
-        success: false,
-        error: "User ID and password are required",
-      });
+  register(form: FormData, role: string): Promise<any> {
+    if (role === "student") {
+      return server
+        .post("/api/v1/users/register/", form)
+        .then(handleResponse)
+        .catch(handleError);
+    } else {
+      form.append("role", role);
+      return server
+        .post("/api/v1/users/register-staff/", form)
+        .then(handleResponse)
+        .catch(handleError);
     }
-
-    const credentials = {
-      user_id: user_id.trim(),
-      real_name: real_name.trim(),
-      password: password,
-    };
-
-    console.log("Registering with data:", { ...credentials, password: "***" });
-
-    return server
-      .post("/api/v1/users/register/", credentials)
-      .then(handleResponse)
-      .catch((error) => {
-        console.error("Registration error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
-        return handleError(error);
-      });
   },
 
   logout(): void {
