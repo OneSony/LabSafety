@@ -78,11 +78,34 @@
         <p>{{ experiment.description }}</p>
       </el-col>
     </el-row>
+
+    <el-row>
+      <el-col :span="24">
+        <strong>实验图片：</strong>
+        <el-row v-for="(image, i) in experiment.images" :key="i">
+          <ImageBox :src="image.image" />
+        </el-row>
+      </el-col>
+    </el-row>
+    <el-row>
+      <el-col :span="24">
+        <strong>实验文件：</strong>
+        <el-row v-for="(file, i) in experiment.files" :key="i">
+          <DownloadLink :url="file.file" />
+        </el-row>
+      </el-col>
+    </el-row>
   </el-card>
 </template>
 <script>
+import DownloadLink from "@/components/DownloadLink.vue";
+import ImageBox from "./ImageBox.vue";
 export default {
   name: "ExperimentCard",
+  components: {
+    DownloadLink,
+    ImageBox,
+  },
   props: {
     index: {
       type: Number,
