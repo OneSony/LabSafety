@@ -68,6 +68,7 @@
 
 <script>
 import { userAPI } from "@/utils/api";
+import { ElMessage } from "element-plus";
 
 export default {
   name: "TeacherPanelAffair",
@@ -110,25 +111,12 @@ export default {
     },
 
     async fetchUserList() {
-      try {
-        const result = await userAPI.getUserList("", { role: "teacher" });
-        if (result.success) {
-          console.log("Fetched user list:", result.data);
-          this.tableData = result.data;
-        } else {
-          // 处理特定错误
-          if (result.message.includes("403")) {
-            this.$message.error("没有权限访问教师列表，请确认您的账号权限");
-            // 可能需要登出或重新登录
-            // this.$store.dispatch('logout');
-            // this.$router.push('/login');
-          } else {
-            this.$message.error("获取教师列表失败：" + result.message);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch user list:", error);
-        this.$message.error("系统错误，请稍后重试");
+      const result = await userAPI.getUserInfo("", "teacher");
+      if (result.success) {
+        console.log("Fetched user list:", result.data);
+        this.tableData = result.data;
+      } else {
+        ElMessage.error("获取学生列表失败");
       }
     },
 

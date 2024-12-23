@@ -333,7 +333,7 @@
       />
     </el-dialog>
 
-    <div class="header-box">
+    <div class="header-box" style="display: flex; flex-direction: column">
       <h3>评论区</h3>
 
       <el-skeleton :rows="3" animated v-if="!commentLoaded" />
