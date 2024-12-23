@@ -32,7 +32,7 @@
             v-model="noticeForm.lab_id"
             placeholder="选择实验室"
             style="width: 100%"
-            :disabled="isEditting || !needToChooseClass"
+            :disabled="isEditting || !needToChooseLab"
           >
             <el-option
               v-for="labItem in labList"
@@ -219,6 +219,7 @@ export default {
     const localClassId = ref(props.class_id);
     const localLabId = ref(props.lab_id);
     const needToChooseClass = localClassId.value === undefined;
+    const needToChooseLab = localLabId.value === undefined;
     const removeUploadedItems = ref([]);
 
     const role = userAPI.getRole();
@@ -325,6 +326,7 @@ export default {
       classList,
       labList,
       needToChooseClass,
+      needToChooseLab,
     };
   },
   async mounted() {
