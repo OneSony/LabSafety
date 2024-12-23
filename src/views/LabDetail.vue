@@ -704,6 +704,7 @@ export default defineComponent({
           this.parsedNotes = [];
         }
         await this.fetchLabManagers();
+        this.loading = false;
       } else {
         ElMessage.error("获取实验室信息失败");
       }
