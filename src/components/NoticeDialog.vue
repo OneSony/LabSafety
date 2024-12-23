@@ -5,7 +5,7 @@
     label-width="120px"
     :rules="formRules"
   >
-    <el-form-item label="选择课堂" prop="class_id">
+    <el-form-item label="选择课堂" prop="class_id" v-if="role === 'teacher'">
       <el-row gutter="20" style="width: 100%">
         <el-col :span="24">
           <el-select
@@ -19,6 +19,26 @@
               :key="classItem.class_id"
               :label="classItem.name"
               :value="classItem.class_id"
+            ></el-option>
+          </el-select>
+        </el-col>
+      </el-row>
+    </el-form-item>
+
+    <el-form-item label="选择实验室" prop="lab_id" v-if="role === 'manager'">
+      <el-row gutter="20" style="width: 100%">
+        <el-col :span="24">
+          <el-select
+            v-model="noticeForm.lab_id"
+            placeholder="选择实验室"
+            style="width: 100%"
+            :disabled="isEditting || !needToChooseClass"
+          >
+            <el-option
+              v-for="labItem in labList"
+              :key="labItem.id"
+              :label="labItem.name"
+              :value="labItem.id"
             ></el-option>
           </el-select>
         </el-col>
@@ -161,7 +181,7 @@ import {
   ElUpload,
   ElMessage,
 } from "element-plus";
-import { noticeAPI, userAPI, classAPI } from "@/utils/api";
+import { noticeAPI, userAPI, classAPI, labAPI } from "@/utils/api";
 import ImageBox from "@/components/ImageBox.vue";
 import DownloadLink from "@/components/DownloadLink.vue";
 const form = ref(null);
@@ -169,6 +189,10 @@ export default {
   name: "DynamicForm",
   props: {
     class_id: {
+      type: Number,
+      required: false,
+    },
+    lab_id: {
       type: Number,
       required: false,
     },
@@ -191,12 +215,17 @@ export default {
   setup(props, { emit }) {
     const isEditting = props.notice !== undefined;
     const classList = ref([]);
+    const labList = ref([]);
     const localClassId = ref(props.class_id);
+    const localLabId = ref(props.lab_id);
     const needToChooseClass = localClassId.value === undefined;
     const removeUploadedItems = ref([]);
 
+    const role = userAPI.getRole();
+
     const noticeForm = ref({
       class_id: localClassId.value,
+      lab_id: localLabId.value,
       dynamicItems: [],
     });
 
@@ -281,6 +310,7 @@ export default {
     };
 
     return {
+      role,
       sender_id,
       formRules,
       noticeForm,
@@ -293,11 +323,16 @@ export default {
       closeDialog,
       localClassId,
       classList,
+      labList,
       needToChooseClass,
     };
   },
   async mounted() {
-    await this.fetchClassList();
+    if (this.role === "teacher") {
+      await this.fetchClassList();
+    } else if (this.role === "manager") {
+      await this.fetchLabList();
+    }
     if (this.isEditting) {
       this.transformNotice(this.notice);
     }
@@ -328,10 +363,22 @@ export default {
       if (this.isEditting == false) {
         const dynamicItems = ref(this.noticeForm.dynamicItems);
         //提交新的notice
-        const noticeResult = await noticeAPI.postNotices(
-          this.sender_id,
-          this.noticeForm.class_id
-        );
+
+        let noticeResult;
+
+        if (this.role === "teacher") {
+          noticeResult = await noticeAPI.postNotices(
+            this.sender_id,
+            this.noticeForm.class_id
+          );
+        } else if (this.role === "manager") {
+          noticeResult = await noticeAPI.postNotices(
+            this.sender_id,
+            undefined, //TODO 可以吗？
+            this.noticeForm.lab_id
+          );
+        }
+
         console.log("notice", noticeResult);
         if (noticeResult.success) {
           console.log("notice发送成功");
@@ -458,6 +505,7 @@ export default {
         }
       }
       console.log("提交成功");
+      ElMessage.success("提交成功");
       this.noticeForm.dynamicItems = [];
       this.closeDialog();
     },
@@ -534,6 +582,16 @@ export default {
         this.classList = res.data;
       } else {
         console.log(res.message);
+      }
+    },
+    async fetchLabList() {
+      const result = await labAPI.getLabs(); // 获取地点的 API
+      console.log("labDialog", result);
+      if (result.success) {
+        console.log(result.data);
+        this.labList = result.data;
+      } else {
+        ElMessage.error("加载地点失败");
       }
     },
 
