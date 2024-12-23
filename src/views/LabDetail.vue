@@ -168,16 +168,33 @@
                       </template>
                     </el-input>
                   </div>
-
+                  <div v-if="loadingManagers">正在加载...</div>
+                  <div
+                    v-if="!loadingManagers && availableManagers.length === 0"
+                  >
+                    未找到匹配的安全员
+                  </div>
                   <el-table
                     :data="availableManagers"
                     style="width: 100%"
                     height="300px"
                     v-loading="loadingManagers"
                   >
-                    <el-table-column prop="manager_name" label="姓名" />
-                    <el-table-column prop="manager_phone" label="电话" />
-                    <el-table-column prop="manager_email" label="邮箱" />
+                    <el-table-column prop="manager_name" label="姓名">
+                      <template #default="{ row }">
+                        {{ row.manager_name || "未知" }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="manager_phone" label="电话">
+                      <template #default="{ row }">
+                        {{ row.manager_name || "未知" }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="manager_email" label="邮箱">
+                      <template #default="{ row }">
+                        {{ row.manager_name || "未知" }}
+                      </template>
+                    </el-table-column>
                     <el-table-column fixed="right" label="操作" width="120">
                       <template #default="{ row }">
                         <el-button
@@ -527,6 +544,11 @@ interface SafetyNote {
   tag: string;
   content: string;
 }
+interface ManagerSearchThis {
+  searchManagerName: string;
+  loadingManagers: boolean;
+  availableManagers: LabManager[];
+}
 export default defineComponent({
   name: "LabDetail",
 
@@ -575,7 +597,7 @@ export default defineComponent({
       loadingManagers: false,
       isLoading: true,
       noticeDialogVisible: false,
-      isManager: userAPI.getRole() === "manager",
+      isManager: localStorage.getItem("role") === "manager",
       noticeLoaded: false,
       noticeList: [],
       myUserId: userAPI.getUserId(),
@@ -598,8 +620,17 @@ export default defineComponent({
 
     this.fetchLabDetails();
     this.fetchNotices();
+    this.fetchLabManagers();
   },
   watch: {
+    "labForm.lab_id": {
+      immediate: true,
+      handler(newId) {
+        if (newId) {
+          this.fetchLabManagers();
+        }
+      },
+    },
     id: {
       immediate: true,
       handler(newId) {
@@ -1013,6 +1044,47 @@ export default defineComponent({
         }
       }
     },
+
+    async fetchUserList() {
+      this.loadingManagers = true;
+      try {
+        const result = await userAPI.getUserInfo("", "manager");
+        if (result.success) {
+          console.log("Fetched user list:", result.data);
+          this.availableManagers = result.data; // 直接设置到 availableManagers
+        } else {
+          // ElMessage.error("获取安全员列表失败");
+        }
+      } catch (error) {
+        console.error("获取安全员列表失败:", error);
+        // ElMessage.error("获取安全员列表失败");
+      } finally {
+        this.loadingManagers = false;
+      }
+    },
+
+    // 修改打开对话框的方法
+    async openManagerDialog() {
+      this.managerDialogVisible = true;
+      this.searchManagerName = "";
+      this.loadingManagers = true;
+
+      try {
+        // 获取所有安全员列表
+        const response = await userAPI.getUserInfo("", "manager");
+        console.log("Initial managers response:", response); // 添加调试日志
+
+        if (response.success && response.data) {
+          this.availableManagers = Array.isArray(response.data)
+            ? response.data
+            : [response.data];
+        }
+      } catch (error) {
+        console.error("获取安全员列表失败:", error);
+      } finally {
+        this.loadingManagers = false;
+      }
+    },
     // 获取当前实验室的安全员列表
     async fetchLabManagers() {
       try {
@@ -1025,23 +1097,16 @@ export default defineComponent({
         });
 
         if (response.success && response.data) {
-          this.labManagers = Array.isArray(response.data)
-            ? response.data
-            : [response.data];
+          this.labManagers = (
+            Array.isArray(response.data) ? response.data : [response.data]
+          ) as LabManager[];
         } else {
           throw new Error(response.error || "获取安全员列表失败");
         }
       } catch (error) {
         console.error("获取安全员列表失败:", error);
-        ElMessage.error("获取安全员列表失败");
+        // ElMessage.error("获取安全员列表失败");
       }
-    },
-
-    // 打开选择安全员对话框
-    async openManagerDialog() {
-      this.managerDialogVisible = true;
-      this.searchManagerName = "";
-      await this.fetchAvailableManagers();
     },
 
     // 获取所有可选的安全员列表
@@ -1053,9 +1118,15 @@ export default defineComponent({
         });
 
         if (response.success && response.data) {
-          this.availableManagers = Array.isArray(response.data)
+          // 确保正确处理数据类型
+          const managers = Array.isArray(response.data)
             ? response.data
             : [response.data];
+          // 将 string 类型的 manager_user_id 转换为需要的格式
+          this.availableManagers = managers.map((manager) => ({
+            ...manager,
+            manager_user_id: manager.manager_user_id, // 如果需要转换为 number，可以用 parseInt
+          }));
         } else {
           throw new Error(response.error || "获取安全员列表失败");
         }
@@ -1068,8 +1139,30 @@ export default defineComponent({
     },
 
     // 处理安全员搜索
-    handleManagerSearch: _.debounce(async function (this: any) {
-      await this.fetchAvailableManagers();
+    // 处理安全员搜索
+    handleManagerSearch: _.debounce(async function (this: ManagerSearchThis) {
+      const searchName = this.searchManagerName.trim();
+      this.loadingManagers = true;
+
+      try {
+        console.log("Searching for:", searchName); // 添加调试日志
+        const response = await userAPI.getUserInfo(searchName, "manager");
+        console.log("Search response:", response); // 添加调试日志
+
+        if (response.success && response.data) {
+          this.availableManagers = Array.isArray(response.data)
+            ? response.data
+            : [response.data];
+          console.log("Available managers:", this.availableManagers); // 添加调试日志
+        } else {
+          this.availableManagers = [];
+        }
+      } catch (error) {
+        console.error("搜索安全员失败:", error);
+        this.availableManagers = [];
+      } finally {
+        this.loadingManagers = false;
+      }
     }, 300),
 
     // 检查安全员是否已绑定
@@ -1080,20 +1173,26 @@ export default defineComponent({
     },
 
     // 绑定安全员
+    // 绑定安全员
     async bindManager(manager: LabManager) {
-      if (this.isManagerBound(manager)) {
+      if (this.isManagerBound(manager)) return;
+
+      const labId = this.labForm.lab_id;
+      if (!labId) {
+        ElMessage.error("实验室ID不能为空");
         return;
       }
 
       try {
         const response = await labAPI.bindLabManager({
           manager_user_id: manager.manager_user_id,
-          lab_id: this.labForm.lab_id!,
+          lab_id: labId,
         });
 
         if (response.success) {
-          await this.fetchLabManagers(); // 刷新安全员列表
+          await this.fetchLabManagers();
           ElMessage.success("安全员添加成功");
+          await this.fetchAvailableManagers(); // 刷新可选列表
         } else {
           throw new Error(response.error || "添加失败");
         }
@@ -1105,23 +1204,36 @@ export default defineComponent({
 
     // 解除绑定安全员
     async unbindManager(manager: LabManager) {
-      try {
-        await ElMessageBox.confirm("确认解除该安全员的绑定?", "提示", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
+      const labId = this.labForm.lab_id;
+      if (!labId) {
+        ElMessage.error("实验室ID不能为空");
+        return;
+      }
 
-        const response = await labAPI.unbindLabManager(
-          this.labForm.lab_id!,
-          manager.manager_user_id
+      try {
+        const confirmed = await ElMessageBox.confirm(
+          "确认解除该安全员的绑定?",
+          "提示",
+          {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning",
+          }
         );
 
-        if (response.success) {
-          await this.fetchLabManagers(); // 刷新安全员列表
-          ElMessage.success("解除绑定成功");
-        } else {
-          throw new Error(response.error || "解除绑定失败");
+        if (confirmed) {
+          const response = await labAPI.unbindLabManager(
+            labId,
+            manager.manager_user_id
+          );
+
+          if (response.success) {
+            await this.fetchLabManagers();
+            ElMessage.success("解除绑定成功");
+            await this.fetchUserList();
+          } else {
+            throw new Error(response.error || "解除绑定失败");
+          }
         }
       } catch (error) {
         if (error !== "cancel") {
@@ -1183,7 +1295,8 @@ export default defineComponent({
         if (loadingInstance) {
           loadingInstance.close();
         }
-
+      }
+    },
     async fetchNotices() {
       this.noticeLoaded = false;
       const result = await noticeAPI.getNotices(undefined, Number(this.id));

@@ -52,7 +52,7 @@ export interface LabManager {
   manager_name: string;
   manager_phone: string;
   manager_email: string;
-  lab_id: number;
+  lab_id: number | null;
 }
 
 export interface BindManagerRequest {

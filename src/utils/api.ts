@@ -762,6 +762,8 @@ const labAPI = {
       const url = `/api/v1/labs/managers${
         queryParams.toString() ? `?${queryParams.toString()}` : ""
       }`;
+
+      // 明确指定响应类型
       const response = await axios.get<LabManager[]>(url);
 
       return {
