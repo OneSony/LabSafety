@@ -594,9 +594,15 @@ export interface BindManagerApiResponse {
 }
 
 const labAPI = {
-  getLabs(lab_id?: number): Promise<any> {
+  getLabs(lab_id?: number, personal?: boolean): Promise<any> {
     //返回id, 不是lab_id
-    const params = lab_id ? { lab_id } : {};
+
+    const params: { lab_id?: number; personal?: boolean } = lab_id
+      ? { lab_id }
+      : {};
+    if (personal) {
+      params["personal"] = true;
+    }
     return server
       .get("/api/v1/labs/lab", { params })
       .then((response) => {
@@ -830,6 +836,23 @@ const labAPI = {
         error: error instanceof Error ? error.message : "解绑安全员失败",
       };
     }
+  },
+
+  postManagerToLab(manager_id: string, lab_id: number): Promise<any> {
+    const data = { manager_user_id: manager_id, lab_id: lab_id };
+    return server
+      .post("/api/v1/labs/managers", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteManagerToLab(manager_id: string, lab_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/labs/managers", {
+        params: { manager_user_id: manager_id, lab_id: lab_id },
+      })
+      .then(handleResponse)
+      .catch(handleError);
   },
 };
 
