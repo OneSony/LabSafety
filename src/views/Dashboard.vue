@@ -107,7 +107,7 @@ export default {
     // 在组件挂载后设置一个定时器来关闭加载动画
     setTimeout(() => {
       this.isLoading = false;
-    }, 1500); // 1.5秒后关闭动画
+    }, 1000); // 1秒后关闭动画
   },
   methods: {
     navigateToCreateCourse() {
