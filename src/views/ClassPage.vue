@@ -301,7 +301,7 @@
       </el-button>
       <div
         v-for="(experiment, index) in experimentList"
-        :key="index"
+        :key="experiment.id"
         class="experiment-item"
       >
         <el-button
@@ -348,7 +348,7 @@
         暂无讨论
       </p>
 
-      <div class="comment-list">
+      <div class="comment-list" v-if="commentLoaded">
         <div
           v-for="(comment, index) in commentList"
           :key="index"
@@ -437,6 +437,19 @@ export default {
         lab_name: "",
         lab_id: Number,
         tags: [],
+      },
+
+      experimentForm: {
+        id: "",
+        title: "",
+        estimated_time: "",
+        safety_tags: [],
+        experiment_method_tags: [],
+        submission_type_tags: [],
+        other_tags: [],
+        description: "",
+        images: [],
+        files: [],
       },
       experimentDialogVisible: false,
       noticeDialogVisible: false,
@@ -563,15 +576,18 @@ export default {
       }
     },
     resetExperimentForm() {
+      //有必要的，因为这里只有一个ExperimentDialog，通过此处区分是否有初始化
       this.experimentForm = {
+        id: "",
         title: "",
-        estimatedTime: "",
-        safetyTags: [],
-        experimentTags: [],
-        submissionTags: [],
-        otherTags: [],
+        estimated_time: "",
+        safety_tags: [],
+        experiment_method_tags: [],
+        submission_type_tags: [],
+        other_tags: [],
         description: "",
-        photos: [],
+        images: [],
+        files: [],
       };
     },
     openExperimentDialog(index, experiment) {
@@ -707,19 +723,15 @@ export default {
       console.log("basic info:", this.basicInfo);
     },
 
-    fetchComments() {
+    async fetchComments() {
       this.commentLoaded = false;
-      classAPI.getComments(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.commentList = [];
-          } else {
-            this.commentList = response.data;
-          }
-        } else {
-          ElMessage.error("获取评论失败");
-        }
-      });
+      const result = await classAPI.getComments(this.class_id);
+      console.log("评论内容:", result);
+      if (result.success) {
+        this.commentList = result.data;
+      } else {
+        ElMessage.error("获取评论失败");
+      }
       this.commentLoaded = true;
     },
 
@@ -768,6 +780,19 @@ export default {
       console.log("实验内容:", result);
       if (result.success) {
         this.experimentList = result.data;
+        for (let i = 0; i < this.experimentList.length; i++) {
+          const safety_tags = this.experimentList[i].safety_tags.split(",");
+          this.experimentList[i].safety_tags = safety_tags;
+          const experiment_method_tags =
+            this.experimentList[i].experiment_method_tags.split(",");
+          this.experimentList[i].experiment_method_tags =
+            experiment_method_tags;
+          const submission_type_tags =
+            this.experimentList[i].submission_type_tags.split(",");
+          this.experimentList[i].submission_type_tags = submission_type_tags;
+          const other_tags = this.experimentList[i].other_tags.split(",");
+          this.experimentList[i].other_tags = other_tags;
+        }
       } else {
         ElMessage.error("获取实验内容失败");
       }
