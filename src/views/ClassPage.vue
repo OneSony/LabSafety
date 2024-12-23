@@ -137,15 +137,13 @@
       <div class="map-section">
         <p class="map-text" v-if="basicInfo.lab_id">实验室地图</p>
         <el-image
-          v-if="labMapImage"
-          :src="labMapImage"
+          v-if="basicInfo.map_image"
+          :src="basicInfo.map_image"
           fit="contain"
           class="lab-map-image"
-          :preview-src-list="[labMapImage]"
+          :preview-src-list="[basicInfo.map_image]"
         ></el-image>
-        <div v-else class="no-map">
-          {{ basicInfo.lab_id ? "正在加载地图..." : "暂无地图" }}
-        </div>
+        <div v-else class="no-map">暂无地图</div>
       </div>
     </div>
     <!-- 编辑对话框 -->
@@ -482,7 +480,6 @@ export default {
       name: "",
       date: "",
       newComment: "",
-      labMapImage: "",
       teacherNames: [],
       teacherIds: [],
       location: "",
@@ -720,8 +717,10 @@ export default {
         } else {
           this.basicInfo.lab_id = result3.data[0].lab_id;
           const result = await labAPI.getLabs(this.basicInfo.lab_id);
+          console.log("地点信息!!!:", result);
           if (result.success) {
             this.basicInfo.lab_name = result.data[0].name;
+            this.basicInfo.map_image = result.data[0].map_image;
           } else {
             ElMessage.error("获取地点信息失败");
           }
@@ -834,46 +833,6 @@ export default {
         ElMessage.error("获取学生失败");
       }
       this.isEnrolledStudentsLoaded = true;
-    },
-    async fetchLabMap() {
-      console.log("Fetching lab map, lab_id:", this.basicInfo.lab_id);
-      if (!this.basicInfo.lab_id) {
-        console.log("No lab_id available");
-        return;
-      }
-
-      try {
-        const response = await labAPI.getLabById(this.basicInfo.lab_id);
-        console.log("Lab response:", response);
-
-        if (response.success && response.data) {
-          if (Array.isArray(response.data)) {
-            // 如果返回的是数组，取第一个元素
-            this.labMapImage = response.data[0].map_image;
-          } else {
-            // 如果返回的是单个对象
-            this.labMapImage = response.data.map_image;
-          }
-          console.log("Retrieved map image:", this.labMapImage);
-        } else {
-          console.log("Failed to get lab data:", response);
-        }
-      } catch (error) {
-        console.error("Error fetching lab map:", error);
-      }
-    },
-  },
-  watch: {
-    "basicInfo.lab_id": {
-      immediate: true,
-      handler(newLabId) {
-        console.log("Lab ID changed to:", newLabId);
-        if (newLabId) {
-          this.fetchLabMap();
-        } else {
-          this.labMapImage = "";
-        }
-      },
     },
   },
 };
