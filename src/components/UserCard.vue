@@ -27,7 +27,7 @@
               教师
             </el-tag>
             <el-tag
-              v-else-if="user.role === 'mamager'"
+              v-else-if="user.role === 'manager'"
               type="warning"
               class="user-tag"
               size="small"
