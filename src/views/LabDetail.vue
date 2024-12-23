@@ -195,8 +195,8 @@
             :xs="24"
             :sm="12"
             :md="8"
-            v-for="(notice, index) in noticeList"
-            :key="index"
+            v-for="notice in noticeList"
+            :key="notice.id"
             :span="8"
             style="
               position: relative;
