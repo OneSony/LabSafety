@@ -144,6 +144,7 @@
                         type="danger"
                         size="small"
                         @click="unbindManager(manager)"
+                        :disabled="manager.manager_user_id === myUserId"
                       >
                         解除绑定
                       </el-button>
@@ -182,17 +183,17 @@
                   >
                     <el-table-column prop="manager_name" label="姓名">
                       <template #default="{ row }">
-                        {{ row.manager_name || "未知" }}
+                        {{ row.real_name || "未知" }}
                       </template>
                     </el-table-column>
                     <el-table-column prop="manager_phone" label="电话">
                       <template #default="{ row }">
-                        {{ row.manager_name || "未知" }}
+                        {{ row.phone_number || "未知" }}
                       </template>
                     </el-table-column>
                     <el-table-column prop="manager_email" label="邮箱">
                       <template #default="{ row }">
-                        {{ row.manager_name || "未知" }}
+                        {{ row.email || "未知" }}
                       </template>
                     </el-table-column>
                     <el-table-column fixed="right" label="操作" width="120">
@@ -534,6 +535,7 @@ import loadingAnimation from "@/assets/loading.json";
 import { Location } from "@element-plus/icons-vue";
 import NoticeCard from "@/components/NoticeCard.vue";
 import NoticeDialog from "@/components/NoticeDialog.vue";
+import { disableAutoUnmount } from "@vue/test-utils";
 
 interface Equipment {
   name: string;
@@ -646,59 +648,47 @@ export default defineComponent({
       this.loading = true;
       this.error = null;
 
-      try {
-        const labId = parseInt(String(this.id), 10);
-        console.log("Fetching lab details for ID:", labId);
+      const labId = Number(this.id);
+      console.log("Fetching lab details for ID:", labId);
 
-        const response = await labAPI.getLabById(labId);
-        console.log("API response:", response);
+      const response = await labAPI.getLabs(labId);
+      console.log("API response:", response);
 
-        if (response.success && response.data) {
-          const lab = Array.isArray(response.data)
-            ? response.data.find((l: Lab) => l.id === labId)
-            : response.data;
+      if (response.success && response.data.length > 0) {
+        const lab = response.data[0];
 
-          if (lab) {
-            console.log("Lab data:", lab);
-            console.log("Safety equipments:", lab.safety_equipments);
+        console.log("Lab data:", lab);
+        console.log("Safety equipments:", lab.safety_equipments);
 
-            this.labForm = {
-              lab_id: lab.id,
-              name: lab.name,
-              location: lab.location,
-              lab_image: lab.lab_image || "",
-              map_image: lab.map_image || "",
-              safety_equipments: lab.safety_equipments || "[]",
-              safety_notes: lab.safety_notes || "",
-            };
+        this.labForm = {
+          lab_id: lab.id,
+          name: lab.name,
+          location: lab.location,
+          lab_image: lab.lab_image || "",
+          map_image: lab.map_image || "",
+          safety_equipments: lab.safety_equipments || "[]",
+          safety_notes: lab.safety_notes || "",
+        };
 
-            // 尝试解析器材信息
-            try {
-              this.parsedEquipments = this.parseEquipments(
-                lab.safety_equipments
-              );
-              console.log("Parsed equipments:", this.parsedEquipments);
-            } catch (e) {
-              console.error("Error parsing equipments:", e);
-              this.parsedEquipments = [];
-            }
-            // Parse safety notes
-            try {
-              this.parsedNotes = this.parseNotes(lab.safety_notes || "[]");
-              console.log("Parsed safety notes:", this.parsedNotes);
-            } catch (e) {
-              console.error("Error parsing safety notes:", e);
-              this.parsedNotes = [];
-            }
-            await this.fetchLabManagers();
-          }
+        // 尝试解析器材信息
+        try {
+          this.parsedEquipments = this.parseEquipments(lab.safety_equipments);
+          console.log("Parsed equipments:", this.parsedEquipments);
+        } catch (e) {
+          console.error("Error parsing equipments:", e);
+          this.parsedEquipments = [];
         }
-      } catch (error) {
-        console.error("Error in fetchLabDetails:", error);
-        this.error =
-          error instanceof Error ? error.message : "获取实验室详情失败";
-      } finally {
-        this.loading = false;
+        // Parse safety notes
+        try {
+          this.parsedNotes = this.parseNotes(lab.safety_notes || "[]");
+          console.log("Parsed safety notes:", this.parsedNotes);
+        } catch (e) {
+          console.error("Error parsing safety notes:", e);
+          this.parsedNotes = [];
+        }
+        await this.fetchLabManagers();
+      } else {
+        ElMessage.error("获取实验室信息失败");
       }
     },
     async fileToBase64(file: File): Promise<string> {
@@ -1047,19 +1037,12 @@ export default defineComponent({
 
     async fetchUserList() {
       this.loadingManagers = true;
-      try {
-        const result = await userAPI.getUserInfo("", "manager");
-        if (result.success) {
-          console.log("Fetched user list:", result.data);
-          this.availableManagers = result.data; // 直接设置到 availableManagers
-        } else {
-          // ElMessage.error("获取安全员列表失败");
-        }
-      } catch (error) {
-        console.error("获取安全员列表失败:", error);
-        // ElMessage.error("获取安全员列表失败");
-      } finally {
-        this.loadingManagers = false;
+      const result = await userAPI.getUserInfo("", "manager");
+      if (result.success) {
+        console.log("Fetched user list:", result.data);
+        this.availableManagers = result.data; // 直接设置到 availableManagers
+      } else {
+        ElMessage.error("获取安全员列表失败");
       }
     },
 
@@ -1087,54 +1070,42 @@ export default defineComponent({
     },
     // 获取当前实验室的安全员列表
     async fetchLabManagers() {
-      try {
-        if (!this.labForm.lab_id) {
-          return;
-        }
+      if (!this.labForm.lab_id) {
+        return;
+      }
 
-        const response = await labAPI.getLabManagers({
-          lab_id: this.labForm.lab_id,
-        });
+      const response = await labAPI.getManagerToLab(this.labForm.lab_id);
 
-        if (response.success && response.data) {
-          this.labManagers = (
-            Array.isArray(response.data) ? response.data : [response.data]
-          ) as LabManager[];
-        } else {
-          throw new Error(response.error || "获取安全员列表失败");
-        }
-      } catch (error) {
-        console.error("获取安全员列表失败:", error);
-        // ElMessage.error("获取安全员列表失败");
+      if (response.success) {
+        this.labManagers = (
+          Array.isArray(response.data) ? response.data : [response.data]
+        ) as LabManager[];
+        console.log("Labmanagers:!", this.labManagers);
+      } else {
+        ElMessage.error("获取安全员列表失败");
       }
     },
 
     // 获取所有可选的安全员列表
     async fetchAvailableManagers() {
       this.loadingManagers = true;
-      try {
-        const response = await labAPI.getLabManagers({
-          manager_name: this.searchManagerName,
-        });
+      const response = await labAPI.getManagerToLab(
+        undefined,
+        this.searchManagerName
+      );
 
-        if (response.success && response.data) {
-          // 确保正确处理数据类型
-          const managers = Array.isArray(response.data)
-            ? response.data
-            : [response.data];
-          // 将 string 类型的 manager_user_id 转换为需要的格式
-          this.availableManagers = managers.map((manager) => ({
-            ...manager,
-            manager_user_id: manager.manager_user_id, // 如果需要转换为 number，可以用 parseInt
-          }));
-        } else {
-          throw new Error(response.error || "获取安全员列表失败");
-        }
-      } catch (error) {
-        console.error("获取安全员列表失败:", error);
+      if (response.success && response.data) {
+        // 确保正确处理数据类型
+        const managers = Array.isArray(response.data)
+          ? response.data
+          : [response.data];
+        // 将 string 类型的 manager_user_id 转换为需要的格式
+        this.availableManagers = managers.map((manager: any) => ({
+          ...manager,
+          manager_user_id: manager.manager_user_id, // 如果需要转换为 number，可以用 parseInt
+        }));
+      } else {
         ElMessage.error("获取安全员列表失败");
-      } finally {
-        this.loadingManagers = false;
       }
     },
 
@@ -1149,10 +1120,8 @@ export default defineComponent({
         const response = await userAPI.getUserInfo(searchName, "manager");
         console.log("Search response:", response); // 添加调试日志
 
-        if (response.success && response.data) {
-          this.availableManagers = Array.isArray(response.data)
-            ? response.data
-            : [response.data];
+        if (response.success) {
+          this.availableManagers = response.data;
           console.log("Available managers:", this.availableManagers); // 添加调试日志
         } else {
           this.availableManagers = [];

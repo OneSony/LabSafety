@@ -838,6 +838,22 @@ const labAPI = {
     }
   },
 
+  getManagerToLab(lab_id?: number, manager_name?: string): Promise<any> {
+    let params;
+    if (lab_id) {
+      params = { lab_id: lab_id };
+    }
+    if (manager_name) {
+      params = { manager_name: manager_name };
+    }
+    return server
+      .get("/api/v1/labs/managers", {
+        params,
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   postManagerToLab(manager_id: string, lab_id: number): Promise<any> {
     const data = { manager_user_id: manager_id, lab_id: lab_id };
     return server
