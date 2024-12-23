@@ -135,8 +135,17 @@
         </div>
       </div>
       <div class="map-section">
-        <p class="map-text">实验室地图</p>
-        <img src="https://via.placeholder.com/150" alt="实验室地图" />
+        <p class="map-text" v-if="basicInfo.lab_id">实验室地图</p>
+        <el-image
+          v-if="labMapImage"
+          :src="labMapImage"
+          fit="contain"
+          class="lab-map-image"
+          :preview-src-list="[labMapImage]"
+        ></el-image>
+        <div v-else class="no-map">
+          {{ basicInfo.lab_id ? "正在加载地图..." : "暂无地图" }}
+        </div>
       </div>
     </div>
     <!-- 编辑对话框 -->
@@ -386,7 +395,7 @@
 <script>
 import { classAPI, labAPI, userAPI, noticeAPI, courseAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
-import { useRouter } from "vue-router";
+import { stringifyQuery, useRouter } from "vue-router";
 import UserCard from "@/components/UserCard.vue";
 import NoticeCard from "@/components/NoticeCard.vue";
 import NoticeDialog from "@/components/NoticeDialog.vue";
@@ -426,6 +435,7 @@ export default {
         date: "",
         lab_id: "",
         lab_name: "",
+        map_image: "",
         tags: [],
       },
 
@@ -451,6 +461,7 @@ export default {
       name: "",
       date: "",
       newComment: "",
+      labMapImage: "",
       teacherNames: [],
       teacherIds: [],
       location: "",
@@ -784,11 +795,80 @@ export default {
       }
       this.isEnrolledStudentsLoaded = true;
     },
+    async fetchLabMap() {
+      console.log("Fetching lab map, lab_id:", this.basicInfo.lab_id);
+      if (!this.basicInfo.lab_id) {
+        console.log("No lab_id available");
+        return;
+      }
+
+      try {
+        const response = await labAPI.getLabById(this.basicInfo.lab_id);
+        console.log("Lab response:", response);
+
+        if (response.success && response.data) {
+          if (Array.isArray(response.data)) {
+            // 如果返回的是数组，取第一个元素
+            this.labMapImage = response.data[0].map_image;
+          } else {
+            // 如果返回的是单个对象
+            this.labMapImage = response.data.map_image;
+          }
+          console.log("Retrieved map image:", this.labMapImage);
+        } else {
+          console.log("Failed to get lab data:", response);
+        }
+      } catch (error) {
+        console.error("Error fetching lab map:", error);
+      }
+    },
+  },
+  watch: {
+    "basicInfo.lab_id": {
+      immediate: true,
+      handler(newLabId) {
+        console.log("Lab ID changed to:", newLabId);
+        if (newLabId) {
+          this.fetchLabMap();
+        } else {
+          this.labMapImage = "";
+        }
+      },
+    },
   },
 };
 </script>
 
 <style scoped>
+.map-section {
+  width: 300px;
+  padding: 20px;
+}
+
+.map-text {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.lab-map-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.no-map {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  color: #909399;
+  border-radius: 4px;
+  font-size: 14px;
+}
 .header-box {
   background-color: #ffffff;
   border-radius: 8px;

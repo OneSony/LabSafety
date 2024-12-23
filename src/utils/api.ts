@@ -605,6 +605,7 @@ const labAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
   getLabname(): string | null {
     return localStorage.getItem("name");
   },
