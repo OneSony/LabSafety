@@ -300,7 +300,7 @@
         添加内容
       </el-button>
       <div
-        v-for="(experiment, index) in experimentInfos"
+        v-for="(experiment, index) in experimentList"
         :key="index"
         class="experiment-item"
       >
@@ -317,6 +317,7 @@
           type="danger"
           class="edit-btn"
           style="position: absolute; top: 70px; right: 20px; z-index: 1000"
+          @click="deleteExperiment(index, experiment)"
           >删除</el-button
         >
         <ExperimentCard :experiment="experiment" :index="index" />
@@ -437,32 +438,6 @@ export default {
         lab_id: Number,
         tags: [],
       },
-
-      experimentInfos: [
-        {
-          title: "化学实验一",
-          estimatedTime: "2小时",
-          safetyTags: ["明火", "腐蚀性试剂"],
-          experimentTags: ["个人"],
-          submissionTags: ["纸质报告"],
-          otherTags: ["注意通风"],
-          description: "这是一个化学实验，涉及到高温和有毒气体。",
-          photos: [
-            "https://via.placeholder.com/150",
-            "https://via.placeholder.com/150",
-          ],
-        },
-        {
-          title: "生物实验二",
-          estimatedTime: "1小时",
-          safetyTags: ["生物危险"],
-          experimentTags: ["小组"],
-          submissionTags: ["上交产物"],
-          otherTags: ["无特殊要求"],
-          description: "这是一项生物实验，需要小组合作。",
-          photos: [],
-        },
-      ],
       experimentDialogVisible: false,
       noticeDialogVisible: false,
       basicDialogVisible: false,
@@ -482,6 +457,7 @@ export default {
       userLookup: {},
       commentList: [],
       studentList: [],
+      experimentList: [],
       copyList: [],
       noticeList: [],
       noticeLoaded: false,
@@ -506,6 +482,7 @@ export default {
     await this.fetchClassBasicInfo();
     await this.fetchComments();
     await this.fetchNotices();
+    await this.fetchExperiments();
     console.log("basic:", this.basicInfo);
     //TODO
   },
@@ -514,6 +491,20 @@ export default {
       console.log("关闭通知对话框");
       this.experimentDialogVisible = false;
       //await this.
+    },
+    async deleteExperiment(index, experiment) {
+      console.log("删除实验:", experiment);
+      //TODO
+      /*const result = await classAPI.deleteExperiment(
+        this.class_id,
+        this.experimentList[index].id
+      );
+      if (result.success) {
+        console.log("删除成功");
+        await this.fetchExperiments();
+      } else {
+        console.log("删除失败");
+      }*/
     },
     async closeNoticeDialog() {
       console.log("关闭通知对话框");
@@ -756,6 +747,18 @@ export default {
         ElMessage.error("获取通知失败");
       }
       this.noticeLoaded = true;
+    },
+
+    async fetchExperiments() {
+      this.experimentLoaded = false;
+      const result = await classAPI.getExperiments(this.class_id);
+      console.log("实验内容:", result);
+      if (result.success) {
+        this.experimentList = result.data;
+      } else {
+        ElMessage.error("获取实验内容失败");
+      }
+      this.experimentLoaded = true;
     },
 
     async fetchEnrolledStudents() {

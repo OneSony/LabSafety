@@ -511,6 +511,23 @@ const classAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
+  getExperiments(class_id: number): Promise<any> {
+    const params = { class_id: class_id };
+    return server
+      .get("/api/v1/classes/experiments/", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteExperiment(experiment_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/classes/experiments/", {
+        params: { experiment_id: experiment_id },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
 };
 interface CreateLabRequest {
   name: string;
