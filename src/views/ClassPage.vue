@@ -317,7 +317,7 @@
           type="danger"
           class="edit-btn"
           style="position: absolute; top: 70px; right: 20px; z-index: 1000"
-          @click="deleteExperiment(index, experiment)"
+          @click="deleteExperiment(experiment)"
           >删除</el-button
         >
         <ExperimentCard :experiment="experiment" :index="index" />
@@ -505,19 +505,15 @@ export default {
       this.experimentDialogVisible = false;
       //await this.
     },
-    async deleteExperiment(index, experiment) {
+    async deleteExperiment(experiment) {
       console.log("删除实验:", experiment);
-      //TODO
-      /*const result = await classAPI.deleteExperiment(
-        this.class_id,
-        this.experimentList[index].id
-      );
+      const result = await classAPI.deleteExperiment(experiment.id);
       if (result.success) {
         console.log("删除成功");
         await this.fetchExperiments();
       } else {
         console.log("删除失败");
-      }*/
+      }
     },
     async closeNoticeDialog() {
       console.log("关闭通知对话框");
