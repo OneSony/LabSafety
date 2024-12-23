@@ -16,11 +16,7 @@
 
     <div class="lab-header">
       <h2 class="lab-name">
-        <span
-          v-if="!editingField.name"
-          @click="startEditing('name')"
-          class="editable-field"
-        >
+        <span v-if="!editingField.name" @click="startEditing('name')">
           {{ labForm.name || "未命名实验室" }}
         </span>
         <el-input
@@ -33,11 +29,7 @@
       </h2>
 
       <h3 class="lab-location">
-        <span
-          v-if="!editingField.location"
-          @click="startEditing('location')"
-          class="editable-field"
-        >
+        <span v-if="!editingField.location" @click="startEditing('location')">
           {{ labForm.location || "未设置地点" }}
         </span>
         <el-input
