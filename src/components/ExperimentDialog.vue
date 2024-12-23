@@ -140,7 +140,7 @@
   <!-- 自定义底部按钮 -->
   <div class="dialog-footer">
     <el-button @click="closeDialog">取消</el-button>
-    <el-button type="primary" @click="submitExperimentForm">保存</el-button>
+    <el-button type="primary" @click="submitExperimentForm">提交</el-button>
   </div>
 </template>
 
@@ -251,10 +251,18 @@ export default {
       this.experimentForm.images.forEach((image) => {
         formData.append("images", image.raw);
       });
+
       console.log("formData", formData);
-      const result = await classAPI.postExperiment(formData);
-      console.log("result", result);
-      if (result.success) {
+      console.log("formData.tag", formData.get("safety_tags"));
+      let experimentResult;
+      if (this.experimentForm.id != undefined && this.experimentForm.id != "") {
+        formData.append("id", this.experimentForm.id);
+        experimentResult = await classAPI.patchExperiment(formData);
+      } else {
+        experimentResult = await classAPI.postExperiment(formData);
+      }
+      console.log("result", experimentResult);
+      if (experimentResult.success) {
         ElMessage.success("实验创建成功");
       } else {
         ElMessage.error("实验创建失败");

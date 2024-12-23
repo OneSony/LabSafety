@@ -512,6 +512,13 @@ const classAPI = {
       .catch(handleError);
   },
 
+  patchExperiment(formData: FormData): Promise<any> {
+    return server
+      .patch("/api/v1/classes/experiments/", formData)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getExperiments(class_id: number): Promise<any> {
     const params = { class_id: class_id };
     return server

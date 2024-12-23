@@ -449,7 +449,6 @@ export default {
       },
 
       experimentForm: {
-        id: "",
         title: "",
         estimated_time: "",
         safety_tags: [],
@@ -583,7 +582,6 @@ export default {
     resetExperimentForm() {
       //有必要的，因为这里只有一个ExperimentDialog，通过此处区分是否有初始化
       this.experimentForm = {
-        id: "",
         title: "",
         estimated_time: "",
         safety_tags: [],
