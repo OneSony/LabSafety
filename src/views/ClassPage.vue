@@ -236,7 +236,7 @@
       <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
       <p
         v-if="noticeList.length === 0 && noticeLoaded"
-        style="text-align: center; color: #ccc"
+        style="text-align: center; color: #ccc; padding: 20px"
       >
         暂无通知
       </p>
@@ -299,6 +299,15 @@
 
     <div class="box">
       <h3>实验内容</h3>
+
+      <el-skeleton :rows="5" animated v-if="!experimentLoaded" />
+      <p
+        v-if="experimentList.length === 0 && experimentLoaded"
+        style="text-align: center; color: #ccc; padding: 20px"
+      >
+        暂无实验
+      </p>
+
       <el-button
         v-if="isTeacher"
         type="primary"
@@ -310,7 +319,7 @@
       </el-button>
       <div
         v-for="(experiment, index) in experimentList"
-        :key="index"
+        :key="experiment.id"
         class="experiment-item"
       >
         <el-button
@@ -326,7 +335,7 @@
           type="danger"
           class="edit-btn"
           style="position: absolute; top: 70px; right: 20px; z-index: 1000"
-          @click="deleteExperiment(index, experiment)"
+          @click="deleteExperiment(experiment)"
           >删除</el-button
         >
         <ExperimentCard :experiment="experiment" :index="index" />
@@ -336,10 +345,10 @@
       title="添加实验内容"
       v-model="experimentDialogVisible"
       width="80%"
-      @close="resetExperimentForm"
+      @close="fetchExperiments"
     >
       <ExperimentDialog
-        @close-dialog="closeExperimentDialog"
+        @close-dialog="experimentDialogVisible = false"
         :input_experiment="experimentForm"
         :class_id="basicInfo.class_id"
         v-if="experimentDialogVisible"
@@ -357,7 +366,7 @@
         暂无讨论
       </p>
 
-      <div class="comment-list">
+      <div class="comment-list" v-if="commentLoaded">
         <div
           v-for="(comment, index) in commentList"
           :key="index"
@@ -448,6 +457,18 @@ export default {
         lab_id: Number,
         tags: [],
       },
+
+      experimentForm: {
+        title: "",
+        estimated_time: "",
+        safety_tags: [],
+        experiment_method_tags: [],
+        submission_type_tags: [],
+        other_tags: [],
+        description: "",
+        images: [],
+        files: [],
+      },
       experimentDialogVisible: false,
       noticeDialogVisible: false,
       basicDialogVisible: false,
@@ -503,19 +524,15 @@ export default {
       this.experimentDialogVisible = false;
       //await this.
     },
-    async deleteExperiment(index, experiment) {
+    async deleteExperiment(experiment) {
       console.log("删除实验:", experiment);
-      //TODO
-      /*const result = await classAPI.deleteExperiment(
-        this.class_id,
-        this.experimentList[index].id
-      );
+      const result = await classAPI.deleteExperiment(experiment.id);
       if (result.success) {
         console.log("删除成功");
         await this.fetchExperiments();
       } else {
         console.log("删除失败");
-      }*/
+      }
     },
     async closeNoticeDialog() {
       console.log("关闭通知对话框");
@@ -573,21 +590,19 @@ export default {
         this.fetchEnrolledStudents();
       }
     },
-    resetExperimentForm() {
-      this.experimentForm = {
-        title: "",
-        estimatedTime: "",
-        safetyTags: [],
-        experimentTags: [],
-        submissionTags: [],
-        otherTags: [],
-        description: "",
-        photos: [],
-      };
-    },
     openExperimentDialog(index, experiment) {
       if (index == null && experiment == null) {
-        this.resetExperimentForm();
+        this.experimentForm = {
+          title: "",
+          estimated_time: "",
+          safety_tags: [],
+          experiment_method_tags: [],
+          submission_type_tags: [],
+          other_tags: [],
+          description: "",
+          images: [],
+          files: [],
+        };
       } else {
         this.experimentForm = { ...experiment };
       }
@@ -718,19 +733,16 @@ export default {
       console.log("basic info:", this.basicInfo);
     },
 
-    fetchComments() {
+    async fetchComments() {
       this.commentLoaded = false;
-      classAPI.getComments(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.commentList = [];
-          } else {
-            this.commentList = response.data;
-          }
-        } else {
-          ElMessage.error("获取评论失败");
-        }
-      });
+      this.commentList = [];
+      const result = await classAPI.getComments(this.class_id);
+      console.log("评论内容:", result);
+      if (result.success) {
+        this.commentList = result.data;
+      } else {
+        ElMessage.error("获取评论失败");
+      }
       this.commentLoaded = true;
     },
 
@@ -750,6 +762,7 @@ export default {
 
     async fetchNotices() {
       this.noticeLoaded = false;
+      this.noticeList = [];
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
         this.noticeList = result.data;
@@ -775,10 +788,24 @@ export default {
 
     async fetchExperiments() {
       this.experimentLoaded = false;
+      this.experimentList = [];
       const result = await classAPI.getExperiments(this.class_id);
       console.log("实验内容:", result);
       if (result.success) {
         this.experimentList = result.data;
+        for (let i = 0; i < this.experimentList.length; i++) {
+          const safety_tags = this.experimentList[i].safety_tags.split(",");
+          this.experimentList[i].safety_tags = safety_tags;
+          const experiment_method_tags =
+            this.experimentList[i].experiment_method_tags.split(",");
+          this.experimentList[i].experiment_method_tags =
+            experiment_method_tags;
+          const submission_type_tags =
+            this.experimentList[i].submission_type_tags.split(",");
+          this.experimentList[i].submission_type_tags = submission_type_tags;
+          const other_tags = this.experimentList[i].other_tags.split(",");
+          this.experimentList[i].other_tags = other_tags;
+        }
       } else {
         ElMessage.error("获取实验内容失败");
       }
