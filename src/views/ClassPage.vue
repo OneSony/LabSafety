@@ -61,71 +61,78 @@
       </div>
     </el-dialog>
 
-    <div
-      class="header-box"
-      style="
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        align-items: stretch;
-      "
-    >
-      <div
-        style="
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          width: 60%;
-        "
-      >
+    <div class="header-box">
+      <div class="info-section">
         <el-button
           v-if="isTeacher"
           type="primary"
-          class="card-btn"
-          style="position: absolute; top: 20px; right: 20px; z-index: 1000"
+          class="edit-button"
           @click="openBasicDialog"
         >
           编辑基本信息
         </el-button>
-        <el-row>
-          <el-col :span="24">
-            <h2>{{ this.basicInfo.class_name }}</h2>
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 教师 </el-col>
-          <el-col :span="20">
-            {{ this.basicInfo.teachers_str }}
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 上课时间 </el-col>
-          <el-col :span="20">
-            <DateBox
-              :dateStr="this.basicInfo.date"
-              v-if="this.basicInfo.date"
-            />
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 地点 </el-col>
-          <el-col :span="20">
-            {{ this.basicInfo.lab_name }}
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 概览 </el-col>
-          <el-col :span="20"> 这里是课程的概览 </el-col>
-        </el-row>
+
+        <div class="class-title">
+          <h2>{{ this.basicInfo.class_name }}</h2>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-user"></i>
+              教师
+            </div>
+            <div class="info-content">
+              {{ this.basicInfo.teachers_str }}
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-time"></i>
+              上课时间
+            </div>
+            <div class="info-content">
+              <DateBox
+                :dateStr="this.basicInfo.date"
+                v-if="this.basicInfo.date"
+              />
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-location"></i>
+              地点
+            </div>
+            <div class="info-content">
+              <el-tooltip
+                effect="dark"
+                content="点击查看实验室详情"
+                placement="top"
+                v-if="basicInfo.lab_id"
+              >
+                <span @click="goToLab(basicInfo.lab_id)" class="lab-link">
+                  {{ basicInfo.lab_name }}
+                </span>
+              </el-tooltip>
+              <span v-else>{{ basicInfo.lab_name }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-document"></i>
+              概览
+            </div>
+            <div class="info-content">
+              {{ this.basicInfo.overview || "这里是课程的概览" }}
+            </div>
+          </div>
+        </div>
       </div>
-      <div
-        style="
-          border-left: 1px solid #ccc;
-          padding-left: 20px;
-          padding-right: 20px;
-        "
-      >
-        <p>实验室地图</p>
+      <div class="map-section">
+        <p class="map-text">实验室地图</p>
         <img src="https://via.placeholder.com/150" alt="实验室地图" />
       </div>
     </div>
@@ -326,7 +333,7 @@
       />
     </el-dialog>
 
-    <div class="header-box">
+    <div class="header-box" style="display: flex; flex-direction: column">
       <h3>评论区</h3>
 
       <el-skeleton :rows="3" animated v-if="!commentLoaded" />
@@ -771,11 +778,143 @@ export default {
       }
       this.isEnrolledStudentsLoaded = true;
     },
+    goToLab(labId) {
+      this.$router.push(`/lab/${labId}`);
+    },
   },
 };
 </script>
 
 <style scoped>
+.header-box {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 24px;
+}
+
+.info-section {
+  position: relative;
+  flex: 1;
+  min-width: 0; /* 防止flex子项溢出 */
+}
+
+.map-section {
+  width: 500px;
+  padding-left: 24px;
+  border-left: 1px solid #dcdfe6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.map-text {
+  font-size: 16px;
+  color: #606266;
+  margin-bottom: 20px;
+}
+.map-section h4 {
+  align-self: flex-start;
+  margin: 0 0 16px 0;
+  color: #606266;
+  font-size: 16px;
+}
+
+.lab-map {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  border-radius: 4px;
+}
+.edit-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.class-title {
+  margin-bottom: 24px;
+  padding-right: 120px;
+}
+
+.class-title h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.info-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.info-item:hover {
+  background-color: #f2f6fc;
+}
+
+.info-label {
+  width: 100px;
+  color: #606266;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-content {
+  flex: 1;
+  color: #303133;
+}
+
+.lab-link {
+  cursor: pointer;
+  color: #409eff;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.lab-link:hover {
+  color: #66b1ff;
+}
+
+@media (max-width: 768px) {
+  .header-box {
+    flex-direction: column;
+  }
+
+  .map-section {
+    width: 100%;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #dcdfe6;
+    padding-top: 24px;
+  }
+
+  .info-grid {
+    gap: 12px;
+  }
+
+  .info-item {
+    flex-direction: column;
+  }
+
+  .info-label {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}
 .class-panel {
   padding: 20px;
 }
