@@ -172,6 +172,8 @@ export default {
     return {
       experimentForm: {
         ...this.input_experiment, // 将父组件传入的实验数据作为默认值
+        images: this.input_experiment?.images || [], // 如果没有传入，设置为默认空数组
+        files: this.input_experiment?.files || [], // 如果没有传入，设置为默认空数组
       },
       newSafetyTag: "",
       newExperimentTag: "",
@@ -231,7 +233,7 @@ export default {
       formData.append("other_tags", this.experimentForm.otherTags);
       formData.append("description", this.experimentForm.description);
       // 上传文件
-      /*this.experimentForm.files.forEach((file) => {
+      this.experimentForm.files.forEach((file) => {
         formData.append("files", file.raw);
       });
       // 上传图片
@@ -239,13 +241,13 @@ export default {
         formData.append("images", image.raw);
       });
       console.log("formData", formData);
-      /*const result = await classAPI.postExperiment(formData);
+      const result = await classAPI.postExperiment(formData);
       console.log("result", result);
       if (result.success) {
         ElMessage.success("实验创建成功");
       } else {
         ElMessage.error("实验创建失败");
-      }*/
+      }
       this.closeDialog();
     },
 
