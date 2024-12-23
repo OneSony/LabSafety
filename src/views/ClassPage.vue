@@ -112,9 +112,12 @@
                 placement="top"
                 v-if="basicInfo.lab_id"
               >
-                <span @click="goToLab(basicInfo.lab_id)" class="lab-link">
-                  {{ basicInfo.lab_name }}
-                </span>
+                <router-link
+                  :to="{ path: '/lab/' + this.basicInfo.lab_id }"
+                  style="cursor: pointer"
+                >
+                  {{ this.basicInfo.lab_name }}
+                </router-link>
               </el-tooltip>
               <span v-else>{{ basicInfo.lab_name }}</span>
             </div>
@@ -777,9 +780,6 @@ export default {
         ElMessage.error("获取学生失败");
       }
       this.isEnrolledStudentsLoaded = true;
-    },
-    goToLab(labId) {
-      this.$router.push(`/lab/${labId}`);
     },
   },
 };
