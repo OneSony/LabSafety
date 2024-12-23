@@ -1,25 +1,10 @@
 <template>
-  <Transition name="fade">
-    <div v-if="isLoading" class="loading-container">
-      <Vue3Lottie
-        :animation-data="loadingAnimation"
-        :height="200"
-        :width="200"
-        :loop="true"
-        :autoPlay="true"
-      />
-    </div>
-  </Transition>
   <div class="page-container">
     <div class="dashboard">
       <SidebarMenu @updateCurrentComponent="updateComponent" />
       <div class="content">
         <keep-alive>
-          <component
-            :is="currentComponent"
-            :classItem="classItem"
-            @show-class-panel="toClassPage"
-          />
+          <component :is="currentComponent" />
         </keep-alive>
       </div>
     </div>
@@ -61,7 +46,6 @@ export default {
   },
   setup() {
     const router = useRouter();
-    const classItem = ref(null); // 存储当前选中的 classItem
     const isTeacher = userAPI.getRole() === "teacher";
     const isAffair = userAPI.getRole() === "teachingAffairs";
     const currentComponent = ref(
@@ -71,15 +55,6 @@ export default {
         ? CoursePanelAffair
         : StudentCoursePanel
     );
-
-    // 切换到 ClassPanel
-    const toClassPage = (class_id, course_id) => {
-      console.log("Selected class dashboard:", class_id, course_id);
-      router.push({
-        name: "class-page",
-        params: { classId: class_id, courseId: course_id },
-      });
-    };
 
     const updateComponent = (componentName) => {
       if (componentName === "CoursePanel") {
@@ -96,9 +71,7 @@ export default {
     };
     return {
       currentComponent,
-      toClassPage,
       updateComponent,
-      classItem,
       isTeacher,
       loadingAnimation,
     };

@@ -11,10 +11,9 @@
           v-if="todayExperiments.length === 0 && !isLoading"
         />
         <div v-else>
-          <CourseCard
-            :experiments="todayExperiments"
-            @class-clicked="handelClassClick"
-          />
+          <div v-for="(item, index) in todayExperiments" :key="index">
+            <CourseCard :input_experiment="item" />
+          </div>
         </div>
       </el-tab-pane>
       <el-tab-pane label="未填充实验" name="unfinished">
@@ -24,10 +23,9 @@
           v-if="unfinishedExperiments.length === 0 && !isLoading"
         />
         <div v-else>
-          <CourseCard
-            :experiments="unfinishedExperiments"
-            @class-clicked="handelClassClick"
-          />
+          <div v-for="(item, index) in unfinishedExperiments" :key="index">
+            <CourseCard :input_experiment="item" />
+          </div>
         </div>
       </el-tab-pane>
       <el-tab-pane label="全部实验" name="all">
@@ -37,18 +35,13 @@
           v-if="allExperiments.length === 0 && !isLoading"
         />
         <div v-else>
-          <CourseCard
-            :experiments="allExperiments"
-            @class-clicked="handelClassClick"
-          />
+          <div v-for="(item, index) in allExperiments" :key="index">
+            <CourseCard :input_experiment="item" />
+          </div>
         </div>
       </el-tab-pane>
     </el-tabs>
   </div>
-  <PaginationComponent
-    :total="experimentNum"
-    @page-changed="handlePageChange"
-  />
 </template>
 
 <script>
@@ -57,11 +50,11 @@ import PaginationComponent from "./Pagination.vue";
 import { courseAPI } from "../utils/api";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
-import { userAPI } from "../utils/api";
+import { userAPI, classAPI } from "../utils/api";
 
 export default {
   name: "CoursePanel",
-  components: { CourseCard, PaginationComponent },
+  components: { CourseCard },
   data() {
     return {
       activeTab: "today",
@@ -77,26 +70,33 @@ export default {
   methods: {
     async fetchCourses() {
       const response = await courseAPI.getCourseList(); // 调用 API 获取课程数据
-      console.log("Response:", response);
+      console.log("course list:", response);
       if (response.success === false) {
         ElMessage.error("获取课程失败：" + response.error);
         console.error("Error fetching courses:", response.error);
       } else {
         const courses = response.data; // 假设 API 返回的数据存储在 `data` 字段中
+
+        for (let i = 0; i < courses.length; i++) {
+          courses[i].isLoaded = false;
+          courses[i].classList = [];
+
+          // 获取课程的实验列表
+          const classResponse = await classAPI.getClassList(courses[i].id);
+          console.log("dashBoardClassResponse", classResponse);
+          if (classResponse.success) {
+            courses[i].classList = classResponse.data;
+            courses[i].isLoaded = true;
+          } else {
+            ElMessage.error("获取课程实验失败：" + classResponse.error);
+            console.error("Error fetching class list:", classResponse.error);
+          }
+        }
+
         this.experimentNum = courses.length; // 设置课程数量
         this.allExperiments = courses;
       }
       this.isLoading = false;
-    },
-    handlePageChange(page) {
-      console.log("Page changed to:", page);
-      //TODO
-    },
-
-    // 处理子组件传递过来的 classItem
-    handelClassClick(class_id, course_id) {
-      console.log("Selected class:", class_id, course_id);
-      this.$emit("show-class-panel", class_id, course_id);
     },
   },
 };
