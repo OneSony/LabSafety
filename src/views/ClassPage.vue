@@ -227,7 +227,7 @@
       <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
       <p
         v-if="noticeList.length === 0 && noticeLoaded"
-        style="text-align: center; color: #ccc"
+        style="text-align: center; color: #ccc; padding: 20px"
       >
         暂无通知
       </p>
@@ -290,6 +290,15 @@
 
     <div class="box">
       <h3>实验内容</h3>
+
+      <el-skeleton :rows="5" animated v-if="!experimentLoaded" />
+      <p
+        v-if="experimentList.length === 0 && experimentLoaded"
+        style="text-align: center; color: #ccc; padding: 20px"
+      >
+        暂无实验
+      </p>
+
       <el-button
         v-if="isTeacher"
         type="primary"
