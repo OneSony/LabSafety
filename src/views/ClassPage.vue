@@ -336,10 +336,10 @@
       title="添加实验内容"
       v-model="experimentDialogVisible"
       width="80%"
-      @close="resetExperimentForm"
+      @close="fetchExperiments"
     >
       <ExperimentDialog
-        @close-dialog="closeExperimentDialog"
+        @close-dialog="experimentDialogVisible = false"
         :input_experiment="experimentForm"
         :class_id="basicInfo.class_id"
         v-if="experimentDialogVisible"
@@ -579,23 +579,19 @@ export default {
         this.fetchEnrolledStudents();
       }
     },
-    resetExperimentForm() {
-      //有必要的，因为这里只有一个ExperimentDialog，通过此处区分是否有初始化
-      this.experimentForm = {
-        title: "",
-        estimated_time: "",
-        safety_tags: [],
-        experiment_method_tags: [],
-        submission_type_tags: [],
-        other_tags: [],
-        description: "",
-        images: [],
-        files: [],
-      };
-    },
     openExperimentDialog(index, experiment) {
       if (index == null && experiment == null) {
-        this.resetExperimentForm();
+        this.experimentForm = {
+          title: "",
+          estimated_time: "",
+          safety_tags: [],
+          experiment_method_tags: [],
+          submission_type_tags: [],
+          other_tags: [],
+          description: "",
+          images: [],
+          files: [],
+        };
       } else {
         this.experimentForm = { ...experiment };
       }
@@ -728,6 +724,7 @@ export default {
 
     async fetchComments() {
       this.commentLoaded = false;
+      this.commentList = [];
       const result = await classAPI.getComments(this.class_id);
       console.log("评论内容:", result);
       if (result.success) {
@@ -754,6 +751,7 @@ export default {
 
     async fetchNotices() {
       this.noticeLoaded = false;
+      this.noticeList = [];
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
         this.noticeList = result.data;
@@ -779,6 +777,7 @@ export default {
 
     async fetchExperiments() {
       this.experimentLoaded = false;
+      this.experimentList = [];
       const result = await classAPI.getExperiments(this.class_id);
       console.log("实验内容:", result);
       if (result.success) {

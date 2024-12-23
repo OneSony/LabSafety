@@ -52,16 +52,21 @@
         <NoticeDialog
           :class_id="notice.class_info.class_id"
           :notice="notice"
-          @close-dialog="closeEditNoticeDialog(notice)"
+          @close-dialog="notice.noticeEditDialogVisible = false"
           v-if="notice.noticeEditDialogVisible"
         />
       </el-dialog>
     </el-col>
   </el-row>
 
-  <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
+  <el-dialog
+    title="添加通知"
+    v-model="noticeDialogVisible"
+    width="40%"
+    @close="fetchNotices"
+  >
     <NoticeDialog
-      @close-dialog="closeNoticeDialog"
+      @close-dialog="noticeDialogVisible = false"
       v-if="noticeDialogVisible"
     />
   </el-dialog>
@@ -97,12 +102,6 @@ export default {
     };
   },
   methods: {
-    async closeNoticeDialog() {
-      console.log("关闭通知对话框");
-      this.noticeDialogVisible = false;
-      await this.fetchNotices();
-    },
-
     async fetchNotices() {
       this.isLoaded = false;
       this.classList = [];
@@ -201,12 +200,6 @@ export default {
       } else {
         console.log("删除失败");
       }
-    },
-
-    closeEditNoticeDialog(notice) {
-      console.log("关闭通知对话框");
-      notice.noticeEditDialogVisible = false;
-      //this.fetchNotices();
     },
   },
   async mounted() {
