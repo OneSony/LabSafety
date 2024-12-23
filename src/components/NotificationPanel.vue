@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import { userAPI, noticeAPI, classAPI } from "@/utils/api";
+import { userAPI, noticeAPI, classAPI, courseAPI } from "@/utils/api";
 import { toRaw } from "vue";
 import { ElCard, ElRow, ElCol, ElDivider } from "element-plus";
 import { ElButton, ElDialog, ElMessage } from "element-plus";
@@ -122,6 +122,41 @@ export default {
         if (result.success) {
           for (let j = 0; j < result.data.length; j++) {
             result.data[j].class_info = this.classList[i];
+
+            const result2 = await courseAPI.getCourseFromClass(
+              result.data[j].class_info.class_id
+            );
+            console.log("result2", result2);
+            if (result2.success) {
+              if (result2.data.length === 0) {
+                ElMessage.error("获取课程失败");
+                continue;
+              }
+              result.data[j].class_info.course_code =
+                result2.data[0].course_code;
+              result.data[j].class_info.course_sequence =
+                result2.data[0].course_sequence;
+            } else {
+              ElMessage.error("获取课程失败");
+            }
+
+            const result3 = await courseAPI.getCourse(
+              result.data[j].class_info.course_code,
+              result.data[j].class_info.course_sequence
+            );
+            console.log("result3", result3);
+            if (result3.success) {
+              if (result3.data.length === 0) {
+                ElMessage.error("获取课程失败");
+                continue;
+              }
+              result.data[j].class_info.course_id = result3.data[0].id;
+            } else {
+              ElMessage.error("获取课程失败");
+            }
+
+            console.log("result.data[j].class_info", result.data[j]);
+            //TODO 优化逻辑
           }
           this.noticeList.push(...result.data);
         } else {
