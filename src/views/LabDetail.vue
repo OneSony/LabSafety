@@ -39,7 +39,44 @@
           @blur="saveField('location')"
           @keyup.enter="saveField('location')"
         ></el-input>
+        <el-button type="text" @click="showMap" class="map-button">
+          <el-icon><Location /></el-icon>
+          查看地图
+        </el-button>
       </h3>
+
+      <!-- 地图对话框 -->
+      <el-dialog v-model="mapDialogVisible" title="实验室地图" width="600px">
+        <div class="map-container">
+          <el-image
+            v-if="labForm.map_image"
+            :src="labForm.map_image"
+            fit="contain"
+            class="map-image"
+          ></el-image>
+          <div v-else class="no-map">暂无地图</div>
+        </div>
+        <div v-if="isManager" class="map-upload">
+          <el-upload
+            class="upload-demo"
+            :action="null"
+            :http-request="UploadMap"
+            :show-file-list="false"
+            accept="image/*"
+            :before-upload="beforeMapUpload"
+          >
+            <el-button type="primary">{{
+              labForm.map_image ? "更换地图" : "上传地图"
+            }}</el-button>
+          </el-upload>
+        </div>
+
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="mapDialogVisible = false">关闭</el-button>
+          </span>
+        </template>
+      </el-dialog>
     </div>
 
     <!-- 下面的卡片部分竖着排列 -->
@@ -407,6 +444,7 @@ import { labAPI } from "../utils/api";
 import _ from "lodash";
 import type { Lab, LabForm, LabManager, UpdateLabRequest } from "../types/lab";
 import loadingAnimation from "@/assets/loading.json";
+import { Location } from "@element-plus/icons-vue";
 
 interface Equipment {
   name: string;
@@ -434,6 +472,7 @@ export default defineComponent({
         name: "",
         location: "",
         lab_image: "",
+        map_image: "",
         safety_equipments: "",
         safety_notes: "",
       } as LabForm,
@@ -442,6 +481,7 @@ export default defineComponent({
       editingIndex: null as number | null,
       loading: false,
       dialogVisible: false,
+      mapDialogVisible: false,
       error: null as string | null,
       parsedEquipments: [] as Equipment[],
       currentEquipment: {
@@ -513,6 +553,7 @@ export default defineComponent({
               name: lab.name,
               location: lab.location,
               lab_image: lab.lab_image || "",
+              map_image: lab.map_image || "",
               safety_equipments: lab.safety_equipments || "[]",
               safety_notes: lab.safety_notes || "",
             };
@@ -1006,11 +1047,111 @@ export default defineComponent({
         }
       }
     },
+    // 显示地图对话框
+    showMap() {
+      this.mapDialogVisible = true;
+    },
+    // 上传地图前的验证
+    beforeMapUpload(file: File) {
+      const isImage = file.type.startsWith("image/");
+      const isLt5M = file.size / 1024 / 1024 < 5;
+
+      if (!isImage) {
+        ElMessage.error("只能上传图片文件!");
+        return false;
+      }
+      if (!isLt5M) {
+        ElMessage.error("图片大小不能超过 5MB!");
+        return false;
+      }
+      return true;
+    },
+
+    // 上传地图
+    async UploadMap({ file }: { file: File }) {
+      let loadingInstance = null;
+      try {
+        // 显示加载提示
+        loadingInstance = ElLoading.service({
+          lock: true,
+          text: "上传中...",
+          background: "rgba(0, 0, 0, 0.7)",
+        });
+
+        console.log("Uploading file:", file.name, file.type, file.size);
+
+        const response = await labAPI.patchLabMap(this.labForm.lab_id!, file);
+
+        if (response.success && response.data) {
+          // 更新本地图片URL
+          this.labForm.map_image = response.data.map_image;
+          ElMessage.success("图片上传成功");
+          // 刷新实验室详情
+          await this.fetchLabDetails();
+        } else {
+          throw new Error(response.error || "上传失败");
+        }
+      } catch (error) {
+        console.error("Upload error:", error);
+        ElMessage.error(
+          error instanceof Error ? error.message : "图片上传失败"
+        );
+      } finally {
+        if (loadingInstance) {
+          loadingInstance.close();
+        }
+      }
+    },
   },
 });
 </script>
 
 <style scoped>
+.lab-location {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-text {
+  cursor: pointer;
+}
+
+.map-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.map-container {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.map-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.no-map {
+  color: #909399;
+  font-size: 14px;
+}
+
+.map-upload {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
 .loading-container {
   position: fixed;
   top: 0;

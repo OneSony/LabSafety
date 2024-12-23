@@ -540,6 +540,7 @@ export interface LabDetails {
   safety_equipments: string;
   safety_notes: string;
   lab_image: string;
+  map_image: string;
 }
 
 export interface LabResponse {
@@ -675,6 +676,34 @@ const labAPI = {
     formData.append("id", String(labId));
     // 添加图片文件
     formData.append("lab_image", file);
+
+    // 添加调试日志
+    for (const pair of formData.entries()) {
+      console.log("FormData:", pair[0], pair[1]);
+    }
+
+    return server
+      .patch("/api/v1/labs/lab", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((response) => {
+        console.log("Upload response:", response);
+        return handleResponse(response);
+      })
+      .catch((error) => {
+        console.error("Upload error:", error);
+        return handleError(error);
+      });
+  },
+  async patchLabMap(labId: number | string, file: File): Promise<LabResponse> {
+    // 创建 FormData 对象
+    const formData = new FormData();
+    // 添加实验室ID
+    formData.append("id", String(labId));
+    // 添加图片文件
+    formData.append("map_image", file);
 
     // 添加调试日志
     for (const pair of formData.entries()) {
