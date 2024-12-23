@@ -216,7 +216,7 @@ const userAPI = {
     } else {
       form.append("role", role);
       return server
-        .post("/api/v1/users/register-staff/", form)
+        .post("/api/v1/users/register-staff", form)
         .then(handleResponse)
         .catch(handleError);
     }
@@ -356,6 +356,27 @@ const courseAPI = {
     };
     return server
       .post("/api/v1/courses/enroll", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getCourseFromClass(class_id: number): Promise<any> {
+    const params = {
+      class_id: class_id,
+    };
+    return server
+      .get("/api/v1/courses/classes", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getCourse(course_code: string, course_sequence: string): Promise<any> {
+    const params = {
+      course_code: course_code,
+      course_sequence: course_sequence,
+    };
+    return server
+      .get("/api/v1/courses/course", { params })
       .then(handleResponse)
       .catch(handleError);
   },

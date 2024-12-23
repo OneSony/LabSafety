@@ -36,6 +36,9 @@
             placeholder="请输入院系"
           ></el-input>
         </el-form-item>
+        <el-form-item label="调试用输入，角色">
+          <el-input v-model="form.role" placeholder="留空默认为教师"></el-input>
+        </el-form-item>
         <el-form-item label="随机密码">
           <el-input v-model="form.password" disabled></el-input>
         </el-form-item>
@@ -87,6 +90,7 @@ export default {
         user_id: "",
         real_name: "",
         department: "",
+        role: "",
       },
       rules: {
         user_id: [
@@ -239,7 +243,11 @@ export default {
       formDate.append("real_name", this.form.real_name);
       formDate.append("department", this.form.department);
 
-      const registerResult = await userAPI.register(formDate, "teacher");
+      let role = this.form.role;
+      if (role == "") {
+        role = "teacher";
+      }
+      const registerResult = await userAPI.register(formDate, role);
 
       if (registerResult.success) {
         // 显示成功消息
