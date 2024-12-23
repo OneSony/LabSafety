@@ -98,6 +98,19 @@
       </el-card>
     </div>
 
+    <el-dialog
+      title="编辑通知"
+      v-model="noticeEditDialogVisible"
+      width="40%"
+      @close="fetchNotices"
+    >
+      <NoticeDialog
+        :lab_id="selectedLabId"
+        @close-dialog="noticeEditDialogVisible = false"
+        v-if="noticeEditDialogVisible"
+      />
+    </el-dialog>
+
     <!-- 创建/编辑实验室弹窗 -->
     <el-dialog
       v-model="isLabDialogVisible"
@@ -137,6 +150,7 @@
 import { ref } from "vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import { labAPI } from "../utils/api";
+import NoticeDialog from "@/components/NoticeDialog.vue";
 import {
   Plus,
   Edit,
@@ -156,6 +170,7 @@ export default {
     Search,
     School,
     Location,
+    NoticeDialog,
   },
   data() {
     return {
@@ -170,6 +185,9 @@ export default {
         // safety_equipment_list: [],
         // safety_notes_list: [],
       },
+      searchQuery: "",
+      noticeEditDialogVisible: false,
+      selectedLabId: null,
     };
   },
   computed: {
@@ -357,6 +375,12 @@ export default {
     goToLabDetail(lab) {
       console.log("id:", lab.id);
       this.$router.push({ name: "LabPage", params: { id: lab.id } });
+    },
+
+    openNotificationEditor(lab) {
+      console.log("打开通知编辑器", lab);
+      this.selectedLabId = lab.id;
+      this.noticeEditDialogVisible = true;
     },
   },
   mounted() {
