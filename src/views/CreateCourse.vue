@@ -108,12 +108,15 @@
         class="w-full"
         :header-cell-style="{ background: '#f5f7fa' }"
       >
-        <el-table-column
-          fixed
-          prop="date"
-          label="日期"
-          width="180"
-        ></el-table-column>
+        <el-table-column fixed prop="date" label="日期" width="180">
+          <template v-slot="scope">
+            <DateBox
+              :dateStr="scope.row.date"
+              :textColor="'#666'"
+              :fontSize="'12px'"
+            />
+          </template>
+        </el-table-column>
         <el-table-column
           prop="class_name"
           label="课堂名"
@@ -383,6 +386,7 @@ import { ElMessage, inputEmits, rowProps } from "element-plus";
 import { defineComponent, onMounted } from "vue";
 import { stringifyQuery } from "vue-router";
 import { useRoute } from "vue-router";
+import DateBox from "@/components/DateBox.vue";
 
 interface Teacher {
   teacher_id: string;
@@ -419,6 +423,9 @@ interface Lab {
 }
 
 export default defineComponent({
+  components: {
+    DateBox,
+  },
   data() {
     return {
       courseData: {
