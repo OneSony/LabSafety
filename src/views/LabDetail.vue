@@ -89,7 +89,7 @@
                   fit="cover"
                 ></el-image>
                 <div v-else class="no-photo">
-                  <span> 点击上传照片</span>
+                  <span> 实验室照片</span>
                 </div>
                 <el-upload
                   class="upload-container"
@@ -114,7 +114,6 @@
                   <el-button
                     v-if="isManager"
                     type="primary"
-                    size="small"
                     @click="openManagerDialog"
                   >
                     <el-icon><Plus /></el-icon>
@@ -345,7 +344,6 @@
               <el-button
                 v-if="isManager"
                 type="primary"
-                size="small"
                 @click="openEquipmentDialog"
               >
                 <el-icon><Plus /></el-icon>
@@ -473,7 +471,6 @@
               <el-button
                 v-if="isManager"
                 type="primary"
-                size="small"
                 @click="openNoteDialog(null)"
               >
                 <el-icon><Plus /></el-icon>
@@ -1398,7 +1395,7 @@ export default defineComponent({
 
 .el-button .el-icon {
   margin-right: 4px;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 /* 主要操作按钮样式 */
@@ -1438,8 +1435,12 @@ export default defineComponent({
 /* 操作区域按钮组样式 */
 .action-button {
   display: flex;
+  top: -80px;
   gap: 8px;
   align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
 }
 
 /* 卡片操作按钮样式 */
@@ -1536,16 +1537,11 @@ export default defineComponent({
 }
 
 .section-title {
-  font-size: 16px;
+  font-size: 20px;
   color: #606266;
   margin: 0 0 12px 0;
 }
 
-.action-button {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
 
 .managers-list {
   display: flex;
@@ -1597,7 +1593,7 @@ export default defineComponent({
 }
 
 .card-main-title h3 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   color: #303133;
   margin: 0;
@@ -1802,7 +1798,7 @@ export default defineComponent({
 .loading {
   text-align: center;
   padding: 20px;
-  font-size: 16px;
+  font-size: 20px;
   color: #666;
 }
 .lab-header {

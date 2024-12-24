@@ -148,9 +148,7 @@ import {
   User,
   Plus,
   Refresh,
-  IdCard,
   Edit,
-  Office,
   School,
   Phone,
   Message,
@@ -173,8 +171,6 @@ export default {
     Setting,
     Check,
     Close,
-    Delete,
-    Warning,
   },
   data() {
     return {
