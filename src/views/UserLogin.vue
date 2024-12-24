@@ -47,6 +47,7 @@
               type="password"
               v-model="loginForm.password"
               placeholder="密码"
+              @keyup.enter="handleLogin"
               class="custom-input"
             ></el-input>
           </el-form-item>

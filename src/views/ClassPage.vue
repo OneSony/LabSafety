@@ -417,8 +417,8 @@
 
       <div class="comment-list" v-if="commentLoaded">
         <div
-          v-for="(comment, index) in commentList"
-          :key="index"
+          v-for="comment in commentList"
+          :key="comment.id"
           class="comment-item"
         >
           <el-button

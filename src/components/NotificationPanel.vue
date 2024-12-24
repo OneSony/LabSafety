@@ -108,7 +108,6 @@ export default {
       this.noticeList = [];
 
       const result = await classAPI.getClassList();
-      console.log("classList", result);
       if (result.success) {
         this.classList = result.data;
       } else {
@@ -125,7 +124,6 @@ export default {
         }
 
         const labResult = await classAPI.getLocations(classItem.class_id);
-        console.log("labResult", labResult);
         if (labResult.success) {
           if (labResult.data.length != 0) {
             classItem.lab_id = labResult.data[0].lab_id;
@@ -134,7 +132,6 @@ export default {
               classItem.lab_id
             );
             if (labNoticeResult.success) {
-              console.log("labNoticeResult", labNoticeResult);
               this.noticeList.push(...labNoticeResult.data);
             } else {
               ElMessage.error("获取通知失败");
@@ -150,7 +147,6 @@ export default {
           const result2 = await courseAPI.getCourseFromClass(
             notice.class_info.class_id
           );
-          console.log("result2", result2);
           if (result2.success) {
             if (result2.data.length === 0) {
               ElMessage.error("获取课程失败");
@@ -166,7 +162,6 @@ export default {
             notice.class_info.course_code,
             notice.class_info.course_sequence
           );
-          console.log("result3", result3);
           if (result3.success) {
             if (result3.data.length === 0) {
               ElMessage.error("获取课程失败");
@@ -182,6 +177,11 @@ export default {
       });
 
       await Promise.all(noticePromises);
+
+      //sort by time
+      this.noticeList.sort((a, b) => {
+        return new Date(b.post_time) - new Date(a.post_time);
+      });
       this.isLoaded = true;
     },
     async deleteNotification(notice) {
@@ -199,8 +199,6 @@ export default {
   },
   async mounted() {
     await this.fetchNotices();
-    console.log("classList", this.classList);
-    console.log("noticeList", this.noticeList);
   },
 };
 </script>

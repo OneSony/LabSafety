@@ -35,6 +35,13 @@ export default {
       const url = this.url;
       const index = url.lastIndexOf("/");
       this.fileName = decodeURIComponent(url.substring(index + 1));
+      const dotIndex = this.fileName.lastIndexOf(".");
+      const hyphenIndex = this.fileName.lastIndexOf("-", dotIndex);
+      if (hyphenIndex !== -1) {
+        this.fileName =
+          this.fileName.substring(0, hyphenIndex) +
+          this.fileName.substring(dotIndex);
+      }
     },
     // 下载文件
     downloadFile() {
