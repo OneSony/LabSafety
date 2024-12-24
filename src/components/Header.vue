@@ -62,7 +62,12 @@ export default {
     const userPhoto = ref("");
 
     const updateUserPhoto = async () => {
-      userPhoto.value = (await userAPI.getAvatar()) || "";
+      try {
+        userPhoto.value = await userAPI.getAvatar();
+      } catch (error) {
+        console.error("Error fetching avatar:", error);
+        userPhoto.value = ""; // ProfilePhoto 组件会使用默认头像
+      }
     };
 
     watch(route, async () => {
@@ -148,6 +153,31 @@ export default {
   display: flex;
   align-items: center;
   cursor: pointer;
+}
+:deep(.el-dropdown) {
+  border: none !important;
+  outline: none !important;
+}
+
+:deep(.el-dropdown:focus) {
+  border: none !important;
+  outline: none !important;
+}
+
+:deep(.el-dropdown:hover) {
+  border: none !important;
+  outline: none !important;
+}
+
+.user-info:hover {
+  border: none !important;
+  outline: none !important;
+}
+
+/* 如果还有边框，可以添加这个来确保边框完全消失 */
+:deep(.el-dropdown-selfdefine) {
+  border: none !important;
+  outline: none !important;
 }
 
 .username {

@@ -1,11 +1,17 @@
 <template>
   <div class="avatar-container">
-    <img v-if="url" :src="url" alt="头像" :style="avatarStyle" />
+    <img
+      :src="displayUrl"
+      alt="头像"
+      :style="avatarStyle"
+      @error="handleImageError"
+    />
   </div>
 </template>
 
 <script>
-import { toRefs, computed, watch } from "vue";
+import { toRefs, computed, ref } from "vue";
+import defaultAvatar from "@/assets/default-avatar.png";
 
 export default {
   name: "ProfilePhoto",
@@ -21,6 +27,17 @@ export default {
   },
   setup(props) {
     const { url, size } = toRefs(props);
+    const hasError = ref(false);
+
+    // 计算实际显示的URL
+    const displayUrl = computed(() => {
+      return hasError.value || !url.value ? defaultAvatar : url.value;
+    });
+
+    // 处理图片加载错误
+    const handleImageError = () => {
+      hasError.value = true;
+    };
 
     // 计算头像的样式
     const avatarStyle = computed(() => {
@@ -33,8 +50,11 @@ export default {
         objectFit: "cover",
       };
     });
+
     return {
       avatarStyle,
+      displayUrl,
+      handleImageError,
     };
   },
 };
@@ -45,5 +65,9 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+img {
+  display: block;
 }
 </style>
