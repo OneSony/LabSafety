@@ -739,30 +739,30 @@ export default defineComponent({
         }
 
         //地点
-        if (
-          this.classFormDataOrigin.lab_id != null &&
-          this.classFormData.lab_id != this.classFormDataOrigin.lab_id
-        ) {
-          const deleteLabResult = await classAPI.deleteLocation(
-            this.classFormData.class_id!,
-            this.classFormDataOrigin.lab_id!
-          );
-          if (deleteLabResult.success) {
-            ElMessage.success("删除成功");
-          } else {
-            ElMessage.error("删除失败");
+        if (this.classFormData.lab_id != this.classFormDataOrigin.lab_id) {
+          console.log("ori_lab_id", this.classFormDataOrigin.lab_id);
+          if (this.classFormDataOrigin.lab_id != null) {
+            const deleteLabResult = await classAPI.deleteLocation(
+              this.classFormData.class_id!,
+              this.classFormDataOrigin.lab_id!
+            );
+            if (deleteLabResult.success) {
+              ElMessage.success("删除成功");
+            } else {
+              ElMessage.error("删除失败");
+            }
           }
-        }
 
-        const postLabResult = await classAPI.postLocation(
-          this.classFormData.class_id!,
-          this.classFormData.lab_id!
-        );
+          const postLabResult = await classAPI.postLocation(
+            this.classFormData.class_id!,
+            this.classFormData.lab_id!
+          );
 
-        if (postLabResult.success) {
-          ElMessage.success("提交成功");
-        } else {
-          ElMessage.error("提交失败");
+          if (postLabResult.success) {
+            ElMessage.success("提交成功");
+          } else {
+            ElMessage.error("提交失败");
+          }
         }
       }
       this.classDialogVisible = false;
