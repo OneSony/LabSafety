@@ -190,23 +190,25 @@
                 </div>
                 <el-table
                   :data="availableManagers"
+                  v-for="manager in labManagers"
+                  :key="manager.manager_user_id"
                   style="width: 100%"
                   height="300px"
                   v-loading="loadingManagers"
                 >
                   <el-table-column prop="manager_name" label="姓名">
                     <template #default="{ row }">
-                      {{ row.real_name || "未知" }}
+                      {{ row.manager_name || "未知" }}
                     </template>
                   </el-table-column>
                   <el-table-column prop="manager_phone" label="电话">
                     <template #default="{ row }">
-                      {{ row.phone_number || "未知" }}
+                      {{ row.manager_phone || "未知" }}
                     </template>
                   </el-table-column>
                   <el-table-column prop="manager_email" label="邮箱">
                     <template #default="{ row }">
-                      {{ row.email || "未知" }}
+                      {{ row.manager_email || "未知" }}
                     </template>
                   </el-table-column>
                   <el-table-column fixed="right" label="操作" width="120">
@@ -1057,24 +1059,6 @@ export default defineComponent({
         } // 直接设置到 availableManagers
       } else {
         ElMessage.error("获取安全员列表失败");
-      }
-    },
-    handleView(row) {
-      const userData = {
-        user_id: row.user_id,
-        real_name: row.real_name,
-        department: row.department,
-        phone_number: row.phone_number,
-      };
-      console.log("View user:", userData);
-      if (this.$router) {
-        this.$router.push({
-          name: "ViewUser",
-          params: { userId: row.user_id },
-          state: { userData },
-        });
-      } else {
-        console.error("Router instance is not available.");
       }
     },
     // 修改打开对话框的方法
