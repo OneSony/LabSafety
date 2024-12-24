@@ -339,9 +339,9 @@ const courseAPI = {
   },
 
   postCourse(
-    course_name: string,
     course_code: string,
     course_sequence: string,
+    course_name: string,
     department: string
   ): Promise<any> {
     const data = {

@@ -1,6 +1,6 @@
 <template>
   <el-row>
-    <p>今天有xx门课</p>
+    <p>今天有{{ todayClassNum }}门课</p>
   </el-row>
   <div class="tabs">
     <el-tabs v-model="activeTab">
@@ -38,7 +38,7 @@ import PaginationComponent from "./Pagination.vue";
 import { courseAPI } from "../utils/api";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
-import { userAPI, classAPI } from "../utils/api";
+import { userAPI, classAPI, labAPI } from "../utils/api";
 
 export default {
   name: "CoursePanel",
@@ -52,10 +52,12 @@ export default {
       allExperiments: [],
       todayExperiments: [],
       isLoading: true,
+      todayClassNum: 0,
     };
   },
-  mounted() {
-    this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
+  async mounted() {
+    await this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
+    this.selectTodayExperiments();
   },
   methods: {
     async fetchCourses() {
@@ -73,9 +75,22 @@ export default {
 
           // 获取课程的实验列表
           const classResponse = await classAPI.getClassList(courses[i].id);
-          console.log("dashBoardClassResponse", classResponse);
           if (classResponse.success) {
             courses[i].classList = classResponse.data;
+            for (let j = 0; j < courses[i].classList.length; j++) {
+              const locationResult = await classAPI.getLocations(
+                courses[i].classList[j].class_id
+              );
+              if (locationResult.success) {
+                courses[i].classList[j].lab_id = locationResult.data[0].lab_id;
+                const labNameResult = await labAPI.getLabs(
+                  courses[i].classList[j].lab_id
+                );
+                if (labNameResult.success) {
+                  courses[i].classList[j].lab_name = labNameResult.data[0].name;
+                }
+              }
+            }
             courses[i].isLoaded = true;
           } else {
             ElMessage.error("获取课程实验失败：" + classResponse.error);
@@ -85,8 +100,42 @@ export default {
 
         this.experimentNum = courses.length; // 设置课程数量
         this.allExperiments = courses;
+        //sort experiments by start_time
+        for (let i = 0; i < this.allExperiments.length; i++) {
+          this.allExperiments[i].classList.sort((a, b) => {
+            return new Date(a.start_time) - new Date(b.start_time);
+          });
+        }
       }
       this.isLoading = false;
+    },
+
+    selectTodayExperiments() {
+      const today = new Date();
+      const todayExperiments = this.allExperiments.filter((course) => {
+        return course.classList.some((experiment) => {
+          const date = new Date(experiment.start_time);
+          return (
+            date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear()
+          );
+        });
+      });
+      this.todayExperiments = todayExperiments;
+
+      for (let i = 0; i < this.allExperiments.length; i++) {
+        for (let j = 0; j < this.allExperiments[i].classList.length; j++) {
+          const date = new Date(this.allExperiments[i].classList[j].start_time);
+          if (
+            date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear()
+          ) {
+            this.todayClassNum++;
+          }
+        }
+      }
     },
   },
 };

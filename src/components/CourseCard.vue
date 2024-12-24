@@ -9,7 +9,7 @@
         <p>开课院系 {{ experiment.department }}</p>
       </div>
       <el-progress
-        :percentage="experiment.progress"
+        :percentage="calculateProgress()"
         type="circle"
       ></el-progress>
     </div>
@@ -40,21 +40,27 @@
               :dateStr="classItem.start_time"
               style="margin-bottom: 5px; margin-left: 10px"
             ></DateBox>
-            <el-card class="class-card">
+            <el-card
+              :class="{
+                'class-card': true,
+                'highlight-today': isToday(classItem.start_time),
+                'highlight-unset': classItem.isUnset === true,
+              }"
+            >
               <div class="class-content">
                 <div class="class-title">
                   <h4>{{ classItem.name }}</h4>
-                  <p>生物医学馆</p>
+                  <p>{{ classItem.lab_name }}</p>
                 </div>
-                <div class="content-box">
+                <div class="content-box" v-if="false">
                   <p>通知</p>
                   <p>0</p>
                 </div>
-                <div class="content-box">
+                <div class="content-box" v-if="false">
                   <p>实验数</p>
                   <p>0</p>
                 </div>
-                <div class="content-box">
+                <div class="content-box" v-if="false">
                   <p>预估时间</p>
                   <p>0</p>
                 </div>
@@ -68,7 +74,7 @@
 </template>
 
 <script>
-import { classAPI } from "../utils/api";
+import { classAPI, userAPI } from "../utils/api";
 import DateBox from "./DateBox.vue";
 
 export default {
@@ -77,6 +83,9 @@ export default {
       type: Object,
       required: true,
     },
+  },
+  mounted() {
+    console.log("experimentmound", this.experiment);
   },
   data() {
     return {
@@ -101,6 +110,7 @@ export default {
     // 处理课程卡片点击事件
     async handleCardClick() {
       // 切换课程卡片的显示状态
+      console.log("experimentmound", this.experiment);
       this.experiment.isVisible = !this.experiment.isVisible;
       console.log("Card clicked:", this.experiment);
       // 仅在 classList 为空时请求数据
@@ -121,6 +131,33 @@ export default {
         }
         this.experiment.isLoaded = true; // 设置为 true，避免重复请求
       }
+    },
+    isToday(dateStr) {
+      const today = new Date();
+      const date = new Date(dateStr);
+      return (
+        date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear()
+      );
+    },
+    calculateProgress() {
+      //统计已经过去的课程数量
+      let count = 0;
+      for (let i = 0; i < this.experiment.classList.length; i++) {
+        //过去的，按天数算，不考虑时间，不算今天
+        if (
+          new Date(this.experiment.classList[i].start_time).setHours(
+            0,
+            0,
+            0,
+            0
+          ) < new Date().setHours(0, 0, 0, 0)
+        ) {
+          count++;
+        }
+      }
+      return (count / this.experiment.classList.length) * 100;
     },
   },
 };
@@ -204,5 +241,39 @@ export default {
 
 .class-title {
   width: 30%;
+}
+.highlight-today {
+  box-shadow: 0 0 5px #a5d6a7; /* 淡绿色发光效果 */
+  transition: border 0.3s ease, box-shadow 0.3s ease; /* 添加动画效果 */
+  animation: border-glow 1.5s infinite; /* 添加跑马灯效果 */
+}
+
+@keyframes border-glow {
+  0% {
+    box-shadow: 0 0 5px #a5d6a7, 0 0 10px #a5d6a7, 0 0 15px #a5d6a7;
+  }
+  50% {
+    box-shadow: 0 0 10px #a5d6a7, 0 0 15px #a5d6a7, 0 0 20px #a5d6a7;
+  }
+  100% {
+    box-shadow: 0 0 5px #a5d6a7, 0 0 10px #a5d6a7, 0 0 15px #a5d6a7;
+  }
+}
+.highlight-unset {
+  box-shadow: 0 0 5px #ffcc80; /* 淡橙黄色发光效果 */
+  transition: border 0.3s ease, box-shadow 0.3s ease; /* 添加动画效果 */
+  animation: border-glow-unset 1.5s infinite; /* 添加跑马灯效果 */
+}
+
+@keyframes border-glow-unset {
+  0% {
+    box-shadow: 0 0 5px #ffcc80, 0 0 10px #ffcc80, 0 0 15px #ffcc80;
+  }
+  50% {
+    box-shadow: 0 0 10px #ffcc80, 0 0 15px #ffcc80, 0 0 20px #ffcc80;
+  }
+  100% {
+    box-shadow: 0 0 5px #ffcc80, 0 0 10px #ffcc80, 0 0 15px #ffcc80;
+  }
 }
 </style>
