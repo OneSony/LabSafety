@@ -86,9 +86,6 @@ export default {
   },
   mounted() {
     console.log("experimentmound", this.experiment);
-    if (userAPI.getRole() == "teacher") {
-      this.markUnsetClass();
-    }
   },
   data() {
     return {

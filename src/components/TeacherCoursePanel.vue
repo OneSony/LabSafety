@@ -1,6 +1,6 @@
 <template>
   <el-row>
-    <p>今天有{{ todayClassNum }}门课, 有xx门没有填充</p>
+    <p>今天有{{ todayClassNum }}门课, 有{{ unsetClassNum }}门没有设置完成</p>
   </el-row>
   <div class="tabs">
     <el-tabs v-model="activeTab">
@@ -63,11 +63,13 @@ export default {
       unsetExperiments: [],
       isLoading: true,
       todayClassNum: 0,
+      unsetClassNum: 0,
     };
   },
   async mounted() {
     await this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
     this.selectTodayExperiments();
+    this.selectUnsetExperiments();
   },
   methods: {
     async fetchCourses() {
@@ -147,6 +149,22 @@ export default {
             date.getFullYear() === today.getFullYear()
           ) {
             this.todayClassNum++;
+          }
+        }
+      }
+    },
+    selectUnsetExperiments() {
+      const unsetExperiments = this.allExperiments.filter((course) => {
+        return course.classList.some((experiment) => {
+          return experiment.isUnset;
+        });
+      });
+      this.unsetExperiments = unsetExperiments;
+
+      for (let i = 0; i < this.allExperiments.length; i++) {
+        for (let j = 0; j < this.allExperiments[i].classList.length; j++) {
+          if (this.allExperiments[i].classList[j].isUnset) {
+            this.unsetClassNum++;
           }
         }
       }
