@@ -1,21 +1,23 @@
 <template>
   <div class="course-management p-6 max-w-7xl mx-auto">
     <!-- Back Button -->
-    <el-button 
-      @click="goBack" 
-      type="primary" 
-      class="mb-6 flex items-center"
-    >
+    <el-button @click="goBack" type="primary" class="mb-6 flex items-center">
       <i class="el-icon-arrow-left mr-2"></i> 返回
     </el-button>
 
     <!-- Course Info Card -->
-    <el-card class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300">
+    <el-card
+      class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300"
+    >
       <div class="border-b pb-4 mb-6">
         <h2 class="text-xl font-semibold text-gray-800">课程基本信息</h2>
       </div>
-      
-      <el-form label-position="right" label-width="100px" class="grid grid-cols-2 gap-6">
+
+      <el-form
+        label-position="right"
+        label-width="100px"
+        class="grid grid-cols-2 gap-6"
+      >
         <el-form-item label="课程号" class="mb-4">
           <el-input
             v-model="courseData.course_code"
@@ -24,7 +26,7 @@
             class="w-full"
           ></el-input>
         </el-form-item>
-        
+
         <el-form-item label="课序号" class="mb-4">
           <el-input
             v-model="courseData.course_sequence"
@@ -33,7 +35,7 @@
             class="w-full"
           ></el-input>
         </el-form-item>
-        
+
         <el-form-item label="课程名" class="mb-4">
           <el-input
             v-model="courseData.course_name"
@@ -41,7 +43,7 @@
             class="w-full"
           ></el-input>
         </el-form-item>
-        
+
         <el-form-item label="开课院系" class="mb-4">
           <el-input
             v-model="courseData.department"
@@ -50,20 +52,18 @@
           ></el-input>
         </el-form-item>
       </el-form>
-      
+
       <div class="flex justify-end mt-6 mr-4">
-        <el-button 
-          @click="submitCourse" 
-          type="primary" 
-          class="w-32"
-        >
+        <el-button @click="submitCourse" type="primary" class="w-32">
           提交
         </el-button>
       </div>
     </el-card>
 
     <!-- Class List Card -->
-    <el-card class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300">
+    <el-card
+      class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300"
+    >
       <div class="flex justify-between items-center border-b pb-4 mb-8">
         <h2 class="text-xl font-semibold text-gray-800">已添加课堂</h2>
         <el-button
@@ -75,17 +75,34 @@
           <i class="el-icon-plus justify-end mr-2 mb-6"></i> 添加课堂
         </el-button>
       </div>
-      
-      <el-table 
-        :data="classList" 
-        border 
+
+      <el-table
+        :data="classList"
+        border
         class="w-full"
-        :header-cell-style="{background:'#f5f7fa'}"
+        :header-cell-style="{ background: '#f5f7fa' }"
       >
-        <el-table-column fixed prop="date" label="日期" width="180"></el-table-column>
-        <el-table-column prop="class_name" label="课堂名" min-width="120"></el-table-column>
-        <el-table-column prop="lab_name" label="位置" min-width="120"></el-table-column>
-        <el-table-column prop="teachers_name" label="授课教师" min-width="150"></el-table-column>
+        <el-table-column
+          fixed
+          prop="date"
+          label="日期"
+          width="180"
+        ></el-table-column>
+        <el-table-column
+          prop="class_name"
+          label="课堂名"
+          min-width="120"
+        ></el-table-column>
+        <el-table-column
+          prop="lab_name"
+          label="位置"
+          min-width="120"
+        ></el-table-column>
+        <el-table-column
+          prop="teachers_name"
+          label="授课教师"
+          min-width="150"
+        ></el-table-column>
         <el-table-column fixed="right" label="操作" width="150">
           <template v-slot="slotProps">
             <el-button
@@ -111,7 +128,9 @@
     </el-card>
 
     <!-- Student List Card -->
-    <el-card class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300">
+    <el-card
+      class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300"
+    >
       <div class="flex justify-between items-center border-b pb-4 mb-8">
         <h2 class="text-xl font-semibold text-gray-800">已添加学生</h2>
         <el-button
@@ -123,15 +142,23 @@
           <i class="el-icon-plus justify-end mr-2 mb-6"></i> 添加学生
         </el-button>
       </div>
-      
-      <el-table 
-        :data="studentList" 
-        border 
+
+      <el-table
+        :data="studentList"
+        border
         class="w-full"
-        :header-cell-style="{background:'#f5f7fa'}"
+        :header-cell-style="{ background: '#f5f7fa' }"
       >
-        <el-table-column prop="student_id" label="学号" width="180"></el-table-column>
-        <el-table-column prop="student_name" label="姓名" min-width="120"></el-table-column>
+        <el-table-column
+          prop="student_id"
+          label="学号"
+          width="180"
+        ></el-table-column>
+        <el-table-column
+          prop="student_name"
+          label="姓名"
+          min-width="120"
+        ></el-table-column>
         <el-table-column fixed="right" label="操作" width="120">
           <template v-slot="slotProps">
             <el-button
@@ -195,18 +222,28 @@
               placeholder="请输入工号，多个工号用逗号分隔"
               class="flex-1"
             ></el-input>
-            <el-button type="primary" @click="fetchTeacherData">查询教师</el-button>
+            <el-button type="primary" @click="fetchTeacherData"
+              >查询教师</el-button
+            >
           </div>
         </el-form-item>
 
-        <el-table 
-          :data="classFormData.teachers" 
-          border 
+        <el-table
+          :data="classFormData.teachers"
+          border
           class="w-full mb-6"
-          :header-cell-style="{background:'#f5f7fa'}"
+          :header-cell-style="{ background: '#f5f7fa' }"
         >
-          <el-table-column prop="teacher_id" label="工号" width="180"></el-table-column>
-          <el-table-column prop="teacher_name" label="姓名" min-width="120"></el-table-column>
+          <el-table-column
+            prop="teacher_id"
+            label="工号"
+            width="180"
+          ></el-table-column>
+          <el-table-column
+            prop="teacher_name"
+            label="姓名"
+            min-width="120"
+          ></el-table-column>
           <el-table-column fixed="right" label="操作" width="120">
             <template v-slot="slotProps">
               <el-button
@@ -245,19 +282,29 @@
               placeholder="请输入学号，多个学号用逗号分隔"
               class="flex-1"
             ></el-input>
-            <el-button type="primary" @click="fetchStudentData">查询学生</el-button>
+            <el-button type="primary" @click="fetchStudentData"
+              >查询学生</el-button
+            >
           </div>
         </el-form-item>
       </el-form>
 
-      <el-table 
-        :data="studentFormList" 
-        border 
+      <el-table
+        :data="studentFormList"
+        border
         class="w-full"
-        :header-cell-style="{background:'#f5f7fa'}"
+        :header-cell-style="{ background: '#f5f7fa' }"
       >
-        <el-table-column prop="student_id" label="学号" width="180"></el-table-column>
-        <el-table-column prop="student_name" label="姓名" min-width="120"></el-table-column>
+        <el-table-column
+          prop="student_id"
+          label="学号"
+          width="180"
+        ></el-table-column>
+        <el-table-column
+          prop="student_name"
+          label="姓名"
+          min-width="120"
+        ></el-table-column>
         <el-table-column fixed="right" label="操作" width="120">
           <template v-slot="slotProps">
             <el-button
