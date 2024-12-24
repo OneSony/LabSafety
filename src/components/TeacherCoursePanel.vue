@@ -122,6 +122,12 @@ export default {
 
         this.experimentNum = courses.length; // 设置课程数量
         this.allExperiments = courses;
+        //sort by start_time
+        for (let i = 0; i < this.allExperiments.length; i++) {
+          this.allExperiments[i].classList.sort((a, b) => {
+            return new Date(a.start_time) - new Date(b.start_time);
+          });
+        }
       }
       this.isLoading = false;
     },
