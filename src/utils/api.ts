@@ -523,6 +523,13 @@ const classAPI = {
       .catch(handleError);
   },
 
+  deleteComment(comment_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/classes/comments", { params: { comment_id } })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getLocations(class_id: number): Promise<any> {
     //返回lab_id
     const params = { class_id: class_id };

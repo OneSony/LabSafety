@@ -412,6 +412,13 @@
           :key="index"
           class="comment-item"
         >
+          <el-button
+            v-if="comment.sender_id === myUserId || isTeacher"
+            type="text"
+            @click="deleteComment(comment)"
+            style="position: absolute; right: 20px"
+            >删除</el-button
+          >
           <UserCard :userId="comment.sender_id" />
           <div class="comment-details">
             {{ comment.content }}
@@ -875,6 +882,16 @@ export default {
         ElMessage.error("获取学生失败");
       }
       this.isEnrolledStudentsLoaded = true;
+    },
+    async deleteComment(comment) {
+      console.log("删除评论:", comment);
+      const result = await classAPI.deleteComment(comment.id);
+      if (result.success) {
+        console.log("删除成功");
+        await this.fetchComments();
+      } else {
+        console.log("删除失败");
+      }
     },
   },
 };
