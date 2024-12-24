@@ -9,7 +9,7 @@
         <p>开课院系 {{ experiment.department }}</p>
       </div>
       <el-progress
-        :percentage="experiment.progress"
+        :percentage="calculateProgress()"
         type="circle"
       ></el-progress>
     </div>
@@ -139,6 +139,24 @@ export default {
         date.getMonth() === today.getMonth() &&
         date.getFullYear() === today.getFullYear()
       );
+    },
+    calculateProgress() {
+      //统计已经过去的课程数量
+      let count = 0;
+      for (let i = 0; i < this.experiment.classList.length; i++) {
+        //过去的，按天数算，不考虑时间，不算今天
+        if (
+          new Date(this.experiment.classList[i].start_time).setHours(
+            0,
+            0,
+            0,
+            0
+          ) < new Date().setHours(0, 0, 0, 0)
+        ) {
+          count++;
+        }
+      }
+      return (count / this.experiment.classList.length) * 100;
     },
   },
 };
