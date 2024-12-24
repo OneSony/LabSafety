@@ -105,7 +105,7 @@
     </el-form-item>
 
     <!-- 文件上传 -->
-    <el-form-item label="上传文件" prop="files">
+    <el-form-item label="上传文件" prop="files" v-if="!experimentForm.id">
       <el-upload
         class="upload-demo"
         action=""
@@ -121,7 +121,7 @@
     </el-form-item>
 
     <!-- 图片上传 -->
-    <el-form-item label="上传图片" prop="images">
+    <el-form-item label="上传图片" prop="images" v-if="!experimentForm.id">
       <el-upload
         class="upload-demo"
         action=""
