@@ -1,6 +1,6 @@
 <template>
   <el-row>
-    <p>今天有xx门课, 有xx门没有填充</p>
+    <p>今天有{{ todayClassNum }}门课, 有xx门没有填充</p>
   </el-row>
   <div class="tabs">
     <el-tabs v-model="activeTab">
@@ -62,10 +62,12 @@ export default {
       todayExperiments: [],
       unfinishedExperiments: [],
       isLoading: true,
+      todayClassNum: 0,
     };
   },
-  mounted() {
-    this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
+  async mounted() {
+    await this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
+    this.selectTodayExperiments();
   },
   methods: {
     async fetchCourses() {
@@ -99,7 +101,6 @@ export default {
                 }
               }
             }
-
             courses[i].isLoaded = true;
           } else {
             ElMessage.error("获取课程实验失败：" + classResponse.error);
@@ -111,6 +112,34 @@ export default {
         this.allExperiments = courses;
       }
       this.isLoading = false;
+    },
+
+    selectTodayExperiments() {
+      const today = new Date();
+      const todayExperiments = this.allExperiments.filter((course) => {
+        return course.classList.some((experiment) => {
+          const date = new Date(experiment.start_time);
+          return (
+            date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear()
+          );
+        });
+      });
+      this.todayExperiments = todayExperiments;
+
+      for (let i = 0; i < this.allExperiments.length; i++) {
+        for (let j = 0; j < this.allExperiments[i].classList.length; j++) {
+          const date = new Date(this.allExperiments[i].classList[j].start_time);
+          if (
+            date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear()
+          ) {
+            this.todayClassNum++;
+          }
+        }
+      }
     },
   },
 };
