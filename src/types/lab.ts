@@ -5,6 +5,7 @@ export interface LabForm {
   name: string;
   location: string;
   lab_image: string;
+  map_image: string;
   safety_equipments: string;
   safety_notes: string;
   [key: string]: string | number | null; // 添加索引签名
@@ -20,6 +21,7 @@ export interface Lab {
   name: string;
   location: string;
   lab_image: string;
+  map_image: string;
   safety_equipments: string;
   safety_notes: string;
 }
@@ -50,7 +52,7 @@ export interface LabManager {
   manager_name: string;
   manager_phone: string;
   manager_email: string;
-  lab_id: number;
+  lab_id: number | null;
 }
 
 export interface BindManagerRequest {

@@ -140,7 +140,7 @@
   <!-- 自定义底部按钮 -->
   <div class="dialog-footer">
     <el-button @click="closeDialog">取消</el-button>
-    <el-button type="primary" @click="submitExperimentForm">保存</el-button>
+    <el-button type="primary" @click="submitExperimentForm">提交</el-button>
   </div>
 </template>
 
@@ -152,12 +152,13 @@ export default {
     input_experiment: {
       type: Object,
       default: () => ({
+        id: undefined,
         title: "",
-        estimatedTime: "",
-        safetyTags: [],
-        experimentTags: [],
-        submissionTags: [],
-        otherTags: [],
+        estimated_time: "",
+        safety_tags: [],
+        experiment_method_tags: [],
+        submission_type_tags: [],
+        other_tags: [],
         description: "",
         images: [],
         files: [],
@@ -171,7 +172,16 @@ export default {
   data() {
     return {
       experimentForm: {
-        ...this.input_experiment, // 将父组件传入的实验数据作为默认值
+        id: this.input_experiment.id,
+        title: this.input_experiment.title,
+        estimatedTime: this.input_experiment.estimated_time,
+        safetyTags: this.input_experiment.safety_tags,
+        experimentTags: this.input_experiment.experiment_method_tags,
+        submissionTags: this.input_experiment.submission_type_tags,
+        otherTags: this.input_experiment.other_tags,
+        description: this.input_experiment.description,
+        images: this.input_experiment.images,
+        files: this.input_experiment.files,
       },
       newSafetyTag: "",
       newExperimentTag: "",
@@ -218,34 +228,45 @@ export default {
       let formData = new FormData();
       formData.append("class_id", this.class_id);
       formData.append("title", this.experimentForm.title);
-      formData.append("estimated_time", this.experimentForm.estimatedTime);
-      formData.append("safety_tags", this.experimentForm.safetyTags);
+      formData.append(
+        "estimated_time",
+        Number(this.experimentForm.estimatedTime)
+      );
+      formData.append("safety_tags", this.experimentForm.safetyTags.join(","));
       formData.append(
         "experiment_method_tags",
-        this.experimentForm.experimentTags
+        this.experimentForm.experimentTags.join(",")
       );
       formData.append(
         "submission_type_tags",
-        this.experimentForm.submissionTags
+        this.experimentForm.submissionTags.join(",")
       );
-      formData.append("other_tags", this.experimentForm.otherTags);
+      formData.append("other_tags", this.experimentForm.otherTags.join(","));
       formData.append("description", this.experimentForm.description);
       // 上传文件
-      /*this.experimentForm.files.forEach((file) => {
+      this.experimentForm.files.forEach((file) => {
         formData.append("files", file.raw);
       });
       // 上传图片
       this.experimentForm.images.forEach((image) => {
         formData.append("images", image.raw);
       });
+
       console.log("formData", formData);
-      /*const result = await classAPI.postExperiment(formData);
-      console.log("result", result);
-      if (result.success) {
+      console.log("formData.tag", formData.get("safety_tags"));
+      let experimentResult;
+      if (this.experimentForm.id != undefined && this.experimentForm.id != "") {
+        formData.append("id", this.experimentForm.id);
+        experimentResult = await classAPI.patchExperiment(formData);
+      } else {
+        experimentResult = await classAPI.postExperiment(formData);
+      }
+      console.log("result", experimentResult);
+      if (experimentResult.success) {
         ElMessage.success("实验创建成功");
       } else {
         ElMessage.error("实验创建失败");
-      }*/
+      }
       this.closeDialog();
     },
 

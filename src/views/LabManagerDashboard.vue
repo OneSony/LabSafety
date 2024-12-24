@@ -98,6 +98,19 @@
       </el-card>
     </div>
 
+    <el-dialog
+      title="编辑通知"
+      v-model="noticeEditDialogVisible"
+      width="40%"
+      @close="fetchNotices"
+    >
+      <NoticeDialog
+        :lab_id="selectedLabId"
+        @close-dialog="noticeEditDialogVisible = false"
+        v-if="noticeEditDialogVisible"
+      />
+    </el-dialog>
+
     <!-- 创建/编辑实验室弹窗 -->
     <el-dialog
       v-model="isLabDialogVisible"
@@ -136,7 +149,8 @@
 <script>
 import { ref } from "vue";
 import { ElMessageBox, ElMessage } from "element-plus";
-import { labAPI } from "../utils/api";
+import { labAPI, userAPI } from "../utils/api";
+import NoticeDialog from "@/components/NoticeDialog.vue";
 import {
   Plus,
   Edit,
@@ -145,6 +159,7 @@ import {
   Search,
   School,
   Location,
+  User,
 } from "@element-plus/icons-vue";
 
 export default {
@@ -156,6 +171,7 @@ export default {
     Search,
     School,
     Location,
+    NoticeDialog,
   },
   data() {
     return {
@@ -170,6 +186,9 @@ export default {
         // safety_equipment_list: [],
         // safety_notes_list: [],
       },
+      searchQuery: "",
+      noticeEditDialogVisible: false,
+      selectedLabId: null,
     };
   },
   computed: {
@@ -186,7 +205,7 @@ export default {
   methods: {
     fetchLabs() {
       labAPI
-        .getLabs()
+        .getLabs(undefined, true) //只看到自己的实验室
         .then((response) => {
           if (response.success) {
             this.labs = response.data;
@@ -261,36 +280,43 @@ export default {
         return;
       }
 
-      try {
-        let response;
-        const labData = {
-          name: this.labForm.name,
-          location: this.labForm.location,
-        };
+      let response;
+      const labData = {
+        name: this.labForm.name,
+        location: this.labForm.location,
+      };
 
-        if (this.labForm.lab_id) {
-          // 编辑现有实验室 - 使用 PATCH
-          response = await labAPI.editLab(this.labForm.lab_id, {
-            id: this.labForm.lab_id, // 确保包含 id
-            ...labData,
-          });
-        } else {
-          // 创建新实验室 - 使用 POST
-          response = await labAPI.createLab(labData);
-        }
-
+      if (this.labForm.lab_id) {
+        // 编辑现有实验室 - 使用 PATCH
+        response = await labAPI.editLab(this.labForm.lab_id, {
+          id: this.labForm.lab_id, // 确保包含 id
+          ...labData, //TODO
+        });
+      } else {
+        response = await labAPI.createLab(labData);
+        console.log("response", response);
         if (response.success) {
-          ElMessage.success(
-            this.labForm.lab_id ? "实验室更新成功！" : "实验室创建成功！"
+          const managerResult = await labAPI.postManagerToLab(
+            userAPI.getUserId(),
+            response.data.lab.lab_id
           );
-          this.isLabDialogVisible = false;
-          await this.fetchLabs();
-        } else {
-          ElMessage.error(response.error || "保存实验室失败");
+
+          if (managerResult.success) {
+            console.log("添加实验室管理员成功");
+          } else {
+            console.error("添加实验室管理员失败", managerResult.error);
+          }
         }
-      } catch (error) {
-        console.error("Save lab error:", error);
-        ElMessage.error("保存实验室失败，请稍后重试！");
+      }
+
+      if (response.success) {
+        ElMessage.success(
+          this.labForm.lab_id ? "实验室更新成功！" : "实验室创建成功！"
+        );
+        this.isLabDialogVisible = false;
+        await this.fetchLabs();
+      } else {
+        ElMessage.error(response.error || "保存实验室失败");
       }
     },
 
@@ -357,6 +383,12 @@ export default {
     goToLabDetail(lab) {
       console.log("id:", lab.id);
       this.$router.push({ name: "LabPage", params: { id: lab.id } });
+    },
+
+    openNotificationEditor(lab) {
+      console.log("打开通知编辑器", lab);
+      this.selectedLabId = lab.id;
+      this.noticeEditDialogVisible = true;
     },
   },
   mounted() {

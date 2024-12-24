@@ -61,72 +61,89 @@
       </div>
     </el-dialog>
 
-    <div
-      class="header-box"
-      style="
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        align-items: stretch;
-      "
-    >
-      <div
-        style="
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          width: 60%;
-        "
-      >
+    <div class="header-box">
+      <div class="info-section">
         <el-button
           v-if="isTeacher"
           type="primary"
-          class="card-btn"
-          style="position: absolute; top: 20px; right: 20px; z-index: 1000"
+          class="edit-button"
           @click="openBasicDialog"
         >
           编辑基本信息
         </el-button>
-        <el-row>
-          <el-col :span="24">
-            <h2>{{ this.basicInfo.class_name }}</h2>
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 教师 </el-col>
-          <el-col :span="20">
-            {{ this.basicInfo.teachers_str }}
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 上课时间 </el-col>
-          <el-col :span="20">
-            <DateBox
-              :dateStr="this.basicInfo.date"
-              v-if="this.basicInfo.date"
-            />
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 地点 </el-col>
-          <el-col :span="20">
-            {{ this.basicInfo.lab_name }}
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="4"> 概览 </el-col>
-          <el-col :span="20"> 这里是课程的概览 </el-col>
-        </el-row>
+
+        <div class="class-title">
+          <h2>{{ this.basicInfo.class_name }}</h2>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-user"></i>
+              教师
+            </div>
+            <div class="info-content">
+              {{ this.basicInfo.teachers_str }}
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-time"></i>
+              上课时间
+            </div>
+            <div class="info-content">
+              <DateBox
+                :dateStr="this.basicInfo.date"
+                v-if="this.basicInfo.date"
+              />
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-location"></i>
+              地点
+            </div>
+            <div class="info-content">
+              <el-tooltip
+                effect="dark"
+                content="点击查看实验室详情"
+                placement="top"
+                v-if="basicInfo.lab_id"
+              >
+                <router-link
+                  :to="{ path: '/lab/' + this.basicInfo.lab_id }"
+                  style="cursor: pointer"
+                >
+                  {{ this.basicInfo.lab_name }}
+                </router-link>
+              </el-tooltip>
+              <span v-else>{{ basicInfo.lab_name }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-document"></i>
+              概览
+            </div>
+            <div class="info-content">
+              {{ this.basicInfo.overview || "这里是课程的概览" }}
+            </div>
+          </div>
+        </div>
       </div>
-      <div
-        style="
-          border-left: 1px solid #ccc;
-          padding-left: 20px;
-          padding-right: 20px;
-        "
-      >
-        <p>实验室地图</p>
-        <img src="https://via.placeholder.com/150" alt="实验室地图" />
+      <div class="map-section">
+        <p class="map-text" v-if="basicInfo.lab_id">实验室地图</p>
+        <el-image
+          v-if="basicInfo.map_image"
+          :src="basicInfo.map_image"
+          fit="contain"
+          class="lab-map-image"
+          :preview-src-list="[basicInfo.map_image]"
+        ></el-image>
+        <div v-else class="no-map">暂无地图</div>
       </div>
     </div>
     <!-- 编辑对话框 -->
@@ -217,7 +234,7 @@
       <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
       <p
         v-if="noticeList.length === 0 && noticeLoaded"
-        style="text-align: center; color: #ccc"
+        style="text-align: center; color: #ccc; padding: 20px"
       >
         暂无通知
       </p>
@@ -226,8 +243,8 @@
           :xs="24"
           :sm="12"
           :md="8"
-          v-for="(notice, index) in noticeList"
-          :key="index"
+          v-for="notice in noticeList"
+          :key="notice.id"
           :span="8"
           style="
             position: relative;
@@ -280,6 +297,15 @@
 
     <div class="box">
       <h3>实验内容</h3>
+
+      <el-skeleton :rows="5" animated v-if="!experimentLoaded" />
+      <p
+        v-if="experimentList.length === 0 && experimentLoaded"
+        style="text-align: center; color: #ccc; padding: 20px"
+      >
+        暂无实验
+      </p>
+
       <el-button
         v-if="isTeacher"
         type="primary"
@@ -290,8 +316,8 @@
         添加内容
       </el-button>
       <div
-        v-for="(experiment, index) in experimentInfos"
-        :key="index"
+        v-for="(experiment, index) in experimentList"
+        :key="experiment.id"
         class="experiment-item"
       >
         <el-button
@@ -307,6 +333,7 @@
           type="danger"
           class="edit-btn"
           style="position: absolute; top: 70px; right: 20px; z-index: 1000"
+          @click="deleteExperiment(experiment)"
           >删除</el-button
         >
         <ExperimentCard :experiment="experiment" :index="index" />
@@ -316,17 +343,17 @@
       title="添加实验内容"
       v-model="experimentDialogVisible"
       width="80%"
-      @close="resetExperimentForm"
+      @close="fetchExperiments"
     >
       <ExperimentDialog
-        @close-dialog="closeExperimentDialog"
+        @close-dialog="experimentDialogVisible = false"
         :input_experiment="experimentForm"
         :class_id="basicInfo.class_id"
         v-if="experimentDialogVisible"
       />
     </el-dialog>
 
-    <div class="header-box">
+    <div class="header-box" style="display: flex; flex-direction: column">
       <h3>评论区</h3>
 
       <el-skeleton :rows="3" animated v-if="!commentLoaded" />
@@ -337,7 +364,7 @@
         暂无讨论
       </p>
 
-      <div class="comment-list">
+      <div class="comment-list" v-if="commentLoaded">
         <div
           v-for="(comment, index) in commentList"
           :key="index"
@@ -375,7 +402,7 @@
 <script>
 import { classAPI, labAPI, userAPI, noticeAPI, courseAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
-import { useRouter } from "vue-router";
+import { stringifyQuery, useRouter } from "vue-router";
 import UserCard from "@/components/UserCard.vue";
 import NoticeCard from "@/components/NoticeCard.vue";
 import NoticeDialog from "@/components/NoticeDialog.vue";
@@ -415,6 +442,7 @@ export default {
         date: "",
         lab_id: "",
         lab_name: "",
+        map_image: "",
         tags: [],
       },
 
@@ -428,31 +456,17 @@ export default {
         tags: [],
       },
 
-      experimentInfos: [
-        {
-          title: "化学实验一",
-          estimatedTime: "2小时",
-          safetyTags: ["明火", "腐蚀性试剂"],
-          experimentTags: ["个人"],
-          submissionTags: ["纸质报告"],
-          otherTags: ["注意通风"],
-          description: "这是一个化学实验，涉及到高温和有毒气体。",
-          photos: [
-            "https://via.placeholder.com/150",
-            "https://via.placeholder.com/150",
-          ],
-        },
-        {
-          title: "生物实验二",
-          estimatedTime: "1小时",
-          safetyTags: ["生物危险"],
-          experimentTags: ["小组"],
-          submissionTags: ["上交产物"],
-          otherTags: ["无特殊要求"],
-          description: "这是一项生物实验，需要小组合作。",
-          photos: [],
-        },
-      ],
+      experimentForm: {
+        title: "",
+        estimated_time: "",
+        safety_tags: [],
+        experiment_method_tags: [],
+        submission_type_tags: [],
+        other_tags: [],
+        description: "",
+        images: [],
+        files: [],
+      },
       experimentDialogVisible: false,
       noticeDialogVisible: false,
       basicDialogVisible: false,
@@ -472,6 +486,7 @@ export default {
       userLookup: {},
       commentList: [],
       studentList: [],
+      experimentList: [],
       copyList: [],
       noticeList: [],
       noticeLoaded: false,
@@ -496,6 +511,7 @@ export default {
     await this.fetchClassBasicInfo();
     await this.fetchComments();
     await this.fetchNotices();
+    await this.fetchExperiments();
     console.log("basic:", this.basicInfo);
     //TODO
   },
@@ -504,6 +520,16 @@ export default {
       console.log("关闭通知对话框");
       this.experimentDialogVisible = false;
       //await this.
+    },
+    async deleteExperiment(experiment) {
+      console.log("删除实验:", experiment);
+      const result = await classAPI.deleteExperiment(experiment.id);
+      if (result.success) {
+        console.log("删除成功");
+        await this.fetchExperiments();
+      } else {
+        console.log("删除失败");
+      }
     },
     async closeNoticeDialog() {
       console.log("关闭通知对话框");
@@ -561,21 +587,19 @@ export default {
         this.fetchEnrolledStudents();
       }
     },
-    resetExperimentForm() {
-      this.experimentForm = {
-        title: "",
-        estimatedTime: "",
-        safetyTags: [],
-        experimentTags: [],
-        submissionTags: [],
-        otherTags: [],
-        description: "",
-        photos: [],
-      };
-    },
     openExperimentDialog(index, experiment) {
       if (index == null && experiment == null) {
-        this.resetExperimentForm();
+        this.experimentForm = {
+          title: "",
+          estimated_time: "",
+          safety_tags: [],
+          experiment_method_tags: [],
+          submission_type_tags: [],
+          other_tags: [],
+          description: "",
+          images: [],
+          files: [],
+        };
       } else {
         this.experimentForm = { ...experiment };
       }
@@ -693,8 +717,10 @@ export default {
         } else {
           this.basicInfo.lab_id = result3.data[0].lab_id;
           const result = await labAPI.getLabs(this.basicInfo.lab_id);
+          console.log("地点信息!!!:", result);
           if (result.success) {
             this.basicInfo.lab_name = result.data[0].name;
+            this.basicInfo.map_image = result.data[0].map_image;
           } else {
             ElMessage.error("获取地点信息失败");
           }
@@ -706,19 +732,16 @@ export default {
       console.log("basic info:", this.basicInfo);
     },
 
-    fetchComments() {
+    async fetchComments() {
       this.commentLoaded = false;
-      classAPI.getComments(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.commentList = [];
-          } else {
-            this.commentList = response.data;
-          }
-        } else {
-          ElMessage.error("获取评论失败");
-        }
-      });
+      this.commentList = [];
+      const result = await classAPI.getComments(this.class_id);
+      console.log("评论内容:", result);
+      if (result.success) {
+        this.commentList = result.data;
+      } else {
+        ElMessage.error("获取评论失败");
+      }
       this.commentLoaded = true;
     },
 
@@ -738,6 +761,7 @@ export default {
 
     async fetchNotices() {
       this.noticeLoaded = false;
+      this.noticeList = [];
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
         this.noticeList = result.data;
@@ -745,7 +769,46 @@ export default {
       } else {
         ElMessage.error("获取通知失败");
       }
+
+      if (this.basicInfo.lab_id) {
+        const result2 = await noticeAPI.getNotices(
+          undefined,
+          this.basicInfo.lab_id
+        );
+        if (result2.success) {
+          this.noticeList.push(...result2.data);
+          console.log("lab 通知??!!:", this.noticeList);
+        } else {
+          ElMessage.error("获取通知失败");
+        }
+      }
       this.noticeLoaded = true;
+    },
+
+    async fetchExperiments() {
+      this.experimentLoaded = false;
+      this.experimentList = [];
+      const result = await classAPI.getExperiments(this.class_id);
+      console.log("实验内容:", result);
+      if (result.success) {
+        this.experimentList = result.data;
+        for (let i = 0; i < this.experimentList.length; i++) {
+          const safety_tags = this.experimentList[i].safety_tags.split(",");
+          this.experimentList[i].safety_tags = safety_tags;
+          const experiment_method_tags =
+            this.experimentList[i].experiment_method_tags.split(",");
+          this.experimentList[i].experiment_method_tags =
+            experiment_method_tags;
+          const submission_type_tags =
+            this.experimentList[i].submission_type_tags.split(",");
+          this.experimentList[i].submission_type_tags = submission_type_tags;
+          const other_tags = this.experimentList[i].other_tags.split(",");
+          this.experimentList[i].other_tags = other_tags;
+        }
+      } else {
+        ElMessage.error("获取实验内容失败");
+      }
+      this.experimentLoaded = true;
     },
 
     async fetchEnrolledStudents() {
@@ -776,6 +839,164 @@ export default {
 </script>
 
 <style scoped>
+.map-section {
+  width: 300px;
+  padding: 20px;
+}
+
+.map-text {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.lab-map-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.no-map {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  color: #909399;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.header-box {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 24px;
+}
+
+.info-section {
+  position: relative;
+  flex: 1;
+  min-width: 0; /* 防止flex子项溢出 */
+}
+
+.map-section {
+  width: 500px;
+  padding-left: 24px;
+  border-left: 1px solid #dcdfe6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.map-text {
+  font-size: 16px;
+  color: #606266;
+  margin-bottom: 20px;
+}
+.map-section h4 {
+  align-self: flex-start;
+  margin: 0 0 16px 0;
+  color: #606266;
+  font-size: 16px;
+}
+
+.lab-map {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  border-radius: 4px;
+}
+.edit-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.class-title {
+  margin-bottom: 24px;
+  padding-right: 120px;
+}
+
+.class-title h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.info-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.info-item:hover {
+  background-color: #f2f6fc;
+}
+
+.info-label {
+  width: 100px;
+  color: #606266;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-content {
+  flex: 1;
+  color: #303133;
+}
+
+.lab-link {
+  cursor: pointer;
+  color: #409eff;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.lab-link:hover {
+  color: #66b1ff;
+}
+
+@media (max-width: 768px) {
+  .header-box {
+    flex-direction: column;
+  }
+
+  .map-section {
+    width: 100%;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #dcdfe6;
+    padding-top: 24px;
+  }
+
+  .info-grid {
+    gap: 12px;
+  }
+
+  .info-item {
+    flex-direction: column;
+  }
+
+  .info-label {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}
 .class-panel {
   padding: 20px;
 }

@@ -1,9 +1,16 @@
 <template>
   <el-card :body-style="{ padding: '20px' }" class="card">
     <DateBox :dateStr="notice.updated_at" textColor="#666" font-size="12px" />
-    <h3 v-if="needToShowClass" style="margin-top: 10px; margin-bottom: 10px">
-      {{ this.notice.class_info.name }}
-    </h3>
+    <router-link
+      v-if="needToShowClass"
+      :to="{
+        path: `/course/${this.notice.class_info.course_id}/class/${this.notice.class_info.class_id}`,
+      }"
+    >
+      <h3 v-if="needToShowClass" style="margin-top: 10px; margin-bottom: 10px">
+        {{ this.notice.class_info.name }}
+      </h3>
+    </router-link>
     <el-row>
       <UserCard :userId="notice.sender" />
     </el-row>

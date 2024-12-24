@@ -1,25 +1,10 @@
 <template>
   <div>
+    <el-button @click="goBack" type="primary"> 返回 </el-button>
     <el-card class="form-block">
       <div class="form-block-title">
-        <span>创建课程</span>
-        <el-button
-          @click="submitCourse"
-          type="primary"
-          size="small"
-          :disabled="isCourseSubmitted"
-        >
-          提交
-        </el-button>
+        <span>课程基本信息</span>
       </div>
-
-      <el-form-item label="课程名">
-        <el-input
-          v-model="courseData.course_name"
-          placeholder="请输入课程名"
-          :disabled="isCourseSubmitted"
-        ></el-input>
-      </el-form-item>
       <el-form-item label="课程号">
         <el-input
           v-model="courseData.course_code"
@@ -34,20 +19,30 @@
           :disabled="isCourseSubmitted"
         ></el-input>
       </el-form-item>
+      <el-form-item label="课程名">
+        <el-input
+          v-model="courseData.course_name"
+          placeholder="请输入课程名"
+        ></el-input>
+      </el-form-item>
       <el-form-item label="开课院系">
         <el-input
           v-model="courseData.department"
           placeholder="请输入开课院系"
-          :disabled="isCourseSubmitted"
         ></el-input>
       </el-form-item>
+      <div style="text-align: center">
+        <el-button @click="submitCourse" type="primary" size="small">
+          提交
+        </el-button>
+      </div>
     </el-card>
 
     <el-card class="form-block">
       <div class="form-block-title">
         <span>已添加课堂</span>
         <el-button
-          @click="openClassDialog"
+          @click="classDialogVisible = true"
           type="primary"
           size="small"
           :disabled="!isCourseSubmitted"
@@ -62,14 +57,21 @@
           prop="teachers_name"
           label="授课教师"
         ></el-table-column>
-        <el-table-column fixed="right" label="操作" width="100">
+        <el-table-column fixed="right" label="操作" width="200">
           <template v-slot="slotProps">
             <el-button
-              @click="handleClassRowClick(slotProps.row)"
+              @click="handleClassEdit(slotProps.row)"
               type="text"
               size="small"
               :disabled="!isCourseSubmitted"
               >查看</el-button
+            >
+            <el-button
+              @click="handleClassDelete(slotProps.row)"
+              type="text"
+              size="small"
+              :disabled="!isCourseSubmitted"
+              >删除</el-button
             >
           </template>
         </el-table-column>
@@ -80,7 +82,7 @@
       <div class="form-block-title">
         <span>已添加学生</span>
         <el-button
-          @click="openStudentDialog"
+          @click="studentDialogVisible = true"
           type="primary"
           size="small"
           :disabled="!isCourseSubmitted"
@@ -93,28 +95,23 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template v-slot="slotProps">
             <el-button
-              @click="handleStudentRowClick(slotProps.row)"
+              @click="handleStudentDelete(slotProps.row)"
               type="text"
               size="small"
               :disabled="!isCourseSubmitted"
-              >查看</el-button
+              >删除</el-button
             >
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <!-- 提交按钮 -->
-    <el-button @click="goBack" type="primary" :disabled="!isCourseSubmitted">
-      完成创建
-    </el-button>
-
     <!-- 添加课堂的对话框 -->
     <el-dialog
       title="添加课堂"
       v-model="classDialogVisible"
       width="800px"
-      @close="resetClassForm"
+      @close="closeClassDialog"
     >
       <el-form :model="classFormData" ref="classForm">
         <el-form-item label="课堂名">
@@ -182,7 +179,7 @@
       title="添加学生"
       v-model="studentDialogVisible"
       width="800px"
-      @close="resetClassForm"
+      @close="closeStudentDialog"
     >
       <!-- 输入学号文本框 -->
       <el-form>
@@ -286,6 +283,16 @@ export default defineComponent({
         teachers_name: "",
       } as Class,
 
+      classFormDataOrigin: {
+        class_name: "",
+        class_id: null,
+        date: "",
+        lab_id: null,
+        lab_name: "",
+        teachers: [] as Teacher[],
+        teachers_name: "",
+      } as Class,
+
       studentFormStr: "" as string,
 
       studentFormList: [] as Student[], // 用来存储学生数据
@@ -306,7 +313,10 @@ export default defineComponent({
     console.log("inputCourseData", history.state.inputCourseData);
     if (history.state.inputCourseData) {
       console.log("inputCourseData", history.state.inputCourseData);
-      this.fetchCourseData(history.state.inputCourseData);
+      this.transformData(history.state.inputCourseData);
+      this.fetchCourse();
+      this.fetchEnroll();
+      this.fetchClassList();
     }
   },
   methods: {
@@ -326,14 +336,31 @@ export default defineComponent({
       }
     },
 
-    async fetchCourseData(inputCourseData: any) {
+    transformData(inputCourseData: any) {
       this.courseData.course_id = inputCourseData?.course_id || null;
       this.courseData.course_name = inputCourseData?.course_name || "";
       this.courseData.course_code = inputCourseData?.course_code || "";
       this.courseData.course_sequence = inputCourseData?.course_sequence || "";
       this.courseData.department = inputCourseData?.department || "";
+    },
 
+    async fetchCourse() {
+      const result = await courseAPI.getCourse(
+        this.courseData.course_code,
+        this.courseData.course_sequence
+      );
+      if (result.success) {
+        this.courseData.course_id = result.data[0].id;
+        this.courseData.course_name = result.data[0].name;
+        this.courseData.department = result.data[0].department;
+      } else {
+        ElMessage.error("加载课程失败");
+      }
+    },
+
+    async fetchEnroll() {
       //TODO 获取学生
+      this.studentList = [] as Student[];
       const result1 = await courseAPI.getEnroll(this.courseData.course_id!);
       console.log("result1", result1);
       if (result1.success) {
@@ -359,8 +386,11 @@ export default defineComponent({
       } else {
         ElMessage.error("加载学生失败");
       }
+    },
 
+    async fetchClassList() {
       //获取class
+      this.classList = [] as Class[];
       const result2 = await classAPI.getClassList(this.courseData.course_id!);
       console.log("result2", result2);
       if (result2.success) {
@@ -395,22 +425,27 @@ export default defineComponent({
         if (result4.success) {
           this.classList[i].teachers = [] as Teacher[];
           for (let j = 0; j < result4.data.length; j++) {
+            //每一份teacher
             const result5 = await userAPI.getUserInfo(
               result4.data[j].teacher_id
             );
             console.log("result5", result5);
             if (result5.success) {
               this.classList[i].teachers.push({
-                teacher_id: result4.data[j].teacher_id,
+                teacher_id: result5.data[0].user_id,
                 teacher_name: result5.data[0].real_name,
               } as Teacher);
             } else {
               ElMessage.error("加载教师失败");
             }
           }
+          this.classList[i].teachers_name = this.classList[i].teachers
+            .map((teacher) => teacher.teacher_name)
+            .join(", ");
         } else {
           ElMessage.error("加载教师失败");
         }
+        console.log("classList!!", this.classList);
       }
     },
 
@@ -512,116 +547,238 @@ export default defineComponent({
     },
 
     async submitCourse() {
-      const result = await courseAPI.postCourse(
-        this.courseData.course_name,
-        this.courseData.course_code,
-        this.courseData.course_sequence,
-        this.courseData.department
-      );
-      if (result.success === true) {
-        ElMessage.success("提交成功");
-        this.courseData.course_id = result.data.course.id;
-        console.log("courseData", this.courseData);
+      console.log("here!", this.courseData);
+      if (this.courseData.course_id != null) {
+        const result = await courseAPI.patchCourse(
+          this.courseData.course_code,
+          this.courseData.course_sequence,
+          this.courseData.course_name,
+          this.courseData.department
+        );
+        if (result.success) {
+          ElMessage.success("提交成功");
+        } else {
+          ElMessage.error("提交失败");
+        }
+        return;
       } else {
-        ElMessage.error("提交失败");
+        const result = await courseAPI.postCourse(
+          this.courseData.course_name,
+          this.courseData.course_code,
+          this.courseData.course_sequence,
+          this.courseData.department
+        );
+        if (result.success === true) {
+          ElMessage.success("提交成功");
+          this.courseData.course_id = result.data.course.id;
+          console.log("courseData", this.courseData);
+        } else {
+          ElMessage.error("提交失败");
+        }
       }
+      this.fetchCourse();
     },
 
     async submitClass() {
+      if (
+        this.courseData.course_id == null ||
+        this.courseData.course_code == "" ||
+        this.courseData.course_sequence == ""
+      ) {
+        ElMessage.error("课堂名不能为空");
+        return;
+      }
       console.log("课堂信息：", this.classFormData);
+      if (this.classFormData.class_id === null) {
+        //新课堂
+        const newClass = {
+          class_name: this.classFormData.class_name,
+          date: this.classFormData.date,
+          lab_id: this.classFormData.lab_id,
+          teachers: [] as Teacher[],
+        } as Class;
 
-      const newClass = {
-        class_name: this.classFormData.class_name,
-        date: this.classFormData.date,
-        lab_id: this.classFormData.lab_id,
-        teachers: [] as Teacher[],
-      } as Class;
-
-      //创建课堂
-      const result = await classAPI.postClass(
-        newClass.class_name,
-        newClass.date
-      );
-      if (result.success) {
-        ElMessage.success("提交成功");
-        newClass.class_id = result.data.class.class_id;
-        console.log("result", result);
-      } else {
-        ElMessage.error("提交失败");
-        return;
-      }
-
-      //绑定课堂到课程
-      const result2 = await courseAPI.postClassToCourse(
-        newClass.class_id!,
-        this.courseData.course_code,
-        this.courseData.course_sequence
-      );
-      if (result2.success) {
-        ElMessage.success("提交成功");
-      } else {
-        ElMessage.error("提交失败");
-        // TODO remove class
-        return;
-      }
-
-      //绑定教师到课堂
-      for (let i = 0; i < this.classFormData.teachers.length; i++) {
-        const teacher = this.classFormData.teachers[i];
-
-        const result3 = await classAPI.postTeacher(
-          newClass.class_id!,
-          teacher.teacher_id
+        //创建课堂
+        const result = await classAPI.postClass(
+          newClass.class_name,
+          newClass.date
         );
-
-        if (result3.success) {
+        if (result.success) {
           ElMessage.success("提交成功");
-          newClass.teachers.push({
-            teacher_id: teacher.teacher_id,
-            teacher_name: teacher.teacher_name,
-          });
+          newClass.class_id = result.data.class.class_id;
+          console.log("result", result);
         } else {
           ElMessage.error("提交失败");
-          // 删除失败的教师
-          this.classFormData.teachers.splice(i, 1);
-          // 由于删除了当前项，i需要减去1来保证索引正确
-          // TODO 需要测试
-          i--;
+          return;
         }
-      }
 
-      console.log("newClass", newClass);
-
-      //绑定地点到课堂
-      //TODO
-      if (newClass.lab_id === null) {
-        ElMessage.error("提交失败");
-        return;
-      } else {
-        const result4 = await classAPI.postLocation(
+        //绑定课堂到课程
+        const result2 = await courseAPI.postClassToCourse(
           newClass.class_id!,
-          newClass.lab_id
+          this.courseData.course_code,
+          this.courseData.course_sequence
         );
-        if (result4.success) {
+        if (result2.success) {
           ElMessage.success("提交成功");
         } else {
           ElMessage.error("提交失败");
-          newClass.lab_id = null;
+          // TODO remove class
+          return;
+        }
+
+        //绑定教师到课堂
+        for (let i = 0; i < this.classFormData.teachers.length; i++) {
+          const teacher = this.classFormData.teachers[i];
+
+          const result3 = await classAPI.postTeacher(
+            newClass.class_id!,
+            teacher.teacher_id
+          );
+
+          if (result3.success) {
+            ElMessage.success("提交成功");
+            newClass.teachers.push({
+              teacher_id: teacher.teacher_id,
+              teacher_name: teacher.teacher_name,
+            });
+          } else {
+            ElMessage.error("提交失败");
+            // 删除失败的教师
+            this.classFormData.teachers.splice(i, 1);
+            // 由于删除了当前项，i需要减去1来保证索引正确
+            // TODO 需要测试
+            i--;
+          }
+        }
+
+        console.log("newClass", newClass);
+
+        //绑定地点到课堂
+        //TODO
+        if (newClass.lab_id === null) {
+          ElMessage.error("提交失败");
+          return;
+        } else {
+          const result4 = await classAPI.postLocation(
+            newClass.class_id!,
+            newClass.lab_id
+          );
+          if (result4.success) {
+            ElMessage.success("提交成功");
+          } else {
+            ElMessage.error("提交失败");
+            newClass.lab_id = null;
+          }
+        }
+
+        ElMessage.success("课堂已添加");
+        this.classDialogVisible = false;
+
+        this.fetchClassList(); // 重新获取课堂列表
+        console.log("classList", this.classList);
+      } else {
+        //TODO 修改课堂
+
+        const result = await classAPI.patchClass(
+          this.classFormData.class_id!,
+          this.classFormData.class_name,
+          this.classFormData.date
+        );
+
+        if (result.success) {
+          ElMessage.success("提交成功");
+        } else {
+          ElMessage.error("提交失败");
+        }
+
+        console.log("this.classFormDataOrigin", this.classFormDataOrigin);
+        console.log("this.classFormData", this.classFormData);
+
+        //绑定教师到课堂
+        const deleteTeacherList = this.classFormDataOrigin.teachers.filter(
+          (teacher: Teacher) =>
+            !this.classFormData.teachers.some(
+              (newTeacher: Teacher) =>
+                newTeacher.teacher_id === teacher.teacher_id
+            )
+        );
+
+        console.log("deleteTeacherList", deleteTeacherList);
+
+        const addTeacherList = this.classFormData.teachers.filter(
+          (newTeacher: Teacher) =>
+            !this.classFormDataOrigin.teachers.some(
+              (teacher: Teacher) => teacher.teacher_id === newTeacher.teacher_id
+            )
+        );
+
+        console.log("addTeacherList", addTeacherList);
+
+        for (let i = 0; i < deleteTeacherList.length; i++) {
+          const result = await classAPI.deleteTeacher(
+            this.classFormData.class_id!,
+            deleteTeacherList[i].teacher_id
+          );
+          if (result.success) {
+            ElMessage.success("提交成功");
+          } else {
+            ElMessage.error("提交失败");
+          }
+        }
+
+        for (let i = 0; i < addTeacherList.length; i++) {
+          const result = await classAPI.postTeacher(
+            this.classFormData.class_id!,
+            addTeacherList[i].teacher_id
+          );
+          if (result.success) {
+            ElMessage.success("提交成功");
+          } else {
+            ElMessage.error("提交失败");
+          }
+        }
+
+        //地点
+        if (
+          this.classFormDataOrigin.lab_id != null &&
+          this.classFormData.lab_id != this.classFormDataOrigin.lab_id
+        ) {
+          const deleteLabResult = await classAPI.deleteLocation(
+            this.classFormData.class_id!,
+            this.classFormDataOrigin.lab_id!
+          );
+          if (deleteLabResult.success) {
+            ElMessage.success("删除成功");
+          } else {
+            ElMessage.error("删除失败");
+          }
+        }
+
+        const postLabResult = await classAPI.postLocation(
+          this.classFormData.class_id!,
+          this.classFormData.lab_id!
+        );
+
+        if (postLabResult.success) {
+          ElMessage.success("提交成功");
+        } else {
+          ElMessage.error("提交失败");
         }
       }
-
-      ElMessage.success("课堂已添加");
       this.classDialogVisible = false;
-
-      this.classList.push(newClass); // 添加到课堂列表
-      this.resetClassForm(); // 重置表单
-      console.log("classList", this.classList);
     },
 
     async submitStudents() {
-      const studentIds = this.studentFormList.map(
-        (student) => student.student_id
-      );
+      //把formlist中不在list的留下
+      const studentIds = this.studentFormList
+        .filter(
+          (newStudent: Student) =>
+            !this.studentList.some(
+              (existingStudent: Student) =>
+                existingStudent.student_id === newStudent.student_id
+            )
+        )
+        .map((student: Student) => student.student_id);
       const result = await courseAPI.postEnroll(
         studentIds,
         this.courseData.course_code,
@@ -630,19 +787,18 @@ export default defineComponent({
       console.log("result", result);
       if (result.success) {
         ElMessage.success("提交成功");
-        this.studentList = this.studentFormList;
+        //把formlist不重复的加到list
         this.studentFormStr = "";
         this.studentDialogVisible = false;
+        this.fetchEnroll();
       } else {
         ElMessage.error("提交失败");
       }
+      this.studentDialogVisible = false;
     },
-    openClassDialog() {
-      // 打开添加课堂的对话框
-      this.classDialogVisible = true;
-    },
-    resetClassForm() {
-      // 重置课堂表单数据
+
+    closeClassDialog() {
+      this.classDialogVisible = false;
       this.classFormData = {
         class_name: "",
         class_id: null,
@@ -652,18 +808,47 @@ export default defineComponent({
         teachers: [] as Teacher[],
         teachers_name: "",
       } as Class;
+
+      this.classFormDataOrigin = {
+        class_name: "",
+        class_id: null,
+        date: "",
+        lab_id: null,
+        lab_name: "",
+        teachers: [] as Teacher[],
+        teachers_name: "",
+      } as Class;
       this.teacherFormStr = "";
+      this.fetchClassList();
     },
-    openStudentDialog() {
-      // 打开添加学生的对话框
-      this.studentDialogVisible = true;
+    closeStudentDialog() {
+      this.studentDialogVisible = false;
+      this.studentFormStr = "";
+      this.studentFormList = [];
+      this.fetchEnroll();
     },
-    handleClassRowClick(row: Class) {
+    handleClassEdit(row: Class) {
       console.log("查看课堂", row);
-      this.classFormData = row;
-      this.openClassDialog();
-      console.log("查看课堂", this.classFormData);
-      //TODO 还不能修改课堂
+      this.classFormData = {
+        class_name: row.class_name,
+        class_id: row.class_id,
+        date: row.date,
+        lab_id: row.lab_id,
+        lab_name: row.lab_name,
+        teachers: row.teachers,
+        teachers_name: row.teachers_name,
+      } as Class;
+      this.classFormDataOrigin = {
+        class_name: row.class_name,
+        class_id: row.class_id,
+        date: row.date,
+        lab_id: row.lab_id,
+        lab_name: row.lab_name,
+        teachers: row.teachers,
+        teachers_name: row.teachers_name,
+      } as Class;
+      this.classDialogVisible = true;
+      console.log("查看课堂", this.classFormData, this.classFormDataOrigin);
     },
     handleStudentDialogRowClick(row: Student) {
       console.log("删除学生", row);
@@ -672,10 +857,50 @@ export default defineComponent({
       );
     },
     handleTeacherDialogRowClick(row: Teacher) {
-      console.log("删除教师", row);
       this.classFormData.teachers = this.classFormData.teachers.filter(
         (teacher: Teacher) => teacher.teacher_id !== row.teacher_id
       );
+      console.log("删除教师", this.classFormData.teachers);
+      console.log("删除教师", this.classFormDataOrigin.teachers);
+    },
+    async handleStudentDelete(row: Student) {
+      //主菜单里删除
+      console.log("删除学生", row);
+      const result = await courseAPI.deleteEnroll(
+        row.student_id,
+        this.courseData.course_code,
+        this.courseData.course_sequence
+      );
+      console.log("result", result);
+      if (result.success) {
+        ElMessage.success("删除成功");
+        this.fetchEnroll();
+      } else {
+        ElMessage.error("删除失败");
+      }
+    },
+    async handleClassDelete(row: Class) {
+      //主菜单里删除
+      console.log("删除课堂", row);
+      const result = await courseAPI.deleteClassToCourse(
+        row.class_id!,
+        this.courseData.course_code,
+        this.courseData.course_sequence
+      );
+      console.log("result", result);
+      if (result.success) {
+        ElMessage.success("删除成功");
+        const result2 = await classAPI.deleteClass(row.class_id!);
+        console.log("result2", result2);
+        if (result2.success) {
+          ElMessage.success("删除成功");
+        } else {
+          ElMessage.error("删除失败");
+        }
+        this.fetchClassList();
+      } else {
+        ElMessage.error("删除失败");
+      }
     },
     goBack() {
       this.$router.go(-1); // 返回上一页

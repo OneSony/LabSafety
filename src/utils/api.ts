@@ -207,33 +207,19 @@ const userAPI = {
       });
   },
 
-  register(user_id: string, real_name: string, password: string): Promise<any> {
-    if (!user_id || !password) {
-      return Promise.reject({
-        success: false,
-        error: "User ID and password are required",
-      });
+  register(form: FormData, role: string): Promise<any> {
+    if (role === "student") {
+      return server
+        .post("/api/v1/users/register/", form)
+        .then(handleResponse)
+        .catch(handleError);
+    } else {
+      form.append("role", role);
+      return server
+        .post("/api/v1/users/register-staff", form)
+        .then(handleResponse)
+        .catch(handleError);
     }
-
-    const credentials = {
-      user_id: user_id.trim(),
-      real_name: real_name.trim(),
-      password: password,
-    };
-
-    console.log("Registering with data:", { ...credentials, password: "***" });
-
-    return server
-      .post("/api/v1/users/register/", credentials)
-      .then(handleResponse)
-      .catch((error) => {
-        console.error("Registration error details:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
-        return handleError(error);
-      });
   },
 
   logout(): void {
@@ -245,32 +231,8 @@ const userAPI = {
     localStorage.removeItem("avatar");
     window.location.href = "/login"; //todo
   },
-  getUserList: async (
-    userId = "",
-    params = {}
-  ): Promise<ApiResponse<UserInfo[]>> => {
-    try {
-      const response = await instance.get<UserInfo[]>("/users/user-info", {
-        params: {
-          user_id: userId,
-          ...params,
-        },
-      });
 
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error) {
-      // 正确处理 AxiosError 类型
-      const axiosError = error as AxiosError<{ detail: string }>;
-      return {
-        success: false,
-        message: axiosError.response?.data?.detail || axiosError.message,
-      };
-    }
-  },
-  getUserInfo(user_id: string, options?: { role?: string }): Promise<any> {
+  getUserInfo(user_id?: string, role?: string): Promise<any> {
     const params: Record<string, string> = {};
 
     // 只有当 user_id 不为空字符串时才添加
@@ -279,8 +241,8 @@ const userAPI = {
     }
 
     // 只有当 role 存在且不为空时才添加
-    if (options?.role && options.role.trim()) {
-      params.role = options.role.trim();
+    if (role && role.trim()) {
+      params.role = role.trim();
     }
 
     console.log("Requesting user info with params:", params); // 调试日志
@@ -340,6 +302,42 @@ const courseAPI = {
     }
   },
 
+  patchCourse(
+    course_code: string,
+    course_sequence: string,
+    course_name?: string,
+    department?: string
+  ): Promise<any> {
+    const data: {
+      course_code: string;
+      course_sequence: string;
+      name?: string;
+      department?: string;
+    } = {
+      course_code: course_code,
+      course_sequence: course_sequence,
+    };
+
+    // 根据传入的参数构建不同的请求体
+    if (course_name) {
+      data["name"] = course_name;
+      console.log("发送请求：仅更新 course_name", data); // 调试信息
+    }
+    if (department) {
+      data["department"] = department;
+      console.log("发送请求：仅更新 department", data); // 调试信息
+    }
+    // 如果两个参数都没有传，返回默认的请求
+    if (!course_name && !department) {
+      console.log("发送请求：只包含 course_code 和 course_sequence", data); // 调试信息
+    }
+
+    return server
+      .patch("/api/v1/courses/course", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   postCourse(
     course_name: string,
     course_code: string,
@@ -374,6 +372,23 @@ const courseAPI = {
       .catch(handleError);
   },
 
+  deleteClassToCourse(
+    class_id: number,
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    return server
+      .delete("/api/v1/courses/classes", {
+        params: {
+          class_id: class_id,
+          course_code: course_code,
+          course_sequence: course_sequence,
+        },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getEnroll(course_id: number): Promise<any> {
     const params = { course_id: course_id };
     return server
@@ -394,6 +409,44 @@ const courseAPI = {
     };
     return server
       .post("/api/v1/courses/enroll", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteEnroll(
+    student_id: string,
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    return server
+      .delete("/api/v1/courses/enroll", {
+        params: {
+          student_id: student_id,
+          course_code: course_code,
+          course_sequence: course_sequence,
+        },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getCourseFromClass(class_id: number): Promise<any> {
+    const params = {
+      class_id: class_id,
+    };
+    return server
+      .get("/api/v1/courses/classes", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getCourse(course_code: string, course_sequence: string): Promise<any> {
+    const params = {
+      course_code: course_code,
+      course_sequence: course_sequence,
+    };
+    return server
+      .get("/api/v1/courses/course", { params })
       .then(handleResponse)
       .catch(handleError);
   },
@@ -433,6 +486,13 @@ const classAPI = {
 
     return server
       .patch("/api/v1/classes/class", params)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteClass(class_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/classes/class", { params: { class_id: class_id } })
       .then(handleResponse)
       .catch(handleError);
   },
@@ -528,6 +588,30 @@ const classAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
+  patchExperiment(formData: FormData): Promise<any> {
+    return server
+      .patch("/api/v1/classes/experiments/", formData)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getExperiments(class_id: number): Promise<any> {
+    const params = { class_id: class_id };
+    return server
+      .get("/api/v1/classes/experiments/", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteExperiment(experiment_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/classes/experiments/", {
+        params: { experiment_id: experiment_id },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
 };
 interface CreateLabRequest {
   name: string;
@@ -540,6 +624,7 @@ export interface LabDetails {
   safety_equipments: string;
   safety_notes: string;
   lab_image: string;
+  map_image: string;
 }
 
 export interface LabResponse {
@@ -586,9 +671,15 @@ export interface BindManagerApiResponse {
 }
 
 const labAPI = {
-  getLabs(lab_id?: number): Promise<any> {
+  getLabs(lab_id?: number, personal?: boolean): Promise<any> {
     //返回id, 不是lab_id
-    const params = lab_id ? { lab_id } : {};
+
+    const params: { lab_id?: number; personal?: boolean } = lab_id
+      ? { lab_id }
+      : {};
+    if (personal) {
+      params["personal"] = true;
+    }
     return server
       .get("/api/v1/labs/lab", { params })
       .then((response) => {
@@ -604,6 +695,7 @@ const labAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+
   getLabname(): string | null {
     return localStorage.getItem("name");
   },
@@ -696,6 +788,34 @@ const labAPI = {
         return handleError(error);
       });
   },
+  async patchLabMap(labId: number | string, file: File): Promise<LabResponse> {
+    // 创建 FormData 对象
+    const formData = new FormData();
+    // 添加实验室ID
+    formData.append("id", String(labId));
+    // 添加图片文件
+    formData.append("map_image", file);
+
+    // 添加调试日志
+    for (const pair of formData.entries()) {
+      console.log("FormData:", pair[0], pair[1]);
+    }
+
+    return server
+      .patch("/api/v1/labs/lab", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((response) => {
+        console.log("Upload response:", response);
+        return handleResponse(response);
+      })
+      .catch((error) => {
+        console.error("Upload error:", error);
+        return handleError(error);
+      });
+  },
 
   // 删除实验室
   deleteLab(labId: number): Promise<any> {
@@ -732,6 +852,8 @@ const labAPI = {
       const url = `/api/v1/labs/managers${
         queryParams.toString() ? `?${queryParams.toString()}` : ""
       }`;
+
+      // 明确指定响应类型
       const response = await axios.get<LabManager[]>(url);
 
       return {
@@ -791,6 +913,39 @@ const labAPI = {
         error: error instanceof Error ? error.message : "解绑安全员失败",
       };
     }
+  },
+
+  getManagerToLab(lab_id?: number, manager_name?: string): Promise<any> {
+    let params;
+    if (lab_id) {
+      params = { lab_id: lab_id };
+    }
+    if (manager_name) {
+      params = { manager_name: manager_name };
+    }
+    return server
+      .get("/api/v1/labs/managers", {
+        params,
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  postManagerToLab(manager_id: string, lab_id: number): Promise<any> {
+    const data = { manager_user_id: manager_id, lab_id: lab_id };
+    return server
+      .post("/api/v1/labs/managers", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteManagerToLab(manager_id: string, lab_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/labs/managers", {
+        params: { manager_user_id: manager_id, lab_id: lab_id },
+      })
+      .then(handleResponse)
+      .catch(handleError);
   },
 };
 
