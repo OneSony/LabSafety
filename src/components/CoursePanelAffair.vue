@@ -102,14 +102,6 @@
               size="small"
               @click="handleRowClick(scope.row)"
             >
-              <el-icon><View /></el-icon>
-              查看
-            </el-button>
-            <el-button
-              type="warning"
-              size="small"
-              @click="handleRowClick(scope.row)"
-            >
               <el-icon><Edit /></el-icon>
               编辑
             </el-button>
