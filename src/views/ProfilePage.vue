@@ -1,5 +1,9 @@
 <template>
   <div class="page-container">
+    <el-button class="back-button" @click="$router.back()">
+      <el-icon><Back /></el-icon>
+      返回
+    </el-button>
     <div class="profile-container">
       <!-- 左侧头像区域 -->
       <div class="avatar-section">
@@ -69,7 +73,7 @@ import ProfilePhoto from "@/components/ProfilePhoto.vue";
 import { userAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
 import { defineComponent } from "vue";
-import { Upload } from "@element-plus/icons-vue";
+import { Upload, Back } from "@element-plus/icons-vue";
 import defaultAvatar from "@/assets/default-avatar.png";
 
 interface UserInfo {
@@ -87,6 +91,7 @@ export default defineComponent({
   components: {
     ProfilePhoto,
     Upload,
+    Back,
   },
   name: "UserProfile",
   data() {
@@ -222,6 +227,7 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   padding: 40px;
+  position: relative;
   background: radial-gradient(
       circle at 20% 20%,
       rgba(125, 197, 228, 0.8) 0%,
@@ -258,11 +264,36 @@ export default defineComponent({
 .profile-container {
   display: flex;
   width: 1000px;
-  top: -20px;
+  margin-top: -200px;
   background: white;
   border-radius: 20px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+}
+.back-button {
+  position: relative;
+  bottom: -250px;
+  right: -100px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  background: white;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.back-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .avatar-section {

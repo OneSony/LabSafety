@@ -89,7 +89,7 @@
                   fit="cover"
                 ></el-image>
                 <div v-else class="no-photo">
-                  <span>点击上传照片</span>
+                  <span> 点击上传照片</span>
                 </div>
                 <el-upload
                   class="upload-container"
@@ -117,6 +117,7 @@
                     size="small"
                     @click="openManagerDialog"
                   >
+                    <el-icon><Plus /></el-icon>
                     添加安全员
                   </el-button>
                 </div>
@@ -254,6 +255,7 @@
             style="position: absolute; top: 20px; right: 20px"
             @click="noticeDialogVisible = true"
           >
+            <el-icon><Plus /></el-icon>
             添加通知
           </el-button>
           <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
@@ -346,6 +348,7 @@
                 size="small"
                 @click="openEquipmentDialog"
               >
+                <el-icon><Plus /></el-icon>
                 添加器材
               </el-button>
             </div>
@@ -380,6 +383,7 @@
                     size="small"
                     @click="editEquipment($index)"
                   >
+                    <el-icon><Edit /></el-icon>
                     编辑
                   </el-button>
                   <el-button
@@ -388,6 +392,7 @@
                     size="small"
                     @click="removeEquipment($index)"
                   >
+                    <el-icon><Delete /></el-icon>
                     删除
                   </el-button>
                 </template>
@@ -471,6 +476,7 @@
                 size="small"
                 @click="openNoteDialog(null)"
               >
+                <el-icon><Plus /></el-icon>
                 添加须知
               </el-button>
             </div>
@@ -490,14 +496,17 @@
                     v-if="isManager"
                     type="text"
                     @click="openNoteDialog(index)"
-                    >编辑</el-button
                   >
+                    <el-icon><Edit /></el-icon>
+                    编辑
+                  </el-button>
                   <el-button
                     v-if="isManager"
                     type="text"
                     class="delete-btn"
                     @click="removeNote(index)"
-                    >删除</el-button
+                  >
+                    <el-icon><Delete /></el-icon>删除</el-button
                   >
                 </div>
               </div>
@@ -560,6 +569,17 @@ import { Location } from "@element-plus/icons-vue";
 import NoticeCard from "@/components/NoticeCard.vue";
 import NoticeDialog from "@/components/NoticeDialog.vue";
 import { disableAutoUnmount } from "@vue/test-utils";
+import {
+  Plus,
+  Edit,
+  Delete,
+  UserPlus,
+  UserMinus,
+  Upload,
+  Bell,
+  Close,
+  Check,
+} from "@element-plus/icons-vue";
 
 interface Equipment {
   name: string;
@@ -577,7 +597,15 @@ interface ManagerSearchThis {
 }
 export default defineComponent({
   name: "LabDetail",
-
+  components: {
+    Plus,
+    Edit,
+    Delete,
+    Location,
+    Search,
+    NoticeCard,
+    NoticeDialog,
+  },
   props: {
     id: {
       type: [String, Number],
@@ -629,10 +657,6 @@ export default defineComponent({
       myUserId: userAPI.getUserId(),
       boundManagerIds: new Set<string | number>(),
     };
-  },
-  components: {
-    NoticeCard,
-    NoticeDialog,
   },
   setup() {
     return {
@@ -1362,6 +1386,115 @@ export default defineComponent({
     ),
     linear-gradient(135deg, #e6f5f5 0%, #e8f0f5 50%, #e6f5f0 100%);
 }
+/* 统一的基础按钮样式 */
+.el-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.el-button .el-icon {
+  margin-right: 4px;
+  font-size: 16px;
+}
+
+/* 主要操作按钮样式 */
+.el-button--primary {
+  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.15);
+}
+
+.el-button--primary:hover {
+  box-shadow: 0 4px 8px rgba(64, 158, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* 危险操作按钮样式 */
+.el-button--danger {
+  box-shadow: 0 2px 4px rgba(245, 108, 108, 0.15);
+}
+
+.el-button--danger:hover {
+  box-shadow: 0 4px 8px rgba(245, 108, 108, 0.25);
+  transform: translateY(-1px);
+}
+
+/* 文字按钮样式优化 */
+.el-button--text {
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.el-button--text:hover {
+  background-color: rgba(64, 158, 255, 0.1);
+}
+
+.el-button--text.delete-btn:hover {
+  background-color: rgba(245, 108, 108, 0.1);
+}
+
+/* 操作区域按钮组样式 */
+.action-button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 卡片操作按钮样式 */
+.card-btn {
+  margin-left: auto;
+}
+
+/* 对话框底部按钮样式 */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* 上传按钮容器样式 */
+.upload-container {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 地图按钮样式 */
+.map-button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.map-button:hover {
+  background-color: rgba(64, 158, 255, 0.1);
+}
+
+/* 管理操作按钮样式 */
+.manager-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 表格内按钮样式 */
+.el-table .el-button {
+  padding: 6px 12px;
+}
+
+/* 移动端按钮响应式调整 */
+@media screen and (max-width: 768px) {
+  .el-button {
+    padding: 8px 16px;
+  }
+
+  .action-button {
+    flex-wrap: wrap;
+  }
+}
+
 .lab-location {
   font-size: 18px;
   color: #666;
@@ -1373,12 +1506,6 @@ export default defineComponent({
 
 .location-text {
   cursor: pointer;
-}
-
-.map-button {
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .map-container {
@@ -1407,29 +1534,7 @@ export default defineComponent({
   display: flex;
   justify-content: center;
 }
-.loading-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: white; /* 或者与你的页面背景色匹配 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
 
-/* 过渡动画效果 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 .section-title {
   font-size: 16px;
   color: #606266;
@@ -1498,27 +1603,11 @@ export default defineComponent({
   margin: 0;
 }
 
-.section-title {
-  font-size: 16px;
-  color: #606266;
-  margin: 0 0 12px 0;
-}
-
-.action-button {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
-
 .manager-card {
   background-color: #f8f9fa;
   padding: 16px;
   border-radius: 4px;
   position: relative;
-}
-
-.safety-info {
-  margin-bottom: 12px;
 }
 
 .info-label {
@@ -1533,6 +1622,7 @@ export default defineComponent({
 
 .safety-officer {
   padding: 0 12px;
+  margin-bottom: 20px;
 }
 
 .dialog-footer {
@@ -1558,13 +1648,6 @@ export default defineComponent({
   color: #606266;
 }
 
-.safety-info {
-  margin-bottom: 12px;
-}
-
-.search-box {
-  margin-bottom: 16px;
-}
 .safety-header {
   display: flex;
   justify-content: space-between;
@@ -1679,12 +1762,6 @@ export default defineComponent({
   margin-bottom: 10px;
 }
 
-.lab-location {
-  font-size: 18px;
-  color: #666;
-  margin-bottom: 20px;
-}
-
 .lab-photo-container {
   position: relative;
   min-height: 200px;
@@ -1735,14 +1812,6 @@ export default defineComponent({
 .info-card {
   padding: 20px;
   margin-bottom: 20px;
-}
-
-.safety-officer {
-  margin-bottom: 20px;
-}
-
-.safety-info {
-  margin-bottom: 10px;
 }
 
 .safety-equipment,

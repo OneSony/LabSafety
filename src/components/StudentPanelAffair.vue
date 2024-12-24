@@ -134,37 +134,10 @@
               <el-icon><Edit /></el-icon>
               编辑
             </el-button>
-            <el-button
-              type="danger"
-              size="small"
-              @click="handleDelete(scope.row)"
-            >
-              <el-icon><Delete /></el-icon>
-              删除
-            </el-button>
           </div>
         </template>
       </el-table-column>
     </el-table>
-
-    <!-- 删除确认对话框 -->
-    <el-dialog
-      v-model="deleteDialogVisible"
-      title="确认删除"
-      width="30%"
-      center
-    >
-      <div class="delete-confirm">
-        <el-icon class="warning-icon"><Warning /></el-icon>
-        <p>确定要删除该学生信息吗？此操作不可恢复！</p>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="deleteDialogVisible = false">取消</el-button>
-          <el-button type="danger" @click="confirmDelete">确认删除</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 <script>
@@ -175,17 +148,13 @@ import {
   User,
   Plus,
   Refresh,
-  IdCard,
   Edit,
-  Office,
   School,
   Phone,
   Message,
   Setting,
   Check,
   Close,
-  Delete,
-  Warning,
 } from "@element-plus/icons-vue";
 export default {
   name: "StudentPanelAffair",
@@ -193,17 +162,13 @@ export default {
     User,
     Plus,
     Refresh,
-    IdCard,
     Edit,
-    Office,
     School,
     Phone,
     Message,
     Setting,
     Check,
     Close,
-    Delete,
-    Warning,
   },
   data() {
     return {
