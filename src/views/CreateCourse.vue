@@ -1,25 +1,10 @@
 <template>
   <div>
+    <el-button @click="goBack" type="primary"> 返回 </el-button>
     <el-card class="form-block">
       <div class="form-block-title">
-        <span>创建课程</span>
-        <el-button
-          @click="submitCourse"
-          type="primary"
-          size="small"
-          :disabled="isCourseSubmitted"
-        >
-          提交
-        </el-button>
+        <span>课程基本信息</span>
       </div>
-
-      <el-form-item label="课程名">
-        <el-input
-          v-model="courseData.course_name"
-          placeholder="请输入课程名"
-          :disabled="isCourseSubmitted"
-        ></el-input>
-      </el-form-item>
       <el-form-item label="课程号">
         <el-input
           v-model="courseData.course_code"
@@ -34,13 +19,23 @@
           :disabled="isCourseSubmitted"
         ></el-input>
       </el-form-item>
+      <el-form-item label="课程名">
+        <el-input
+          v-model="courseData.course_name"
+          placeholder="请输入课程名"
+        ></el-input>
+      </el-form-item>
       <el-form-item label="开课院系">
         <el-input
           v-model="courseData.department"
           placeholder="请输入开课院系"
-          :disabled="isCourseSubmitted"
         ></el-input>
       </el-form-item>
+      <div style="text-align: center">
+        <el-button @click="submitCourse" type="primary" size="small">
+          提交
+        </el-button>
+      </div>
     </el-card>
 
     <el-card class="form-block">
@@ -110,11 +105,6 @@
         </el-table-column>
       </el-table>
     </el-card>
-
-    <!-- 提交按钮 -->
-    <el-button @click="goBack" type="primary" :disabled="!isCourseSubmitted">
-      完成创建
-    </el-button>
 
     <!-- 添加课堂的对话框 -->
     <el-dialog
@@ -324,6 +314,7 @@ export default defineComponent({
     if (history.state.inputCourseData) {
       console.log("inputCourseData", history.state.inputCourseData);
       this.transformData(history.state.inputCourseData);
+      this.fetchCourse();
       this.fetchEnroll();
       this.fetchClassList();
     }
@@ -353,8 +344,23 @@ export default defineComponent({
       this.courseData.department = inputCourseData?.department || "";
     },
 
+    async fetchCourse() {
+      const result = await courseAPI.getCourse(
+        this.courseData.course_code,
+        this.courseData.course_sequence
+      );
+      if (result.success) {
+        this.courseData.course_id = result.data[0].id;
+        this.courseData.course_name = result.data[0].name;
+        this.courseData.department = result.data[0].department;
+      } else {
+        ElMessage.error("加载课程失败");
+      }
+    },
+
     async fetchEnroll() {
       //TODO 获取学生
+      this.studentList = [] as Student[];
       const result1 = await courseAPI.getEnroll(this.courseData.course_id!);
       console.log("result1", result1);
       if (result1.success) {
@@ -384,6 +390,7 @@ export default defineComponent({
 
     async fetchClassList() {
       //获取class
+      this.classList = [] as Class[];
       const result2 = await classAPI.getClassList(this.courseData.course_id!);
       console.log("result2", result2);
       if (result2.success) {
@@ -540,22 +547,47 @@ export default defineComponent({
     },
 
     async submitCourse() {
-      const result = await courseAPI.postCourse(
-        this.courseData.course_name,
-        this.courseData.course_code,
-        this.courseData.course_sequence,
-        this.courseData.department
-      );
-      if (result.success === true) {
-        ElMessage.success("提交成功");
-        this.courseData.course_id = result.data.course.id;
-        console.log("courseData", this.courseData);
+      console.log("here!", this.courseData);
+      if (this.courseData.course_id != null) {
+        const result = await courseAPI.patchCourse(
+          this.courseData.course_code,
+          this.courseData.course_sequence,
+          this.courseData.course_name,
+          this.courseData.department
+        );
+        if (result.success) {
+          ElMessage.success("提交成功");
+        } else {
+          ElMessage.error("提交失败");
+        }
+        return;
       } else {
-        ElMessage.error("提交失败");
+        const result = await courseAPI.postCourse(
+          this.courseData.course_name,
+          this.courseData.course_code,
+          this.courseData.course_sequence,
+          this.courseData.department
+        );
+        if (result.success === true) {
+          ElMessage.success("提交成功");
+          this.courseData.course_id = result.data.course.id;
+          console.log("courseData", this.courseData);
+        } else {
+          ElMessage.error("提交失败");
+        }
       }
+      this.fetchCourse();
     },
 
     async submitClass() {
+      if (
+        this.courseData.course_id == null ||
+        this.courseData.course_code == "" ||
+        this.courseData.course_sequence == ""
+      ) {
+        ElMessage.error("课堂名不能为空");
+        return;
+      }
       console.log("课堂信息：", this.classFormData);
       if (this.classFormData.class_id === null) {
         //新课堂
