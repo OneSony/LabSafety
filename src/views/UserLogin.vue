@@ -1,97 +1,79 @@
 <template>
   <div class="page-container">
-    <div class="page-container">
-      <div class="login-container">
-        <!-- 左侧欢迎区域 -->
-        <div class="welcome-section">
-          <h1 class="welcome-title">WELCOME</h1>
-          <div class="welcome-image">
-            <img src="../assets/welcome.png" alt="Welcome" />
-          </div>
+    <div class="login-container">
+      <!-- 左侧欢迎区域 -->
+      <div class="welcome-section">
+        <h1 class="welcome-title">WELCOME</h1>
+        <div class="welcome-image">
+          <img src="../assets/welcome.png" alt="Welcome" />
         </div>
+      </div>
 
-        <!-- 右侧登录表单 -->
-        <div class="form-section">
-          <h2 class="login-title">Login</h2>
-          <el-form
-            :model="loginForm"
-            @submit.prevent="handleLogin"
-            label-width="0"
-          >
-            <el-form-item prop="user_id">
+      <!-- 右侧登录表单 -->
+      <div class="form-section">
+        <h2 class="login-title">Login</h2>
+        <el-form
+          :model="loginForm"
+          @submit.prevent="handleLogin"
+          label-width="0"
+        >
+          <el-form-item prop="user_id">
+            <div class="input-with-history">
               <el-input
                 v-model="loginForm.user_id"
-                placeholder="your account"
+                placeholder="学号、工作证号或账号"
                 class="custom-input"
+                @focus="showHistoryPopup = true"
               ></el-input>
-            </el-form-item>
-
-            <el-form-item prop="password">
-              <el-input
-                type="password"
-                v-model="loginForm.password"
-                placeholder="your password"
-                class="custom-input"
-              ></el-input>
-            </el-form-item>
-
-            <el-form-item>
-              <el-button
-                type="primary"
-                @click="handleLogin"
-                class="login-button"
-                >Login</el-button
+              <!-- 历史账号悬浮框 -->
+              <div
+                v-if="showHistoryPopup && historyAccounts.length"
+                class="history-popup"
               >
-              <!-- <el-button @click="isDialogVisible = true" class="register-button"
-              >注册</el-button
-            > -->
-            </el-form-item>
-          </el-form>
+                <div
+                  v-for="account in historyAccounts"
+                  :key="account.user_id"
+                  class="history-item"
+                  @click="fillAccountInfo(account)"
+                >
+                  <span class="account-id">{{ account.user_id }}</span>
+                </div>
+              </div>
+            </div>
+          </el-form-item>
 
-          <!-- 注册对话框 -->
-          <el-dialog v-model="isDialogVisible" title="注册" width="400px">
-            <!-- 注册表单内容保持不变 -->
-            <p>页面会被弃用, 应使用TeachingAffair注册账号</p>
-            <el-form
-              :model="registerForm"
-              @submit.prevent="handleRegister"
-              label-width="80px"
+          <el-form-item prop="password">
+            <el-input
+              type="password"
+              v-model="loginForm.password"
+              placeholder="密码"
+              class="custom-input"
+            ></el-input>
+          </el-form-item>
+
+          <el-form-item>
+            <el-checkbox v-model="rememberAccount">记住账号</el-checkbox>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="handleLogin" class="login-button"
+              >登录</el-button
             >
-              <!-- 注册表单项保持不变 -->
-            </el-form>
-            <template #footer>
-              <el-button @click="isDialogVisible = false">取消</el-button>
-              <el-button type="primary" @click="handleRegister">注册</el-button>
-            </template>
-          </el-dialog>
-        </div>
+          </el-form-item>
+        </el-form>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref } from "vue";
-import { useRouter } from "vue-router"; // 导入 useRouter
-import { onMounted } from "vue"; // 引入 onMounted
-import {
-  ElDialog,
-  ElInput,
-  ElButton,
-  ElForm,
-  ElFormItem,
-  ElMessage,
-} from "element-plus"; // 导入 Element Plus 组件
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import { userAPI } from "../utils/api";
 
 export default {
   name: "UserLogin",
-
-  data() {
-    return {
-      isDialogVisible: false,
-    };
-  },
 
   setup() {
     const loginForm = ref({
@@ -99,68 +81,167 @@ export default {
       password: "",
     });
 
-    const registerForm = ref({
-      user_id: "",
-      real_name: "",
-      password: "",
-    });
+    const historyAccounts = ref([]);
+    const rememberAccount = ref(true);
+    const showHistoryPopup = ref(false);
+
+    // 从 localStorage 加载历史账号
+    const loadHistoryAccounts = () => {
+      const accounts = localStorage.getItem("historyAccounts");
+      if (accounts) {
+        historyAccounts.value = JSON.parse(accounts);
+      }
+    };
+
+    // 保存账号到历史记录
+    const saveToHistory = (account) => {
+      if (!rememberAccount.value) return;
+
+      const accounts = [...historyAccounts.value];
+      const existingIndex = accounts.findIndex(
+        (a) => a.user_id === account.user_id
+      );
+
+      const newAccount = {
+        ...account,
+        lastLogin: new Date().toISOString(),
+      };
+
+      if (existingIndex !== -1) {
+        accounts.splice(existingIndex, 1);
+      }
+
+      accounts.unshift(newAccount);
+
+      // 限制最多保存5个历史账号
+      if (accounts.length > 5) {
+        accounts.pop();
+      }
+
+      localStorage.setItem("historyAccounts", JSON.stringify(accounts));
+      historyAccounts.value = accounts;
+    };
+
+    // 填充账号信息
+    const fillAccountInfo = (account) => {
+      loginForm.value.user_id = account.user_id;
+      loginForm.value.password = account.password || "";
+      showHistoryPopup.value = false;
+    };
+
+    // 格式化日期
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    };
+
+    // 点击外部关闭历史记录弹窗
+    const handleClickOutside = (event) => {
+      const popup = document.querySelector(".history-popup");
+      const input = document.querySelector(".input-with-history");
+      if (popup && input && !input.contains(event.target)) {
+        showHistoryPopup.value = false;
+      }
+    };
 
     onMounted(() => {
+      loadHistoryAccounts();
+      document.addEventListener("click", handleClickOutside);
+
       if (!userAPI.isLoggedIn()) {
-        ElMessage.warning("请登录以查看更多内容"); // 如果未登录，显示 ElMessage 提示
+        ElMessage.warning("请登录以查看更多内容");
       } else {
-        ElMessage.success("已经登陆"); // 如果已登录，显示欢迎信息
+        ElMessage.success("已经登陆");
       }
     });
 
-    console.log("login status", userAPI.isLoggedIn());
+    onBeforeUnmount(() => {
+      document.removeEventListener("click", handleClickOutside);
+    });
 
-    return {
-      loginForm,
-      registerForm,
-    };
-  },
+    const router = useRouter();
 
-  methods: {
-    async handleLogin() {
-      const { user_id, password } = this.loginForm;
+    const handleLogin = async () => {
+      const { user_id, password } = loginForm.value;
       const result = await userAPI.login(user_id, password);
 
       if (result.success) {
-        // 登录成功
+        if (rememberAccount.value) {
+          saveToHistory({ user_id, password });
+        }
         ElMessage.success("登录成功！");
-        this.loginError = ""; // 清除错误信息
-        this.$router.push("/");
+        router.push("/");
       } else {
-        // 登录失败
-        this.loginError = result.error || "Login failed"; // 设置错误信息
-        ElMessage.error(`错误：${this.loginError}`);
+        ElMessage.error(`错误：${result.error || "登录失败"}`);
       }
-    },
+    };
 
-    async handleRegister() {
-      const { user_id, real_name, password } = this.registerForm; // 使用 `this.loginForm` 访问表单数据
-      const result = await userAPI.register(user_id, real_name, password);
-
-      console.log("rrr status", result);
-      if (result.success) {
-        ElMessage.success("注册成功！");
-        console.log("rrr status");
-
-        this.loginForm.user_id = this.registerForm.user_id;
-        this.loginForm.password = this.registerForm.password;
-        this.isDialogVisible = false;
-        this.handleLogin();
-      } else {
-        this.loginError = result.error || "Login failed"; // 设置错误信息
-        ElMessage.error(`错误：${this.loginError}`);
-      }
-    },
+    return {
+      loginForm,
+      historyAccounts,
+      rememberAccount,
+      showHistoryPopup,
+      handleLogin,
+      fillAccountInfo,
+      formatDate,
+    };
   },
 };
 </script>
 
 <style scoped>
+:deep(.el-checkbox__label) {
+  color: #666;
+}
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #764ba2; /* 选中后的背景颜色 */
+  border-color: #764ba2; /* 选中后的边框颜色 */
+}
+
+/* 鼠标悬停时的颜色 */
+:deep(.el-checkbox__input.is-checked:hover .el-checkbox__inner) {
+  border-color: #6a4494; /* 选中后悬停时的边框颜色 */
+}
+
+.input-with-history {
+  position: relative;
+  width: 100%;
+}
+
+.history-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #e1dce6;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.history-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-item:hover {
+  background-color: #f7f5fa;
+}
+
+.account-id {
+  font-weight: 500;
+}
+
+.last-login {
+  color: #999;
+  font-size: 0.9em;
+}
 .page-container {
   min-height: 100vh;
   display: flex;

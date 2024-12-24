@@ -39,26 +39,68 @@
       </div>
     </el-dialog>
 
-    <el-dialog title="上课学生" v-model="studentDialogVisible" width="40%">
-      <el-button type="primary" @click="fetchEnrolledStudents">刷新</el-button>
+    <el-dialog
+      v-model="studentDialogVisible"
+      width="50%"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <div class="flex items-center space-x-4 mb-4">
+        <div class="flex items-center">
+          <el-icon class="mr-2"><User /></el-icon>
+          <span class="text-lg font-medium">学生名单</span>
+        </div>
+        <el-button type="primary" @click="fetchEnrolledStudents" size="default">
+          刷新列表
+        </el-button>
+      </div>
+
       <el-table
+        v-if="isEnrolledStudentsLoaded"
         :data="studentList"
         border
-        style="width: 100%"
-        v-if="isEnrolledStudentsLoaded"
+        stripe
+        highlight-current-row
+        class="w-full"
       >
-        <el-table-column fixed prop="student_id" label="学号"></el-table-column>
-        <el-table-column prop="name" label="姓名"></el-table-column>
-        <el-table-column prop="department" label="院系"></el-table-column>
+        <el-table-column
+          fixed
+          prop="student_id"
+          label="学号"
+          width="120"
+          align="center"
+        >
+          <template #default="{ row }">
+            <span class="font-mono">{{ row.student_id }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="name" label="姓名" width="100" align="center" />
+
+        <el-table-column prop="department" label="院系" align="center">
+        </el-table-column>
       </el-table>
-      <el-skeleton
-        :rows="3"
-        animated
-        v-if="!isEnrolledStudentsLoaded"
-      ></el-skeleton>
-      <div class="dialog-footer">
-        <el-button @click="studentDialogVisible = false">关闭</el-button>
+
+      <div v-else class="p-4">
+        <el-skeleton :rows="5" animated :loading="true">
+          <template #template>
+            <div class="mb-2">
+              <el-skeleton-item
+                variant="image"
+                style="width: 100%; height: 40px"
+              />
+            </div>
+          </template>
+        </el-skeleton>
       </div>
+
+      <template #footer>
+        <div class="flex justify-end">
+          <el-button size="default" @click="studentDialogVisible = false"
+            >关闭</el-button
+          >
+        </div>
+      </template>
     </el-dialog>
 
     <div class="header-box">
@@ -839,6 +881,74 @@ export default {
 </script>
 
 <style scoped>
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.space-x-4 > * + * {
+  margin-left: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+.el-dialog {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.el-table {
+  --el-table-border-color: #ebeef5;
+  --el-table-header-background-color: #f5f7fa;
+}
+
+:deep(.el-table__header) {
+  background-color: #f5f7fa;
+}
+
+:deep(.el-table__header-wrapper th) {
+  background-color: #f5f7fa !important;
+}
+
+:deep(.el-dialog__footer) {
+  padding: 20px;
+  border-top: 1px solid #e4e7ed;
+}
+:deep(.el-table__body tr:hover > td) {
+  background-color: #f0f7ff !important; /* 浅蓝色 */
+}
+:deep(.el-button--default) {
+  padding: 8px 20px;
+}
+
+.dialog-header {
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 1rem;
+}
+.el-button {
+  font-size: 15px;
+  padding: 10px 20px;
+}
+
+.el-icon {
+  font-size: 20px;
+}
 .map-section {
   width: 300px;
   padding: 20px;
