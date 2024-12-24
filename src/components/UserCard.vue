@@ -100,7 +100,7 @@ export default defineComponent({
     // 获取用户信息函数
     const getUserInfo = async () => {
       console.log("USERCARDD", props.userId);
-      const res = await userAPI.getUserInfo(props.userId);
+      const res = await userAPI.getUserInfoWithCache(props.userId);
       console.log("get profile", res);
       if (res.success) {
         user.value.username = res.data[0].real_name;
