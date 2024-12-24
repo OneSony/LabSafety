@@ -81,7 +81,7 @@ export default {
               const locationResult = await classAPI.getLocations(
                 courses[i].classList[j].class_id
               );
-              if (locationResult.success) {
+              if (locationResult.success && locationResult.data.length > 0) {
                 courses[i].classList[j].lab_id = locationResult.data[0].lab_id;
                 const labNameResult = await labAPI.getLabs(
                   courses[i].classList[j].lab_id
@@ -89,6 +89,8 @@ export default {
                 if (labNameResult.success) {
                   courses[i].classList[j].lab_name = labNameResult.data[0].name;
                 }
+              } else {
+                courses[i].classList[j].lab_name = "未知";
               }
             }
             courses[i].isLoaded = true;

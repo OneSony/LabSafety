@@ -485,7 +485,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .quick-look {
   padding: 20px;
   background-color: var(--el-bg-color);

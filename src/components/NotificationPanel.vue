@@ -116,26 +116,22 @@ export default {
         return;
       }
 
-      for (let i = 0; i < this.classList.length; i++) {
-        const result = await noticeAPI.getNotices(this.classList[i].class_id);
+      const noticePromises = this.classList.map(async (classItem) => {
+        const result = await noticeAPI.getNotices(classItem.class_id);
         if (result.success) {
           this.noticeList.push(...result.data);
         } else {
           ElMessage.error("获取通知失败");
         }
 
-        //获取实验室id
-        //TODO 然后加到list
-        const labResult = await classAPI.getLocations(
-          this.classList[i].class_id
-        );
+        const labResult = await classAPI.getLocations(classItem.class_id);
         console.log("labResult", labResult);
         if (labResult.success) {
           if (labResult.data.length != 0) {
-            this.classList[i].lab_id = labResult.data[0].lab_id;
+            classItem.lab_id = labResult.data[0].lab_id;
             const labNoticeResult = await noticeAPI.getNotices(
               undefined,
-              this.classList[i].lab_id
+              classItem.lab_id
             );
             if (labNoticeResult.success) {
               console.log("labNoticeResult", labNoticeResult);
@@ -148,45 +144,44 @@ export default {
           ElMessage.error("获取实验室失败");
         }
 
-        for (let j = 0; j < this.noticeList.length; j++) {
-          this.noticeList[j].class_info = this.classList[i];
+        const noticeDetailPromises = this.noticeList.map(async (notice) => {
+          notice.class_info = classItem;
 
           const result2 = await courseAPI.getCourseFromClass(
-            this.noticeList[j].class_info.class_id
+            notice.class_info.class_id
           );
           console.log("result2", result2);
           if (result2.success) {
             if (result2.data.length === 0) {
               ElMessage.error("获取课程失败");
-              continue;
+              return;
             }
-            this.noticeList[j].class_info.course_code =
-              result2.data[0].course_code;
-            this.noticeList[j].class_info.course_sequence =
-              result2.data[0].course_sequence;
+            notice.class_info.course_code = result2.data[0].course_code;
+            notice.class_info.course_sequence = result2.data[0].course_sequence;
           } else {
             ElMessage.error("获取课程失败");
           }
 
           const result3 = await courseAPI.getCourse(
-            this.noticeList[j].class_info.course_code,
-            this.noticeList[j].class_info.course_sequence
+            notice.class_info.course_code,
+            notice.class_info.course_sequence
           );
           console.log("result3", result3);
           if (result3.success) {
             if (result3.data.length === 0) {
               ElMessage.error("获取课程失败");
-              continue;
+              return;
             }
-            this.noticeList[j].class_info.course_id = result3.data[0].id;
+            notice.class_info.course_id = result3.data[0].id;
           } else {
             ElMessage.error("获取课程失败");
           }
+        });
 
-          console.log("result.data[j].class_info", result.data[j]);
-          //TODO 优化逻辑
-        }
-      }
+        await Promise.all(noticeDetailPromises);
+      });
+
+      await Promise.all(noticePromises);
       this.isLoaded = true;
     },
     async deleteNotification(notice) {
