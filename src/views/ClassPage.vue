@@ -137,15 +137,13 @@
       <div class="map-section">
         <p class="map-text" v-if="basicInfo.lab_id">实验室地图</p>
         <el-image
-          v-if="labMapImage"
-          :src="labMapImage"
+          v-if="basicInfo.map_image"
+          :src="basicInfo.map_image"
           fit="contain"
           class="lab-map-image"
-          :preview-src-list="[labMapImage]"
+          :preview-src-list="[basicInfo.map_image]"
         ></el-image>
-        <div v-else class="no-map">
-          {{ basicInfo.lab_id ? "正在加载地图..." : "暂无地图" }}
-        </div>
+        <div v-else class="no-map">暂无地图</div>
       </div>
     </div>
     <!-- 编辑对话框 -->
@@ -236,7 +234,7 @@
       <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
       <p
         v-if="noticeList.length === 0 && noticeLoaded"
-        style="text-align: center; color: #ccc"
+        style="text-align: center; color: #ccc; padding: 20px"
       >
         暂无通知
       </p>
@@ -299,6 +297,15 @@
 
     <div class="box">
       <h3>实验内容</h3>
+
+      <el-skeleton :rows="5" animated v-if="!experimentLoaded" />
+      <p
+        v-if="experimentList.length === 0 && experimentLoaded"
+        style="text-align: center; color: #ccc; padding: 20px"
+      >
+        暂无实验
+      </p>
+
       <el-button
         v-if="isTeacher"
         type="primary"
@@ -310,7 +317,7 @@
       </el-button>
       <div
         v-for="(experiment, index) in experimentList"
-        :key="index"
+        :key="experiment.id"
         class="experiment-item"
       >
         <el-button
@@ -326,7 +333,7 @@
           type="danger"
           class="edit-btn"
           style="position: absolute; top: 70px; right: 20px; z-index: 1000"
-          @click="deleteExperiment(index, experiment)"
+          @click="deleteExperiment(experiment)"
           >删除</el-button
         >
         <ExperimentCard :experiment="experiment" :index="index" />
@@ -336,10 +343,10 @@
       title="添加实验内容"
       v-model="experimentDialogVisible"
       width="80%"
-      @close="resetExperimentForm"
+      @close="fetchExperiments"
     >
       <ExperimentDialog
-        @close-dialog="closeExperimentDialog"
+        @close-dialog="experimentDialogVisible = false"
         :input_experiment="experimentForm"
         :class_id="basicInfo.class_id"
         v-if="experimentDialogVisible"
@@ -357,7 +364,7 @@
         暂无讨论
       </p>
 
-      <div class="comment-list">
+      <div class="comment-list" v-if="commentLoaded">
         <div
           v-for="(comment, index) in commentList"
           :key="index"
@@ -448,6 +455,18 @@ export default {
         lab_id: Number,
         tags: [],
       },
+
+      experimentForm: {
+        title: "",
+        estimated_time: "",
+        safety_tags: [],
+        experiment_method_tags: [],
+        submission_type_tags: [],
+        other_tags: [],
+        description: "",
+        images: [],
+        files: [],
+      },
       experimentDialogVisible: false,
       noticeDialogVisible: false,
       basicDialogVisible: false,
@@ -461,7 +480,6 @@ export default {
       name: "",
       date: "",
       newComment: "",
-      labMapImage: "",
       teacherNames: [],
       teacherIds: [],
       location: "",
@@ -503,19 +521,15 @@ export default {
       this.experimentDialogVisible = false;
       //await this.
     },
-    async deleteExperiment(index, experiment) {
+    async deleteExperiment(experiment) {
       console.log("删除实验:", experiment);
-      //TODO
-      /*const result = await classAPI.deleteExperiment(
-        this.class_id,
-        this.experimentList[index].id
-      );
+      const result = await classAPI.deleteExperiment(experiment.id);
       if (result.success) {
         console.log("删除成功");
         await this.fetchExperiments();
       } else {
         console.log("删除失败");
-      }*/
+      }
     },
     async closeNoticeDialog() {
       console.log("关闭通知对话框");
@@ -573,21 +587,19 @@ export default {
         this.fetchEnrolledStudents();
       }
     },
-    resetExperimentForm() {
-      this.experimentForm = {
-        title: "",
-        estimatedTime: "",
-        safetyTags: [],
-        experimentTags: [],
-        submissionTags: [],
-        otherTags: [],
-        description: "",
-        photos: [],
-      };
-    },
     openExperimentDialog(index, experiment) {
       if (index == null && experiment == null) {
-        this.resetExperimentForm();
+        this.experimentForm = {
+          title: "",
+          estimated_time: "",
+          safety_tags: [],
+          experiment_method_tags: [],
+          submission_type_tags: [],
+          other_tags: [],
+          description: "",
+          images: [],
+          files: [],
+        };
       } else {
         this.experimentForm = { ...experiment };
       }
@@ -705,8 +717,10 @@ export default {
         } else {
           this.basicInfo.lab_id = result3.data[0].lab_id;
           const result = await labAPI.getLabs(this.basicInfo.lab_id);
+          console.log("地点信息!!!:", result);
           if (result.success) {
             this.basicInfo.lab_name = result.data[0].name;
+            this.basicInfo.map_image = result.data[0].map_image;
           } else {
             ElMessage.error("获取地点信息失败");
           }
@@ -718,19 +732,16 @@ export default {
       console.log("basic info:", this.basicInfo);
     },
 
-    fetchComments() {
+    async fetchComments() {
       this.commentLoaded = false;
-      classAPI.getComments(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.commentList = [];
-          } else {
-            this.commentList = response.data;
-          }
-        } else {
-          ElMessage.error("获取评论失败");
-        }
-      });
+      this.commentList = [];
+      const result = await classAPI.getComments(this.class_id);
+      console.log("评论内容:", result);
+      if (result.success) {
+        this.commentList = result.data;
+      } else {
+        ElMessage.error("获取评论失败");
+      }
       this.commentLoaded = true;
     },
 
@@ -750,6 +761,7 @@ export default {
 
     async fetchNotices() {
       this.noticeLoaded = false;
+      this.noticeList = [];
       const result = await noticeAPI.getNotices(this.class_id);
       if (result.success) {
         this.noticeList = result.data;
@@ -775,10 +787,24 @@ export default {
 
     async fetchExperiments() {
       this.experimentLoaded = false;
+      this.experimentList = [];
       const result = await classAPI.getExperiments(this.class_id);
       console.log("实验内容:", result);
       if (result.success) {
         this.experimentList = result.data;
+        for (let i = 0; i < this.experimentList.length; i++) {
+          const safety_tags = this.experimentList[i].safety_tags.split(",");
+          this.experimentList[i].safety_tags = safety_tags;
+          const experiment_method_tags =
+            this.experimentList[i].experiment_method_tags.split(",");
+          this.experimentList[i].experiment_method_tags =
+            experiment_method_tags;
+          const submission_type_tags =
+            this.experimentList[i].submission_type_tags.split(",");
+          this.experimentList[i].submission_type_tags = submission_type_tags;
+          const other_tags = this.experimentList[i].other_tags.split(",");
+          this.experimentList[i].other_tags = other_tags;
+        }
       } else {
         ElMessage.error("获取实验内容失败");
       }
@@ -807,46 +833,6 @@ export default {
         ElMessage.error("获取学生失败");
       }
       this.isEnrolledStudentsLoaded = true;
-    },
-    async fetchLabMap() {
-      console.log("Fetching lab map, lab_id:", this.basicInfo.lab_id);
-      if (!this.basicInfo.lab_id) {
-        console.log("No lab_id available");
-        return;
-      }
-
-      try {
-        const response = await labAPI.getLabById(this.basicInfo.lab_id);
-        console.log("Lab response:", response);
-
-        if (response.success && response.data) {
-          if (Array.isArray(response.data)) {
-            // 如果返回的是数组，取第一个元素
-            this.labMapImage = response.data[0].map_image;
-          } else {
-            // 如果返回的是单个对象
-            this.labMapImage = response.data.map_image;
-          }
-          console.log("Retrieved map image:", this.labMapImage);
-        } else {
-          console.log("Failed to get lab data:", response);
-        }
-      } catch (error) {
-        console.error("Error fetching lab map:", error);
-      }
-    },
-  },
-  watch: {
-    "basicInfo.lab_id": {
-      immediate: true,
-      handler(newLabId) {
-        console.log("Lab ID changed to:", newLabId);
-        if (newLabId) {
-          this.fetchLabMap();
-        } else {
-          this.labMapImage = "";
-        }
-      },
     },
   },
 };
