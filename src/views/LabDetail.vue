@@ -570,8 +570,6 @@ import {
   Plus,
   Edit,
   Delete,
-  UserPlus,
-  UserMinus,
   Upload,
   Bell,
   Close,
@@ -1541,7 +1539,6 @@ export default defineComponent({
   color: #606266;
   margin: 0 0 12px 0;
 }
-
 
 .managers-list {
   display: flex;
