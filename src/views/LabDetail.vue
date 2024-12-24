@@ -190,8 +190,6 @@
                 </div>
                 <el-table
                   :data="availableManagers"
-                  v-for="manager in labManagers"
-                  :key="manager.manager_user_id"
                   style="width: 100%"
                   height="300px"
                   v-loading="loadingManagers"
@@ -611,6 +609,7 @@ export default defineComponent({
       noticeLoaded: false,
       noticeList: [],
       myUserId: userAPI.getUserId(),
+      boundManagerIds: new Set<string | number>(),
     };
   },
   components: {
@@ -1066,22 +1065,25 @@ export default defineComponent({
       this.managerDialogVisible = true;
       this.searchManagerName = "";
       this.loadingManagers = true;
-
+      this.availableManagers = [];
+      this.boundManagerIds = new Set();
       try {
-        // 获取所有安全员列表
         const response = await userAPI.getUserInfo("", "manager");
-        console.log("Initial managers response:", response); // 添加调试日志
-
         if (response.success) {
-          console.log("Fetched user list:", response.data);
-          for (let i = 0; i < response.data.length; i++) {
-            this.availableManagers.push({
-              manager_user_id: response.data[i].user_id,
-              manager_name: response.data[i].real_name,
-              manager_phone: response.data[i].phone_number,
-              manager_email: response.data[i].email,
-            } as LabManager);
-          } // 直接设置到 availableManagers
+          this.availableManagers = response.data.map((manager: any) => ({
+            manager_user_id: manager.user_id,
+            manager_name: manager.real_name,
+            manager_phone: manager.phone_number,
+            manager_email: manager.email,
+          }));
+
+          // 初始化已绑定的安全员
+          const labManagersResponse = await this.fetchLabManagers();
+          if (labManagersResponse && labManagersResponse.success) {
+            this.boundManagerIds = new Set(
+              this.labManagers.map((m) => m.manager_user_id)
+            );
+          }
         }
       } catch (error) {
         console.error("获取安全员列表失败:", error);
@@ -1105,6 +1107,7 @@ export default defineComponent({
       } else {
         ElMessage.error("获取安全员列表失败");
       }
+      return response;
     },
 
     // 获取所有可选的安全员列表
@@ -1128,6 +1131,7 @@ export default defineComponent({
       } else {
         ElMessage.error("获取安全员列表失败");
       }
+      this.loadingManagers = false;
     },
 
     // 处理安全员搜索
@@ -1160,14 +1164,6 @@ export default defineComponent({
       }
     }, 300),
 
-    // 检查安全员是否已绑定
-    isManagerBound(manager: LabManager): boolean {
-      return this.labManagers.some(
-        (m) => m.manager_user_id === manager.manager_user_id
-      );
-    },
-
-    // 绑定安全员
     // 绑定安全员
     async bindManager(manager: LabManager) {
       if (this.isManagerBound(manager)) return;
@@ -1187,12 +1183,17 @@ export default defineComponent({
       if (response.success) {
         await this.fetchLabManagers();
         ElMessage.success("安全员添加成功");
-        await this.fetchAvailableManagers(); // 刷新可选列表
+        this.boundManagerIds = new Set([
+          ...this.boundManagerIds,
+          manager.manager_user_id,
+        ]);
       } else {
         ElMessage.error(response.error || "添加安全员失败");
       }
     },
-
+    isManagerBound(manager: LabManager): boolean {
+      return this.boundManagerIds.has(manager.manager_user_id);
+    },
     // 解除绑定安全员
     async unbindManager(manager: LabManager) {
       const labId = this.labForm.lab_id;
