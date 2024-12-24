@@ -127,7 +127,7 @@
                     class="manager-card"
                   >
                     <div class="safety-info">
-                      <span class="info-label">安全员：</span>
+                      <span class="info-label" prop="real_name">安全员：</span>
                       <span>{{ manager.manager_name }}</span>
                     </div>
                     <div class="safety-info">
@@ -1062,7 +1062,24 @@ export default defineComponent({
         this.loadingManagers = false;
       }
     },
-
+    handleView(row) {
+      const userData = {
+        user_id: row.user_id,
+        real_name: row.real_name,
+        department: row.department,
+        phone_number: row.phone_number,
+      };
+      console.log("View user:", userData);
+      if (this.$router) {
+        this.$router.push({
+          name: "ViewUser",
+          params: { userId: row.user_id },
+          state: { userData },
+        });
+      } else {
+        console.error("Router instance is not available.");
+      }
+    },
     // 修改打开对话框的方法
     async openManagerDialog() {
       this.managerDialogVisible = true;
