@@ -120,10 +120,7 @@
               <el-icon><Check /></el-icon>
               保存
             </el-button>
-            <el-button
-              size="small"
-              @click="cancelEdit(scope.$index)"
-            >
+            <el-button size="small" @click="cancelEdit(scope.$index)">
               <el-icon><Close /></el-icon>
               取消
             </el-button>
