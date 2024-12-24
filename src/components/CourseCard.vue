@@ -44,6 +44,7 @@
               :class="{
                 'class-card': true,
                 'highlight-today': isToday(classItem.start_time),
+                'highlight-unset': classItem.isSet === false,
               }"
             >
               <div class="class-content">
@@ -73,7 +74,7 @@
 </template>
 
 <script>
-import { classAPI } from "../utils/api";
+import { classAPI, userAPI } from "../utils/api";
 import DateBox from "./DateBox.vue";
 
 export default {
@@ -85,6 +86,9 @@ export default {
   },
   mounted() {
     console.log("experimentmound", this.experiment);
+    if (userAPI.getRole() == "teacher") {
+      this.markUnsetClass();
+    }
   },
   data() {
     return {
@@ -103,6 +107,9 @@ export default {
       this.experiment = newExperiment;
       this.isVisible = false; // 默认初始化为 false
       console.log("new exp", newExperiment);
+      if (userAPI.getRole() == "teacher") {
+        this.markUnsetClass();
+      }
     },
   },
   methods: {
@@ -129,6 +136,21 @@ export default {
           this.$message.error("获取课程列表失败");
         }
         this.experiment.isLoaded = true; // 设置为 true，避免重复请求
+      }
+    },
+    async markUnsetClass() {
+      for (let i = 0; i < this.experiment.classList.length; i++) {
+        if (this.experiment.classList[i].lab_id == null) {
+          this.experiment.classList[i].isSet = false;
+        } else {
+          const experimentResult = await classAPI.getExperiments(
+            this.experiment.classList[i].class_id
+          );
+          if (experimentResult.success) {
+            this.experiment.classList[i].isSet =
+              experimentResult.data.length > 0;
+          }
+        }
       }
     },
     isToday(dateStr) {
@@ -256,6 +278,23 @@ export default {
   }
   100% {
     box-shadow: 0 0 5px #a5d6a7, 0 0 10px #a5d6a7, 0 0 15px #a5d6a7;
+  }
+}
+.highlight-unset {
+  box-shadow: 0 0 5px #ffcc80; /* 淡橙黄色发光效果 */
+  transition: border 0.3s ease, box-shadow 0.3s ease; /* 添加动画效果 */
+  animation: border-glow-unset 1.5s infinite; /* 添加跑马灯效果 */
+}
+
+@keyframes border-glow-unset {
+  0% {
+    box-shadow: 0 0 5px #ffcc80, 0 0 10px #ffcc80, 0 0 15px #ffcc80;
+  }
+  50% {
+    box-shadow: 0 0 10px #ffcc80, 0 0 15px #ffcc80, 0 0 20px #ffcc80;
+  }
+  100% {
+    box-shadow: 0 0 5px #ffcc80, 0 0 10px #ffcc80, 0 0 15px #ffcc80;
   }
 }
 </style>
