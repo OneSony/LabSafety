@@ -841,19 +841,6 @@ export default {
       console.log("实验内容:", result);
       if (result.success) {
         this.experimentList = result.data;
-        for (let i = 0; i < this.experimentList.length; i++) {
-          const safety_tags = this.experimentList[i].safety_tags.split(",");
-          this.experimentList[i].safety_tags = safety_tags;
-          const experiment_method_tags =
-            this.experimentList[i].experiment_method_tags.split(",");
-          this.experimentList[i].experiment_method_tags =
-            experiment_method_tags;
-          const submission_type_tags =
-            this.experimentList[i].submission_type_tags.split(",");
-          this.experimentList[i].submission_type_tags = submission_type_tags;
-          const other_tags = this.experimentList[i].other_tags.split(",");
-          this.experimentList[i].other_tags = other_tags;
-        }
       } else {
         ElMessage.error("获取实验内容失败");
       }

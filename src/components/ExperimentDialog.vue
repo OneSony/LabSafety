@@ -225,23 +225,30 @@ export default {
       });
       console.log("exp!", this.experimentForm, this.class_id);
       // 在这里打包成 FormData
+
       let formData = new FormData();
-      formData.append("class_id", this.class_id);
+      formData.append("class_id", Number(this.class_id));
       formData.append("title", this.experimentForm.title);
       formData.append(
         "estimated_time",
         Number(this.experimentForm.estimatedTime)
       );
-      formData.append("safety_tags", this.experimentForm.safetyTags.join(","));
+      formData.append(
+        "safety_tags",
+        JSON.stringify(this.experimentForm.safetyTags)
+      );
       formData.append(
         "experiment_method_tags",
-        this.experimentForm.experimentTags.join(",")
+        JSON.stringify(this.experimentForm.experimentTags)
       );
       formData.append(
         "submission_type_tags",
-        this.experimentForm.submissionTags.join(",")
+        JSON.stringify(this.experimentForm.submissionTags)
       );
-      formData.append("other_tags", this.experimentForm.otherTags.join(","));
+      formData.append(
+        "other_tags",
+        JSON.stringify(this.experimentForm.otherTags)
+      );
       formData.append("description", this.experimentForm.description);
       // 上传文件
       this.experimentForm.files.forEach((file) => {
@@ -252,8 +259,6 @@ export default {
         formData.append("images", image.raw);
       });
 
-      console.log("formData", formData);
-      console.log("formData.tag", formData.get("safety_tags"));
       let experimentResult;
       if (this.experimentForm.id != undefined && this.experimentForm.id != "") {
         formData.append("id", this.experimentForm.id);
