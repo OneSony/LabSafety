@@ -1,118 +1,213 @@
 <template>
   <div class="quick-look">
-    <h3>学生管理</h3>
-    <el-button
-      type="primary"
-      @click="showCreateDialog"
-      style="margin-bottom: 20px"
-      destroy-on-close
+    <div class="header-section">
+      <h3 class="title">
+        <el-icon class="mr-2"><User /></el-icon>
+        学生管理
+      </h3>
+      <div class="button-group">
+        <el-button type="primary" @click="showCreateDialog">
+          <el-icon><Plus /></el-icon>
+          创建账号
+        </el-button>
+        <el-button type="info" @click="loadData">
+          <el-icon><Refresh /></el-icon>
+          刷新列表
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 表格 -->
+    <el-skeleton :rows="5" animated v-if="!isLoaded"></el-skeleton>
+    <el-table
+      v-if="isLoaded"
+      :data="tableData"
+      style="width: 100%"
+      border
+      fit
+      :row-class-name="tableRowClassName"
+      highlight-current-row
     >
-      创建账号
-    </el-button>
-    <el-button type="primary" @click="loadData" style="margin-bottom: 20px">
-      刷新列表
-    </el-button>
-    <!-- 创建账号弹窗 -->
-    <el-dialog
-      title="创建学生账号"
-      v-model="dialogVisible"
-      width="30%"
-      :before-close="handleClose"
-      destroy-on-close
-    >
-      <el-form :model="form" ref="form" :rules="rules">
-        <el-form-item label="学号" prop="user_id">
-          <el-input v-model="form.user_id" placeholder="请输入学号"></el-input>
-        </el-form-item>
-        <el-form-item label="姓名" prop="real_name">
+      <el-table-column label="学号" width="180" prop="user_id">
+        <template #header>
+          <div class="column-header">
+            <el-icon><Postcard /></el-icon>
+            <span>学号</span>
+          </div>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="姓名" width="180">
+        <template #header>
+          <div class="column-header">
+            <el-icon><User /></el-icon>
+            <span>姓名</span>
+          </div>
+        </template>
+        <template #default="scope">
           <el-input
-            v-model="form.real_name"
+            v-if="editableRow === scope.$index"
+            v-model="editableData[scope.$index].real_name"
             placeholder="请输入姓名"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="院系">
+            size="small"
+          >
+            <template #prefix>
+              <el-icon><Edit /></el-icon>
+            </template>
+          </el-input>
+          <span v-else>{{ scope.row.real_name }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="院系" width="180">
+        <template #header>
+          <div class="column-header">
+            <el-icon><School /></el-icon>
+            <span>院系</span>
+          </div>
+        </template>
+        <template #default="scope">
           <el-input
-            v-model="form.department"
+            v-if="editableRow === scope.$index"
+            v-model="editableData[scope.$index].department"
             placeholder="请输入院系"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="默认密码">
-          <el-input v-model="form.password" disabled></el-input>
-        </el-form-item>
-      </el-form>
+            size="small"
+          >
+            <template #prefix>
+              <el-icon><School /></el-icon>
+            </template>
+          </el-input>
+          <span v-else>{{ scope.row.department }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="联系方式" width="180">
+        <template #header>
+          <div class="column-header">
+            <el-icon><Phone /></el-icon>
+            <span>联系方式</span>
+          </div>
+        </template>
+        <template #default="scope">
+          <el-input
+            v-if="editableRow === scope.$index"
+            v-model="editableData[scope.$index].phone_number"
+            placeholder="请输入联系方式"
+            size="small"
+          >
+            <template #prefix>
+              <el-icon><Message /></el-icon>
+            </template>
+          </el-input>
+          <span v-else>{{ scope.row.phone_number }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="操作">
+        <template #header>
+          <div class="column-header">
+            <el-icon><Setting /></el-icon>
+            <span>操作</span>
+          </div>
+        </template>
+        <template #default="scope">
+          <div v-if="editableRow === scope.$index" class="operation-buttons">
+            <el-button
+              type="primary"
+              size="small"
+              @click="saveEdit(scope.row, scope.$index)"
+            >
+              <el-icon><Check /></el-icon>
+              保存
+            </el-button>
+            <el-button
+              size="small"
+              @click="cancelEdit(scope.$index)"
+            >
+              <el-icon><Close /></el-icon>
+              取消
+            </el-button>
+          </div>
+          <div v-else class="operation-buttons">
+            <el-button
+              type="primary"
+              size="small"
+              @click="editRow(scope.$index)"
+            >
+              <el-icon><Edit /></el-icon>
+              编辑
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              @click="handleDelete(scope.row)"
+            >
+              <el-icon><Delete /></el-icon>
+              删除
+            </el-button>
+          </div>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- 删除确认对话框 -->
+    <el-dialog
+      v-model="deleteDialogVisible"
+      title="确认删除"
+      width="30%"
+      center
+    >
+      <div class="delete-confirm">
+        <el-icon class="warning-icon"><Warning /></el-icon>
+        <p>确定要删除该学生信息吗？此操作不可恢复！</p>
+      </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="handleCreate">确 定</el-button>
+          <el-button @click="deleteDialogVisible = false">取消</el-button>
+          <el-button type="danger" @click="confirmDelete">确认删除</el-button>
         </span>
       </template>
     </el-dialog>
   </div>
-  <el-skeleton :rows="5" animated v-if="!isLoaded"></el-skeleton>
-  <el-table
-    v-if="isLoaded"
-    :data="tableData"
-    style="width: 100%"
-    :row-class-name="tableRowClassName"
-  >
-    <el-table-column prop="user_id" label="学号" width="180" />
-    <el-table-column prop="real_name" label="姓名" width="180" />
-    <el-table-column prop="department" label="院系" width="180" />
-    <el-table-column prop="phone_number" label="联系方式" width="180" />
-    <el-table-column fixed="right" label="操作">
-      <template v-slot="slotProps">
-        <el-button @click="handleEdit(slotProps.row)" type="text" size="small"
-          >编辑</el-button
-        >
-        <el-dialog
-          title="编辑学生信息"
-          v-model="editDialogVisible"
-          width="30%"
-          :before-close="handleEditClose"
-        >
-          <el-form :model="editForm" ref="editForm" :rules="rules">
-            <el-form-item label="学号" prop="user_id">
-              <el-input v-model="editForm.user_id" disabled></el-input>
-            </el-form-item>
-            <el-form-item label="姓名" prop="real_name">
-              <el-input
-                v-model="editForm.real_name"
-                placeholder="请输入姓名"
-              ></el-input>
-            </el-form-item>
-            <el-form-item label="院系">
-              <el-input
-                v-model="editForm.department"
-                placeholder="请输入院系"
-              ></el-input>
-            </el-form-item>
-            <el-form-item label="联系方式">
-              <el-input
-                v-model="editForm.phone_number"
-                placeholder="请输入联系方式"
-              ></el-input>
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <span class="dialog-footer">
-              <el-button @click="editDialogVisible = false">取 消</el-button>
-              <el-button type="primary" @click="handleEditSubmit"
-                >确 定</el-button
-              >
-            </span>
-          </template>
-        </el-dialog>
-      </template>
-    </el-table-column>
-  </el-table>
 </template>
-
 <script>
+import { ref } from "vue";
 import { userAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
-
+import {
+  User,
+  Plus,
+  Refresh,
+  IdCard,
+  Edit,
+  Office,
+  School,
+  Phone,
+  Message,
+  Setting,
+  Check,
+  Close,
+  Delete,
+  Warning,
+} from "@element-plus/icons-vue";
 export default {
   name: "StudentPanelAffair",
+  components: {
+    User,
+    Plus,
+    Refresh,
+    IdCard,
+    Edit,
+    Office,
+    School,
+    Phone,
+    Message,
+    Setting,
+    Check,
+    Close,
+    Delete,
+    Warning,
+  },
   data() {
     return {
       editForm: {
@@ -125,11 +220,13 @@ export default {
       isLoaded: false,
       dialogVisible: false,
       editDialogVisible: false,
+      editableRow: null, // 当前正在编辑的行的索引
+      editableData: [], // 编辑状态下的临时数据
       form: {
         user_id: "",
         real_name: "",
         department: "",
-        phone_number: "",
+        password: "",
       },
       rules: {
         user_id: [
@@ -179,7 +276,45 @@ export default {
         ElMessage.error("获取学生列表失败");
       }
     },
+    editRow(index) {
+      // 确保初始化 editableData 并触发 Vue 的响应式
+      this.editableData[index] = { ...this.tableData[index] };
+      this.editableRow = index; // 设置当前编辑的行索引
+    },
 
+    cancelEdit(index) {
+      this.editableData[index] = { ...this.tableData[index] }; // 重置编辑数据
+      this.editableRow = null; // 退出编辑模式
+    },
+
+    async saveEdit(row, index) {
+      // 将编辑数据转换为 FormData 格式
+      const formData = new FormData();
+      formData.append("user_id", this.editableData[index].user_id); // 必须字段
+      formData.append("real_name", this.editableData[index].real_name || "");
+      formData.append("department", this.editableData[index].department || "");
+      formData.append(
+        "phone_number",
+        this.editableData[index].phone_number || ""
+      );
+
+      try {
+        // 调用 patchUserInfo API 更新数据
+        const result = await userAPI.patchUserInfo(formData);
+
+        if (result.success) {
+          ElMessage.success("保存成功");
+          // 更新主表数据
+          this.tableData[index] = { ...this.editableData[index] };
+          this.editableRow = null; // 退出编辑模式
+        } else {
+          ElMessage.error(result.error || "保存失败");
+        }
+      } catch (error) {
+        console.error("保存失败：", error);
+        ElMessage.error("保存失败：" + (error.message || "未知错误"));
+      }
+    },
     handleView(row) {
       const userData = {
         user_id: row.user_id,
@@ -205,7 +340,7 @@ export default {
         user_id: row.user_id,
         real_name: row.real_name,
         department: row.department,
-        phone_number: row.phone_number || "", // 防止 phone_number 为 null
+        phone_number: row.phone_number || "",
       };
       this.editDialogVisible = true;
     },
@@ -266,9 +401,6 @@ export default {
     },
 
     showCreateDialog() {
-      // 先生成密码
-      const password = this.generatePassword();
-
       // 重置表单数据
       this.form = {
         user_id: "",
@@ -294,17 +426,6 @@ export default {
     handleClose() {
       this.dialogVisible = false;
       this.$refs.form?.resetFields();
-    },
-
-    generatePassword() {
-      // 生成8位随机密码，包含数字和字母
-      const charset =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      let password = "";
-      for (let i = 0; i < 8; i++) {
-        password += charset.charAt(Math.floor(Math.random() * charset.length));
-      }
-      return password;
     },
 
     async handleCreate() {
@@ -368,14 +489,124 @@ export default {
     });
     await this.loadData();
   },
+  handleDelete(row) {
+    this.studentToDelete = row;
+    this.deleteDialogVisible = true;
+  },
+
+  async confirmDelete() {
+    if (!this.studentToDelete) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("user_id", this.studentToDelete.user_id);
+
+      const result = await userAPI.deleteUser(formData);
+
+      if (result.success) {
+        ElMessage.success("删除成功");
+        this.deleteDialogVisible = false;
+        await this.loadData();
+      } else {
+        ElMessage.error(result.error || "删除失败");
+      }
+    } catch (error) {
+      console.error("删除失败：", error);
+      ElMessage.error("删除失败：" + (error.message || "未知错误"));
+    }
+
+    this.studentToDelete = null;
+    this.deleteDialogVisible = false;
+  },
 };
 </script>
 
 <style>
-.el-table .warning-row {
-  --el-table-tr-bg-color: var(--el-color-warning-light-9);
+.quick-look {
+  padding: 20px;
+  background-color: var(--el-bg-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 24px;
+  color: var(--el-text-color-primary);
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.operation-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.delete-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.warning-icon {
+  font-size: 48px;
+  color: var(--el-color-warning);
+}
+
+.el-table {
+  margin-top: 20px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.el-table th {
+  background-color: var(--el-color-primary-light-9) !important;
+}
+
+.el-table .warning-row {
+  background-color: var(--el-color-warning-light-9);
+}
+
 .el-table .success-row {
-  --el-table-tr-bg-color: var(--el-color-success-light-9);
+  background-color: var(--el-color-success-light-9);
+}
+
+.el-input.el-input--small {
+  width: 100%;
+}
+
+/* 添加过渡动画 */
+.el-table-column--edit-mode {
+  transition: all 0.3s ease;
+}
+
+/* 添加悬停效果 */
+.el-button {
+  transition: all 0.3s ease;
+}
+
+.el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
