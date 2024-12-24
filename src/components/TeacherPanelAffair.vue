@@ -58,10 +58,10 @@
     style="width: 100%"
     :row-class-name="tableRowClassName"
   >
-    <el-table-column prop="user_id" label="学号" width="100" />
-    <el-table-column prop="real_name" label="姓名" width="100" />
-    <el-table-column prop="department" label="院系" width="100" />
-    <el-table-column prop="phone_number" label="联系方式" width="100" />
+    <el-table-column prop="user_id" label="学号" width="180" />
+    <el-table-column prop="real_name" label="姓名" width="180" />
+    <el-table-column prop="department" label="院系" width="180" />
+    <el-table-column prop="phone_number" label="联系方式" width="180" />
     <el-table-column fixed="right" label="操作">
       <template v-slot="slotProps">
         <el-button @click="handleView(slotProps.row)" type="text" size="small"
@@ -170,9 +170,9 @@ export default {
     },
 
     tableRowClassName({ row, rowIndex }) {
-      if (rowIndex === 1) {
+      if (rowIndex % 2 === 1) {
         return "warning-row";
-      } else if (rowIndex === 0) {
+      } else if (rowIndex % 2 === 0) {
         return "success-row";
       }
       return "";

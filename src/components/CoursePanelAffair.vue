@@ -80,9 +80,9 @@ export default {
     },
 
     tableRowClassName({ row, rowIndex }) {
-      if (rowIndex === 1) {
+      if (rowIndex % 2 === 1) {
         return "warning-row";
-      } else if (rowIndex === 0) {
+      } else if (rowIndex % 2 === 0) {
         return "success-row";
       }
       return "";

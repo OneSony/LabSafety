@@ -124,6 +124,7 @@ export default {
   padding: 0 20px;
   height: 60px;
   border-bottom: 1px solid #ebeef5;
+  background-color: rgba(245, 247, 250, 0.8);
 }
 
 .logo-container {

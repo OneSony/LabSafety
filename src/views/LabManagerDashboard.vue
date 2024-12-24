@@ -1,148 +1,150 @@
 <template>
-  <div class="lab-manager-dashboard">
-    <!-- 页面标题区域 -->
-    <div class="dashboard-header">
-      <div class="title-section">
-        <h2 class="main-title">实验室管理控制台</h2>
+  <div class="page-container">
+    <div class="lab-manager-dashboard">
+      <!-- 页面标题区域 -->
+      <div class="dashboard-header">
+        <div class="title-section">
+          <h2 class="main-title">实验室管理控制台</h2>
+        </div>
+        <el-button
+          type="primary"
+          class="create-button"
+          @click="openCreateLabDialog"
+        >
+          <el-icon class="mr-2"><Plus /></el-icon>
+          创建实验室
+        </el-button>
       </div>
-      <el-button
-        type="primary"
-        class="create-button"
-        @click="openCreateLabDialog"
-      >
-        <el-icon class="mr-2"><Plus /></el-icon>
-        创建实验室
-      </el-button>
-    </div>
 
-    <!-- 实验室列表卡片 -->
-    <div class="lab-list-container">
-      <el-card class="lab-table-card">
-        <template #header>
-          <div class="card-header">
-            <span>实验室列表</span>
-            <div class="header-actions">
-              <el-input
-                v-model="searchQuery"
-                placeholder="搜索实验室..."
-                class="search-input"
-                clearable
-              >
-                <template #prefix>
-                  <el-icon><Search /></el-icon>
-                </template>
-              </el-input>
+      <!-- 实验室列表卡片 -->
+      <div class="lab-list-container">
+        <el-card class="lab-table-card">
+          <template #header>
+            <div class="card-header">
+              <span>实验室列表</span>
+              <div class="header-actions">
+                <el-input
+                  v-model="searchQuery"
+                  placeholder="搜索实验室..."
+                  class="search-input"
+                  clearable
+                >
+                  <template #prefix>
+                    <el-icon><Search /></el-icon>
+                  </template>
+                </el-input>
+              </div>
             </div>
+          </template>
+
+          <el-table
+            :data="filteredLabs"
+            style="width: 100%"
+            @row-click="goToLabDetail"
+            :header-cell-style="{ background: '#f5f7fa' }"
+            border
+            stripe
+            highlight-current-row
+          >
+            <el-table-column prop="name" label="实验室名称" min-width="200">
+              <template #default="scope">
+                <div class="lab-name-cell">
+                  <el-icon class="mr-2"><School /></el-icon>
+                  {{ scope.row.name }}
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="location" label="地点" min-width="200">
+              <template #default="scope">
+                <div class="lab-location-cell">
+                  <el-icon class="mr-2"><Location /></el-icon>
+                  {{ scope.row.location }}
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="250" fixed="right">
+              <template #default="scope">
+                <div class="action-buttons">
+                  <el-button
+                    @click.stop="editLab(scope.row)"
+                    type="primary"
+                    size="small"
+                    class="action-button"
+                  >
+                    <el-icon class="mr-1"><Edit /></el-icon>
+                    编辑
+                  </el-button>
+                  <el-button
+                    @click.stop="deleteLab(scope.row.id)"
+                    type="danger"
+                    size="small"
+                    class="action-button"
+                  >
+                    <el-icon class="mr-1"><Delete /></el-icon>
+                    删除
+                  </el-button>
+                  <el-button
+                    @click.stop="openNotificationEditor(scope.row)"
+                    type="info"
+                    size="small"
+                    class="action-button"
+                  >
+                    <el-icon class="mr-1"><Bell /></el-icon>
+                    通知
+                  </el-button>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </div>
+
+      <el-dialog
+        title="编辑通知"
+        v-model="noticeEditDialogVisible"
+        width="40%"
+        @close="fetchNotices"
+      >
+        <NoticeDialog
+          :lab_id="selectedLabId"
+          @close-dialog="noticeEditDialogVisible = false"
+          v-if="noticeEditDialogVisible"
+        />
+      </el-dialog>
+
+      <!-- 创建/编辑实验室弹窗 -->
+      <el-dialog
+        v-model="isLabDialogVisible"
+        :title="labForm.lab_id ? '编辑实验室' : '创建实验室'"
+        width="500px"
+        @closed="handleDialogClosed"
+        :before-close="handleBeforeClose"
+        destroy-on-close
+      >
+        <el-form :model="labForm" label-position="top" class="lab-form">
+          <el-form-item label="实验室名称" :required="true">
+            <el-input
+              v-model="labForm.name"
+              placeholder="请输入实验室名称"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="地点" :required="true">
+            <el-input
+              v-model="labForm.location"
+              placeholder="请输入实验室地点"
+              clearable
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <div class="dialog-footer">
+            <el-button @click="handleCancel">取消</el-button>
+            <el-button type="primary" @click="saveLab">保存</el-button>
           </div>
         </template>
-
-        <el-table
-          :data="filteredLabs"
-          style="width: 100%"
-          @row-click="goToLabDetail"
-          :header-cell-style="{ background: '#f5f7fa' }"
-          border
-          stripe
-          highlight-current-row
-        >
-          <el-table-column prop="name" label="实验室名称" min-width="200">
-            <template #default="scope">
-              <div class="lab-name-cell">
-                <el-icon class="mr-2"><School /></el-icon>
-                {{ scope.row.name }}
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="location" label="地点" min-width="200">
-            <template #default="scope">
-              <div class="lab-location-cell">
-                <el-icon class="mr-2"><Location /></el-icon>
-                {{ scope.row.location }}
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="250" fixed="right">
-            <template #default="scope">
-              <div class="action-buttons">
-                <el-button
-                  @click.stop="editLab(scope.row)"
-                  type="primary"
-                  size="small"
-                  class="action-button"
-                >
-                  <el-icon class="mr-1"><Edit /></el-icon>
-                  编辑
-                </el-button>
-                <el-button
-                  @click.stop="deleteLab(scope.row.id)"
-                  type="danger"
-                  size="small"
-                  class="action-button"
-                >
-                  <el-icon class="mr-1"><Delete /></el-icon>
-                  删除
-                </el-button>
-                <el-button
-                  @click.stop="openNotificationEditor(scope.row)"
-                  type="info"
-                  size="small"
-                  class="action-button"
-                >
-                  <el-icon class="mr-1"><Bell /></el-icon>
-                  通知
-                </el-button>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
+      </el-dialog>
     </div>
-
-    <el-dialog
-      title="编辑通知"
-      v-model="noticeEditDialogVisible"
-      width="40%"
-      @close="fetchNotices"
-    >
-      <NoticeDialog
-        :lab_id="selectedLabId"
-        @close-dialog="noticeEditDialogVisible = false"
-        v-if="noticeEditDialogVisible"
-      />
-    </el-dialog>
-
-    <!-- 创建/编辑实验室弹窗 -->
-    <el-dialog
-      v-model="isLabDialogVisible"
-      :title="labForm.lab_id ? '编辑实验室' : '创建实验室'"
-      width="500px"
-      @closed="handleDialogClosed"
-      :before-close="handleBeforeClose"
-      destroy-on-close
-    >
-      <el-form :model="labForm" label-position="top" class="lab-form">
-        <el-form-item label="实验室名称" :required="true">
-          <el-input
-            v-model="labForm.name"
-            placeholder="请输入实验室名称"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="地点" :required="true">
-          <el-input
-            v-model="labForm.location"
-            placeholder="请输入实验室地点"
-            clearable
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="handleCancel">取消</el-button>
-          <el-button type="primary" @click="saveLab">保存</el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -398,6 +400,39 @@ export default {
 </script>
 
 <style scoped>
+.page-container {
+  background: radial-gradient(
+      circle at 20% 20%,
+      rgba(185, 230, 249, 0.8) 0%,
+      rgba(232, 240, 245, 0.4) 35%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(187, 231, 217, 0.8) 0%,
+      rgba(232, 245, 242, 0.4) 35%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(230, 245, 245, 0.8) 0%,
+      rgba(232, 245, 242, 0.4) 45%,
+      transparent 80%
+    ),
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(202, 223, 172, 0.7) 0%,
+      rgba(230, 245, 240, 0.3) 50%,
+      transparent 75%
+    ),
+    radial-gradient(
+      circle at 15% 85%,
+      rgba(230, 245, 242, 0.7) 0%,
+      rgba(232, 245, 245, 0.3) 40%,
+      transparent 75%
+    ),
+    linear-gradient(135deg, #e6f5f5 0%, #e8f0f5 50%, #e6f5f0 100%);
+}
 .lab-manager-dashboard {
   padding: 24px;
   background-color: #f5f7fa;

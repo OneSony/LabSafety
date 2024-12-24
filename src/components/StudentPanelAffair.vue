@@ -36,7 +36,7 @@
             placeholder="请输入院系"
           ></el-input>
         </el-form-item>
-        <el-form-item label="随机密码">
+        <el-form-item label="默认密码">
           <el-input v-model="form.password" disabled></el-input>
         </el-form-item>
       </el-form>
@@ -55,18 +55,53 @@
     style="width: 100%"
     :row-class-name="tableRowClassName"
   >
-    <el-table-column prop="user_id" label="学号" width="100" />
-    <el-table-column prop="real_name" label="姓名" width="100" />
-    <el-table-column prop="department" label="院系" width="100" />
-    <el-table-column prop="phone_number" label="联系方式" width="100" />
+    <el-table-column prop="user_id" label="学号" width="180" />
+    <el-table-column prop="real_name" label="姓名" width="180" />
+    <el-table-column prop="department" label="院系" width="180" />
+    <el-table-column prop="phone_number" label="联系方式" width="180" />
     <el-table-column fixed="right" label="操作">
       <template v-slot="slotProps">
-        <el-button @click="handleView(slotProps.row)" type="text" size="small"
-          >查看</el-button
-        >
         <el-button @click="handleEdit(slotProps.row)" type="text" size="small"
           >编辑</el-button
         >
+        <el-dialog
+          title="编辑学生信息"
+          v-model="editDialogVisible"
+          width="30%"
+          :before-close="handleEditClose"
+        >
+          <el-form :model="editForm" ref="editForm" :rules="rules">
+            <el-form-item label="学号" prop="user_id">
+              <el-input v-model="editForm.user_id" disabled></el-input>
+            </el-form-item>
+            <el-form-item label="姓名" prop="real_name">
+              <el-input
+                v-model="editForm.real_name"
+                placeholder="请输入姓名"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="院系">
+              <el-input
+                v-model="editForm.department"
+                placeholder="请输入院系"
+              ></el-input>
+            </el-form-item>
+            <el-form-item label="联系方式">
+              <el-input
+                v-model="editForm.phone_number"
+                placeholder="请输入联系方式"
+              ></el-input>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="editDialogVisible = false">取 消</el-button>
+              <el-button type="primary" @click="handleEditSubmit"
+                >确 定</el-button
+              >
+            </span>
+          </template>
+        </el-dialog>
       </template>
     </el-table-column>
   </el-table>
@@ -80,13 +115,21 @@ export default {
   name: "StudentPanelAffair",
   data() {
     return {
+      editForm: {
+        user_id: "",
+        real_name: "",
+        department: "",
+        phone_number: "",
+      },
       tableData: [],
       isLoaded: false,
       dialogVisible: false,
+      editDialogVisible: false,
       form: {
         user_id: "",
         real_name: "",
         department: "",
+        phone_number: "",
       },
       rules: {
         user_id: [
@@ -109,6 +152,16 @@ export default {
         ],
       },
     };
+  },
+  watch: {
+    "form.user_id": function (newVal) {
+      if (newVal.length >= 6) {
+        // 获取学号的后六位作为密码
+        this.form.password = newVal.slice(-6);
+      } else {
+        this.form.password = "";
+      }
+    },
   },
   methods: {
     async loadData() {
@@ -147,28 +200,66 @@ export default {
     },
 
     handleEdit(row) {
-      const userData = {
+      // 将选中行的数据复制到编辑表单中
+      this.editForm = {
         user_id: row.user_id,
         real_name: row.real_name,
         department: row.department,
-        phone_number: row.phone_number,
+        phone_number: row.phone_number || "", // 防止 phone_number 为 null
       };
-      console.log("Edit user:", userData);
-      if (this.$router) {
-        this.$router.push({
-          name: "EditUser",
-          params: { userId: row.user_id },
-          state: { userData },
+      this.editDialogVisible = true;
+    },
+
+    handleEditClose() {
+      this.editDialogVisible = false;
+      if (this.$refs.editForm) {
+        this.$refs.editForm.resetFields();
+      }
+    },
+
+    async handleEditSubmit() {
+      try {
+        const valid = await new Promise((resolve) => {
+          this.$refs.editForm.validate((valid) => {
+            resolve(valid);
+          });
         });
-      } else {
-        console.error("Router instance is not available.");
+
+        if (!valid) {
+          ElMessage.error("请检查表单是否填写正确");
+          return;
+        }
+
+        // 构造 FormData
+        const formData = new FormData();
+        formData.append("user_id", this.editForm.user_id);
+        formData.append("real_name", this.editForm.real_name);
+        formData.append("department", this.editForm.department);
+        if (this.editForm.phone_number) {
+          formData.append("phone_number", this.editForm.phone_number);
+        }
+
+        // 调用 patchUserInfo API
+        const result = await userAPI.patchUserInfo(formData);
+
+        if (result.success) {
+          ElMessage.success("更新成功");
+          this.editDialogVisible = false;
+          // 刷新列表
+          await this.loadData();
+        } else {
+          ElMessage.error(result.error || "更新失败");
+        }
+      } catch (error) {
+        console.error("Update failed:", error);
+        ElMessage.error("更新失败：" + (error.message || "未知错误"));
       }
     },
 
     tableRowClassName({ row, rowIndex }) {
-      if (rowIndex === 1) {
+      if (rowIndex % 2 === 1) {
         return "warning-row";
-      } else if (rowIndex === 0) {
+      } else if (rowIndex % 2 === 0) {
         return "success-row";
       }
       return "";
@@ -182,7 +273,7 @@ export default {
       this.form = {
         user_id: "",
         real_name: "",
-        password: password,
+        password: "",
         phone_number: "",
         department: "",
         profile_picture: null,

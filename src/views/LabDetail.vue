@@ -1,151 +1,164 @@
 <template>
-  <div class="lab-detail">
-    <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+  <div class="page-container">
+    <div class="lab-detail">
+      <div v-if="loading" class="loading">加载中...</div>
+      <div v-else-if="error" class="error">{{ error }}</div>
 
-    <div class="lab-header">
-      <h2 class="lab-name">
-        <span v-if="!editingField.name" @click="startEditing('name')">
-          {{ labForm.name || "未命名实验室" }}
-        </span>
-        <el-input
-          v-else
-          v-model="editForm.name"
-          placeholder="请输入实验室名称"
-          @blur="saveField('name')"
-          @keyup.enter="saveField('name')"
-        ></el-input>
-      </h2>
-
-      <h3 class="lab-location">
-        <span v-if="!editingField.location" @click="startEditing('location')">
-          {{ labForm.location || "未设置地点" }}
-        </span>
-        <el-input
-          v-else
-          v-model="editForm.location"
-          placeholder="请输入实验室地点"
-          @blur="saveField('location')"
-          @keyup.enter="saveField('location')"
-        ></el-input>
-        <el-button type="text" @click="showMap" class="map-button">
-          <el-icon><Location /></el-icon>
-          查看地图
-        </el-button>
-      </h3>
-
-      <!-- 地图对话框 -->
-      <el-dialog v-model="mapDialogVisible" title="实验室地图" width="600px">
-        <div class="map-container">
-          <el-image
-            v-if="labForm.map_image"
-            :src="labForm.map_image"
-            fit="contain"
-            class="map-image"
-          ></el-image>
-          <div v-else class="no-map">暂无地图</div>
-        </div>
-        <div v-if="isManager" class="map-upload">
-          <el-upload
-            class="upload-demo"
-            :action="null"
-            :http-request="UploadMap"
-            :show-file-list="false"
-            accept="image/*"
-            :before-upload="beforeMapUpload"
-          >
-            <el-button type="primary">{{
-              labForm.map_image ? "更换地图" : "上传地图"
-            }}</el-button>
-          </el-upload>
-        </div>
-
-        <template #footer>
-          <span class="dialog-footer">
-            <el-button @click="mapDialogVisible = false">关闭</el-button>
+      <div class="lab-header">
+        <h2 class="lab-name">
+          <span v-if="!editingField.name" @click="startEditing('name')">
+            {{ labForm.name || "未命名实验室" }}
           </span>
-        </template>
-      </el-dialog>
-    </div>
+          <el-input
+            v-else
+            v-model="editForm.name"
+            placeholder="请输入实验室名称"
+            @blur="saveField('name')"
+            @keyup.enter="saveField('name')"
+          ></el-input>
+        </h2>
 
-    <!-- 下面的卡片部分竖着排列 -->
-    <el-row :gutter="20" class="lab-cards">
-      <!-- 第一张卡片：实验室照片和安全员信息 -->
+        <h3 class="lab-location">
+          <span v-if="!editingField.location" @click="startEditing('location')">
+            {{ labForm.location || "未设置地点" }}
+          </span>
+          <el-input
+            v-else
+            v-model="editForm.location"
+            placeholder="请输入实验室地点"
+            @blur="saveField('location')"
+            @keyup.enter="saveField('location')"
+          ></el-input>
+          <el-button type="text" @click="showMap" class="map-button">
+            <el-icon><Location /></el-icon>
+            查看地图
+          </el-button>
+        </h3>
 
-      <div class="box">
-        <div class="card-main-title">
-          <h3>实验室信息</h3>
-        </div>
+        <!-- 地图对话框 -->
+        <el-dialog v-model="mapDialogVisible" title="实验室地图" width="600px">
+          <div class="map-container">
+            <el-image
+              v-if="labForm.map_image"
+              :src="labForm.map_image"
+              fit="contain"
+              class="map-image"
+            ></el-image>
+            <div v-else class="no-map">暂无地图</div>
+          </div>
+          <div v-if="isManager" class="map-upload">
+            <el-upload
+              class="upload-demo"
+              :action="null"
+              :http-request="UploadMap"
+              :show-file-list="false"
+              accept="image/*"
+              :before-upload="beforeMapUpload"
+            >
+              <el-button type="primary">{{
+                labForm.map_image ? "更换地图" : "上传地图"
+              }}</el-button>
+            </el-upload>
+          </div>
 
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <!-- 实验室照片 -->
-            <div class="lab-photo-container">
-              <el-image
-                v-if="labForm.lab_image"
-                :src="labForm.lab_image"
-                style="width: 100%; max-height: 300px; object-fit: cover"
-                fit="cover"
-              ></el-image>
-              <div v-else class="no-photo">
-                <span>点击上传照片</span>
-              </div>
-              <el-upload
-                class="upload-container"
-                :action="null"
-                :http-request="customImageUpload"
-                :show-file-list="false"
-                accept="image/*"
-                :before-upload="beforeImageUpload"
-              >
-                <el-button v-if="isManager" type="primary">上传照片</el-button>
-              </el-upload>
-            </div>
-          </el-col>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="mapDialogVisible = false">关闭</el-button>
+            </span>
+          </template>
+        </el-dialog>
+      </div>
 
-          <el-col :span="16">
-            <!-- 安全员信息 -->
-            <div class="safety-officer">
-              <h4 class="section-title">实验室安全员</h4>
-              <div class="action-button">
-                <el-button
-                  v-if="isManager"
-                  type="primary"
-                  size="small"
-                  @click="openManagerDialog"
+      <!-- 下面的卡片部分竖着排列 -->
+      <el-row :gutter="20" class="lab-cards">
+        <!-- 第一张卡片：实验室照片和安全员信息 -->
+
+        <div class="box">
+          <div class="card-main-title">
+            <h3>实验室信息</h3>
+          </div>
+
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <!-- 实验室照片 -->
+              <div class="lab-photo-container">
+                <el-image
+                  v-if="labForm.lab_image"
+                  :src="labForm.lab_image"
+                  style="width: 100%; max-height: 300px; object-fit: cover"
+                  fit="cover"
+                ></el-image>
+                <div v-else class="no-photo">
+                  <span>点击上传照片</span>
+                </div>
+                <el-upload
+                  class="upload-container"
+                  :action="null"
+                  :http-request="customImageUpload"
+                  :show-file-list="false"
+                  accept="image/*"
+                  :before-upload="beforeImageUpload"
                 >
-                  添加安全员
-                </el-button>
+                  <el-button v-if="isManager" type="primary"
+                    >上传照片</el-button
+                  >
+                </el-upload>
               </div>
-              <!-- 安全员列表 -->
-              <div v-if="labManagers.length" class="managers-list">
-                <div
-                  v-for="manager in labManagers"
-                  :key="manager.manager_user_id"
-                  class="manager-card"
-                >
-                  <div class="safety-info">
-                    <span class="info-label">安全员：</span>
-                    <span>{{ manager.manager_name }}</span>
-                  </div>
-                  <div class="safety-info">
-                    <span class="info-label">电话：</span>
-                    <span>{{ manager.manager_phone }}</span>
-                  </div>
-                  <div class="safety-info">
-                    <span class="info-label">邮箱：</span>
-                    <span>{{ manager.manager_email }}</span>
-                  </div>
-                  <div class="manager-actions">
-                    <el-tooltip
-                      v-if="manager.manager_user_id === myUserId"
-                      class="item"
-                      effect="dark"
-                      content="不能解除绑定自己"
-                      placement="top"
-                    >
+            </el-col>
+
+            <el-col :span="16">
+              <!-- 安全员信息 -->
+              <div class="safety-officer">
+                <h4 class="section-title">实验室安全员</h4>
+                <div class="action-button">
+                  <el-button
+                    v-if="isManager"
+                    type="primary"
+                    size="small"
+                    @click="openManagerDialog"
+                  >
+                    添加安全员
+                  </el-button>
+                </div>
+                <!-- 安全员列表 -->
+                <div v-if="labManagers.length" class="managers-list">
+                  <div
+                    v-for="manager in labManagers"
+                    :key="manager.manager_user_id"
+                    class="manager-card"
+                  >
+                    <div class="safety-info">
+                      <span class="info-label">安全员：</span>
+                      <span>{{ manager.manager_name }}</span>
+                    </div>
+                    <div class="safety-info">
+                      <span class="info-label">电话：</span>
+                      <span>{{ manager.manager_phone }}</span>
+                    </div>
+                    <div class="safety-info">
+                      <span class="info-label">邮箱：</span>
+                      <span>{{ manager.manager_email }}</span>
+                    </div>
+                    <div class="manager-actions">
+                      <el-tooltip
+                        v-if="manager.manager_user_id === myUserId"
+                        class="item"
+                        effect="dark"
+                        content="不能解除绑定自己"
+                        placement="top"
+                      >
+                        <el-button
+                          v-if="isManager"
+                          type="danger"
+                          size="small"
+                          @click="unbindManager(manager)"
+                          :disabled="manager.manager_user_id === myUserId"
+                        >
+                          解除绑定
+                        </el-button>
+                      </el-tooltip>
                       <el-button
-                        v-if="isManager"
+                        v-else-if="isManager"
                         type="danger"
                         size="small"
                         @click="unbindManager(manager)"
@@ -153,379 +166,384 @@
                       >
                         解除绑定
                       </el-button>
-                    </el-tooltip>
-                    <el-button
-                      v-else-if="isManager"
-                      type="danger"
-                      size="small"
-                      @click="unbindManager(manager)"
-                      :disabled="manager.manager_user_id === myUserId"
-                    >
-                      解除绑定
-                    </el-button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div v-else class="no-managers">暂无安全员信息</div>
-              <el-dialog
-                title="添加安全员"
-                v-model="managerDialogVisible"
-                width="600px"
-              >
-                <div class="search-box">
-                  <el-input
-                    v-model="searchManagerName"
-                    placeholder="搜索安全员"
-                    clearable
-                    @input="handleManagerSearch"
-                  >
-                    <template #prefix>
-                      <el-icon><Search /></el-icon>
-                    </template>
-                  </el-input>
-                </div>
-                <div v-if="loadingManagers">正在加载...</div>
-                <div v-if="!loadingManagers && availableManagers.length === 0">
-                  未找到匹配的安全员
-                </div>
-                <el-table
-                  :data="availableManagers"
-                  style="width: 100%"
-                  height="300px"
-                  v-loading="loadingManagers"
+                <div v-else class="no-managers">暂无安全员信息</div>
+                <el-dialog
+                  title="添加安全员"
+                  v-model="managerDialogVisible"
+                  width="600px"
                 >
-                  <el-table-column prop="manager_name" label="姓名">
-                    <template #default="{ row }">
-                      {{ row.manager_name || "未知" }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="manager_phone" label="电话">
-                    <template #default="{ row }">
-                      {{ row.manager_phone || "未知" }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="manager_email" label="邮箱">
-                    <template #default="{ row }">
-                      {{ row.manager_email || "未知" }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column fixed="right" label="操作" width="120">
-                    <template #default="{ row }">
+                  <div class="search-box">
+                    <el-input
+                      v-model="searchManagerName"
+                      placeholder="搜索安全员"
+                      clearable
+                      @input="handleManagerSearch"
+                    >
+                      <template #prefix>
+                        <el-icon><Search /></el-icon>
+                      </template>
+                    </el-input>
+                  </div>
+                  <div v-if="loadingManagers">正在加载...</div>
+                  <div
+                    v-if="!loadingManagers && availableManagers.length === 0"
+                  >
+                    未找到匹配的安全员
+                  </div>
+                  <el-table
+                    :data="availableManagers"
+                    style="width: 100%"
+                    height="300px"
+                    v-loading="loadingManagers"
+                  >
+                    <el-table-column prop="manager_name" label="姓名">
+                      <template #default="{ row }">
+                        {{ row.manager_name || "未知" }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="manager_phone" label="电话">
+                      <template #default="{ row }">
+                        {{ row.manager_phone || "未知" }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="manager_email" label="邮箱">
+                      <template #default="{ row }">
+                        {{ row.manager_email || "未知" }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column fixed="right" label="操作" width="120">
+                      <template #default="{ row }">
+                        <el-button
+                          v-if="isManager"
+                          type="primary"
+                          size="small"
+                          @click="bindManager(row)"
+                          :disabled="isManagerBound(row)"
+                        >
+                          {{ isManagerBound(row) ? "已添加" : "添加" }}
+                        </el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+
+                  <template #footer>
+                    <span class="dialog-footer">
                       <el-button
                         v-if="isManager"
-                        type="primary"
-                        size="small"
-                        @click="bindManager(row)"
-                        :disabled="isManagerBound(row)"
+                        @click="managerDialogVisible = false"
+                        >关闭</el-button
                       >
-                        {{ isManagerBound(row) ? "已添加" : "添加" }}
-                      </el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-
-                <template #footer>
-                  <span class="dialog-footer">
-                    <el-button
-                      v-if="isManager"
-                      @click="managerDialogVisible = false"
-                      >关闭</el-button
-                    >
-                  </span>
-                </template>
-              </el-dialog>
-            </div>
-          </el-col>
-        </el-row>
-      </div>
-
-      <!-- 通知已写好勿动 -->
-      <div class="box">
-        <h3>通知</h3>
-        <el-button
-          v-if="isManager"
-          type="primary"
-          class="card-btn"
-          style="position: absolute; top: 20px; right: 20px"
-          @click="noticeDialogVisible = true"
-        >
-          添加通知
-        </el-button>
-        <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
-        <p
-          v-if="noticeList.length === 0 && noticeLoaded"
-          style="text-align: center; color: #ccc"
-        >
-          暂无通知
-        </p>
-        <el-row gutter="20">
-          <el-col
-            :xs="24"
-            :sm="12"
-            :md="8"
-            v-for="notice in noticeList"
-            :key="notice.id"
-            :span="8"
-            style="
-              position: relative;
-              display: flex;
-              flex-direction: column;
-              margin-bottom: 20px;
-            "
-            class="notice-item"
-          >
-            <el-button
-              type="text"
-              @click="deleteNotification(notice)"
-              v-if="notice.sender === myUserId"
-              style="position: absolute; right: 25px; top: 15px; z-index: 1000"
-            >
-              删除
-            </el-button>
-            <el-button
-              type="text"
-              @click="notice.noticeEditDialogVisible = true"
-              v-if="notice.sender === myUserId"
-              style="position: absolute; right: 65px; top: 15px; z-index: 1000"
-            >
-              编辑
-            </el-button>
-            <NoticeCard :notice="notice" />
-            <el-dialog
-              title="编辑通知"
-              v-model="notice.noticeEditDialogVisible"
-              width="40%"
-              @close="fetchNotices"
-            >
-              <NoticeDialog
-                :lab_id="Number(id)"
-                :notice="notice"
-                @close-dialog="notice.noticeEditDialogVisible = false"
-                v-if="notice.noticeEditDialogVisible"
-              />
-            </el-dialog>
-          </el-col>
-        </el-row>
-      </div>
-      <el-dialog
-        title="添加通知"
-        v-model="noticeDialogVisible"
-        width="40%"
-        @close="fetchNotices"
-      >
-        <NoticeDialog
-          :lab_id="Number(id)"
-          @close-dialog="noticeDialogVisible = false"
-          v-if="noticeDialogVisible"
-        />
-      </el-dialog>
-
-      <!-- 第二张卡片：安全器材 -->
-      <div class="box">
-        <div class="safety-equipment">
-          <div class="equipment-header">
-            <h3>安全器材</h3>
-            <el-button
-              v-if="isManager"
-              type="primary"
-              size="small"
-              @click="openEquipmentDialog"
-            >
-              添加器材
-            </el-button>
-          </div>
-
-          <!-- 器材列表 -->
-          <el-table
-            :data="parsedEquipments"
-            style="width: 100%"
-            v-if="parsedEquipments.length"
-          >
-            <el-table-column label="器材图片" width="150">
-              <template #default="{ row }">
-                <div class="equipment-image-container">
-                  <el-image
-                    v-if="row.image"
-                    :src="row.image"
-                    fit="cover"
-                    class="equipment-thumb"
-                    :preview-src-list="[row.image]"
-                  ></el-image>
-                  <div v-else class="no-image">暂无图片</div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="器材名称" prop="name" width="180" />
-            <el-table-column label="器材描述" prop="description" />
-            <el-table-column width="200" align="center">
-              <template #default="{ $index }">
-                <el-button
-                  v-if="isManager"
-                  type="primary"
-                  size="small"
-                  @click="editEquipment($index)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  v-if="isManager"
-                  type="danger"
-                  size="small"
-                  @click="removeEquipment($index)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div v-else class="no-equipment">暂无安全器材信息</div>
-
-          <!-- 编辑对话框 -->
-          <el-dialog
-            :title="editingIndex === null ? '添加器材' : '编辑器材'"
-            v-model="dialogVisible"
-            width="500px"
-          >
-            <el-form :model="currentEquipment" label-width="80px">
-              <el-form-item label="器材名称" required>
-                <el-input
-                  v-model="currentEquipment.name"
-                  placeholder="请输入器材名称"
-                />
-              </el-form-item>
-
-              <el-form-item label="器材描述" required>
-                <el-input
-                  v-model="currentEquipment.description"
-                  type="textarea"
-                  rows="3"
-                  placeholder="请输入器材描述"
-                />
-              </el-form-item>
-
-              <el-form-item label="器材图片">
-                <div class="equipment-image-preview">
-                  <el-image
-                    v-if="currentEquipment.image"
-                    :src="currentEquipment.image"
-                    class="preview-image"
-                    fit="cover"
-                  ></el-image>
-                  <div v-else class="no-image">暂无图片</div>
-                </div>
-                <el-upload
-                  class="equipment-upload"
-                  :auto-upload="false"
-                  :show-file-list="false"
-                  :on-change="handleImageChange"
-                  accept="image/*"
-                >
-                  <el-button v-if="isManager" type="primary">
-                    {{ currentEquipment.image ? "更换图片" : "选择图片" }}
-                  </el-button>
-                </el-upload>
-              </el-form-item>
-            </el-form>
-
-            <template #footer>
-              <span class="dialog-footer">
-                <el-button v-if="isManager" @click="dialogVisible = false"
-                  >取消</el-button
-                >
-                <el-button
-                  v-if="isManager"
-                  type="primary"
-                  @click="saveEquipment"
-                  >确定</el-button
-                >
-              </span>
-            </template>
-          </el-dialog>
+                    </span>
+                  </template>
+                </el-dialog>
+              </div>
+            </el-col>
+          </el-row>
         </div>
-      </div>
 
-      <!-- 第三张卡片：安全须知 -->
-      <div class="box">
-        <div class="safety-notes">
-          <div class="safety-header">
-            <h3>安全须知</h3>
-            <el-button
-              v-if="isManager"
-              type="primary"
-              size="small"
-              @click="openNoteDialog(null)"
+        <!-- 通知已写好勿动 -->
+        <div class="box">
+          <h3>通知</h3>
+          <el-button
+            v-if="isManager"
+            type="primary"
+            class="card-btn"
+            style="position: absolute; top: 20px; right: 20px"
+            @click="noticeDialogVisible = true"
+          >
+            添加通知
+          </el-button>
+          <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
+          <p
+            v-if="noticeList.length === 0 && noticeLoaded"
+            style="text-align: center; color: #ccc"
+          >
+            暂无通知
+          </p>
+          <el-row gutter="20">
+            <el-col
+              :xs="24"
+              :sm="12"
+              :md="8"
+              v-for="notice in noticeList"
+              :key="notice.id"
+              :span="8"
+              style="
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                margin-bottom: 20px;
+              "
+              class="notice-item"
             >
-              添加须知
-            </el-button>
+              <el-button
+                type="text"
+                @click="deleteNotification(notice)"
+                v-if="notice.sender === myUserId"
+                style="
+                  position: absolute;
+                  right: 25px;
+                  top: 15px;
+                  z-index: 1000;
+                "
+              >
+                删除
+              </el-button>
+              <el-button
+                type="text"
+                @click="notice.noticeEditDialogVisible = true"
+                v-if="notice.sender === myUserId"
+                style="
+                  position: absolute;
+                  right: 65px;
+                  top: 15px;
+                  z-index: 1000;
+                "
+              >
+                编辑
+              </el-button>
+              <NoticeCard :notice="notice" />
+              <el-dialog
+                title="编辑通知"
+                v-model="notice.noticeEditDialogVisible"
+                width="40%"
+                @close="fetchNotices"
+              >
+                <NoticeDialog
+                  :lab_id="Number(id)"
+                  :notice="notice"
+                  @close-dialog="notice.noticeEditDialogVisible = false"
+                  v-if="notice.noticeEditDialogVisible"
+                />
+              </el-dialog>
+            </el-col>
+          </el-row>
+        </div>
+        <el-dialog
+          title="添加通知"
+          v-model="noticeDialogVisible"
+          width="40%"
+          @close="fetchNotices"
+        >
+          <NoticeDialog
+            :lab_id="Number(id)"
+            @close-dialog="noticeDialogVisible = false"
+            v-if="noticeDialogVisible"
+          />
+        </el-dialog>
+
+        <!-- 第二张卡片：安全器材 -->
+        <div class="box">
+          <div class="safety-equipment">
+            <div class="equipment-header">
+              <h3>安全器材</h3>
+              <el-button
+                v-if="isManager"
+                type="primary"
+                size="small"
+                @click="openEquipmentDialog"
+              >
+                添加器材
+              </el-button>
+            </div>
+
+            <!-- 器材列表 -->
+            <el-table
+              :data="parsedEquipments"
+              style="width: 100%"
+              v-if="parsedEquipments.length"
+            >
+              <el-table-column label="器材图片" width="150">
+                <template #default="{ row }">
+                  <div class="equipment-image-container">
+                    <el-image
+                      v-if="row.image"
+                      :src="row.image"
+                      fit="cover"
+                      class="equipment-thumb"
+                      :preview-src-list="[row.image]"
+                    ></el-image>
+                    <div v-else class="no-image">暂无图片</div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="器材名称" prop="name" width="180" />
+              <el-table-column label="器材描述" prop="description" />
+              <el-table-column width="200" align="center">
+                <template #default="{ $index }">
+                  <el-button
+                    v-if="isManager"
+                    type="primary"
+                    size="small"
+                    @click="editEquipment($index)"
+                  >
+                    编辑
+                  </el-button>
+                  <el-button
+                    v-if="isManager"
+                    type="danger"
+                    size="small"
+                    @click="removeEquipment($index)"
+                  >
+                    删除
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <div v-else class="no-equipment">暂无安全器材信息</div>
+
+            <!-- 编辑对话框 -->
+            <el-dialog
+              :title="editingIndex === null ? '添加器材' : '编辑器材'"
+              v-model="dialogVisible"
+              width="500px"
+            >
+              <el-form :model="currentEquipment" label-width="80px">
+                <el-form-item label="器材名称" required>
+                  <el-input
+                    v-model="currentEquipment.name"
+                    placeholder="请输入器材名称"
+                  />
+                </el-form-item>
+
+                <el-form-item label="器材描述" required>
+                  <el-input
+                    v-model="currentEquipment.description"
+                    type="textarea"
+                    rows="3"
+                    placeholder="请输入器材描述"
+                  />
+                </el-form-item>
+
+                <el-form-item label="器材图片">
+                  <div class="equipment-image-preview">
+                    <el-image
+                      v-if="currentEquipment.image"
+                      :src="currentEquipment.image"
+                      class="preview-image"
+                      fit="cover"
+                    ></el-image>
+                    <div v-else class="no-image">暂无图片</div>
+                  </div>
+                  <el-upload
+                    class="equipment-upload"
+                    :auto-upload="false"
+                    :show-file-list="false"
+                    :on-change="handleImageChange"
+                    accept="image/*"
+                  >
+                    <el-button v-if="isManager" type="primary">
+                      {{ currentEquipment.image ? "更换图片" : "选择图片" }}
+                    </el-button>
+                  </el-upload>
+                </el-form-item>
+              </el-form>
+
+              <template #footer>
+                <span class="dialog-footer">
+                  <el-button v-if="isManager" @click="dialogVisible = false"
+                    >取消</el-button
+                  >
+                  <el-button
+                    v-if="isManager"
+                    type="primary"
+                    @click="saveEquipment"
+                    >确定</el-button
+                  >
+                </span>
+              </template>
+            </el-dialog>
           </div>
+        </div>
 
-          <!-- Safety notes list -->
-          <div class="safety-list" v-if="parsedNotes.length">
-            <div
-              v-for="(note, index) in parsedNotes"
-              :key="index"
-              class="safety-item"
-            >
-              <span class="note-number">{{ index + 1 }}</span>
-              <el-tag class="note-tag" size="small">{{ note.tag }}</el-tag>
-              <span class="note-content">{{ note.content }}</span>
-              <div class="note-actions">
-                <el-button
-                  v-if="isManager"
-                  type="text"
-                  @click="openNoteDialog(index)"
-                  >编辑</el-button
-                >
-                <el-button
-                  v-if="isManager"
-                  type="text"
-                  class="delete-btn"
-                  @click="removeNote(index)"
-                  >删除</el-button
-                >
+        <!-- 第三张卡片：安全须知 -->
+        <div class="box">
+          <div class="safety-notes">
+            <div class="safety-header">
+              <h3>安全须知</h3>
+              <el-button
+                v-if="isManager"
+                type="primary"
+                size="small"
+                @click="openNoteDialog(null)"
+              >
+                添加须知
+              </el-button>
+            </div>
+
+            <!-- Safety notes list -->
+            <div class="safety-list" v-if="parsedNotes.length">
+              <div
+                v-for="(note, index) in parsedNotes"
+                :key="index"
+                class="safety-item"
+              >
+                <span class="note-number">{{ index + 1 }}</span>
+                <el-tag class="note-tag" size="small">{{ note.tag }}</el-tag>
+                <span class="note-content">{{ note.content }}</span>
+                <div class="note-actions">
+                  <el-button
+                    v-if="isManager"
+                    type="text"
+                    @click="openNoteDialog(index)"
+                    >编辑</el-button
+                  >
+                  <el-button
+                    v-if="isManager"
+                    type="text"
+                    class="delete-btn"
+                    @click="removeNote(index)"
+                    >删除</el-button
+                  >
+                </div>
               </div>
             </div>
-          </div>
-          <div v-else class="no-notes">暂无安全须知</div>
+            <div v-else class="no-notes">暂无安全须知</div>
 
-          <!-- Note dialog -->
-          <el-dialog
-            :title="editingNoteIndex === null ? '添加安全须知' : '编辑安全须知'"
-            v-model="noteDialogVisible"
-            width="500px"
-          >
-            <el-form :model="currentNote" label-width="80px">
-              <el-form-item label="类型标签" required>
-                <el-input
-                  v-model="currentNote.tag"
-                  placeholder="请输入标签"
-                  maxlength="10"
-                />
-              </el-form-item>
-              <el-form-item label="须知内容" required>
-                <el-input
-                  v-model="currentNote.content"
-                  type="textarea"
-                  rows="3"
-                  placeholder="请输入须知内容"
-                />
-              </el-form-item>
-            </el-form>
-            <template #footer>
-              <span class="dialog-footer">
-                <el-button v-if="isManager" @click="noteDialogVisible = false"
-                  >取消</el-button
-                >
-                <el-button v-if="isManager" type="primary" @click="saveNote"
-                  >确定</el-button
-                >
-              </span>
-            </template>
-          </el-dialog>
+            <!-- Note dialog -->
+            <el-dialog
+              :title="
+                editingNoteIndex === null ? '添加安全须知' : '编辑安全须知'
+              "
+              v-model="noteDialogVisible"
+              width="500px"
+            >
+              <el-form :model="currentNote" label-width="80px">
+                <el-form-item label="类型标签" required>
+                  <el-input
+                    v-model="currentNote.tag"
+                    placeholder="请输入标签"
+                    maxlength="10"
+                  />
+                </el-form-item>
+                <el-form-item label="须知内容" required>
+                  <el-input
+                    v-model="currentNote.content"
+                    type="textarea"
+                    rows="3"
+                    placeholder="请输入须知内容"
+                  />
+                </el-form-item>
+              </el-form>
+              <template #footer>
+                <span class="dialog-footer">
+                  <el-button v-if="isManager" @click="noteDialogVisible = false"
+                    >取消</el-button
+                  >
+                  <el-button v-if="isManager" type="primary" @click="saveNote"
+                    >确定</el-button
+                  >
+                </span>
+              </template>
+            </el-dialog>
+          </div>
         </div>
-      </div>
-    </el-row>
+      </el-row>
+    </div>
   </div>
 </template>
 
@@ -1311,6 +1329,39 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.page-container {
+  background: radial-gradient(
+      circle at 20% 20%,
+      rgba(185, 230, 249, 0.8) 0%,
+      rgba(232, 240, 245, 0.4) 35%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(187, 231, 217, 0.8) 0%,
+      rgba(232, 245, 242, 0.4) 35%,
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(230, 245, 245, 0.8) 0%,
+      rgba(232, 245, 242, 0.4) 45%,
+      transparent 80%
+    ),
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(202, 223, 172, 0.7) 0%,
+      rgba(230, 245, 240, 0.3) 50%,
+      transparent 75%
+    ),
+    radial-gradient(
+      circle at 15% 85%,
+      rgba(230, 245, 242, 0.7) 0%,
+      rgba(232, 245, 245, 0.3) 40%,
+      transparent 75%
+    ),
+    linear-gradient(135deg, #e6f5f5 0%, #e8f0f5 50%, #e6f5f0 100%);
+}
 .lab-location {
   font-size: 18px;
   color: #666;
