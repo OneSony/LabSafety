@@ -12,9 +12,6 @@
         <el-menu-item index="1-2" @click="changeComponent('NotificationPanel')">
           <el-icon><ChatRound /></el-icon>通知
         </el-menu-item>
-        <el-menu-item index="1-3" @click="changeComponent('FilePanel')">
-          <el-icon><Paperclip /></el-icon>文件
-        </el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu index="2" v-if="isAffair">

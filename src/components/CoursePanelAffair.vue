@@ -125,7 +125,6 @@ import {
   Collection,
   User,
   Setting,
-  View,
   Edit,
 } from "@element-plus/icons-vue";
 
@@ -142,7 +141,6 @@ export default {
     Collection,
     User,
     Setting,
-    View,
     Edit,
   },
   data() {

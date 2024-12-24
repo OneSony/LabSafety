@@ -340,7 +340,7 @@
         <div class="box">
           <div class="safety-equipment">
             <div class="equipment-header">
-              <h3>安全器材</h3>
+              <h3>仪器设备</h3>
               <el-button
                 v-if="isManager"
                 type="primary"
@@ -397,7 +397,7 @@
               </el-table-column>
             </el-table>
 
-            <div v-else class="no-equipment">暂无安全器材信息</div>
+            <div v-else class="no-equipment">暂无仪器设备信息</div>
 
             <!-- 编辑对话框 -->
             <el-dialog
@@ -463,11 +463,11 @@
           </div>
         </div>
 
-        <!-- 第三张卡片：安全须知 -->
+        <!-- 第三张卡片：安全准则 -->
         <div class="box">
           <div class="safety-notes">
             <div class="safety-header">
-              <h3>安全须知</h3>
+              <h3>安全准则</h3>
               <el-button
                 v-if="isManager"
                 type="primary"
@@ -508,12 +508,12 @@
                 </div>
               </div>
             </div>
-            <div v-else class="no-notes">暂无安全须知</div>
+            <div v-else class="no-notes">暂无安全准则</div>
 
             <!-- Note dialog -->
             <el-dialog
               :title="
-                editingNoteIndex === null ? '添加安全须知' : '编辑安全须知'
+                editingNoteIndex === null ? '添加安全准则' : '编辑安全准则'
               "
               v-model="noteDialogVisible"
               width="500px"
@@ -994,7 +994,7 @@ export default defineComponent({
         if (!Array.isArray(parsed)) return [];
         return parsed;
       } catch (e) {
-        console.error("解析安全须知失败:", e);
+        console.error("解析安全准则失败:", e);
         return [];
       }
     },
@@ -1052,7 +1052,7 @@ export default defineComponent({
 
     async removeNote(index: number) {
       try {
-        await ElMessageBox.confirm("确认删除该安全须知?", "提示", {
+        await ElMessageBox.confirm("确认删除该安全准则?", "提示", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning",
