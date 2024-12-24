@@ -44,17 +44,17 @@
               <div class="class-content">
                 <div class="class-title">
                   <h4>{{ classItem.name }}</h4>
-                  <p>生物医学馆</p>
+                  <p>{{ classItem.lab_name }}</p>
                 </div>
-                <div class="content-box">
+                <div class="content-box" v-if="false">
                   <p>通知</p>
                   <p>0</p>
                 </div>
-                <div class="content-box">
+                <div class="content-box" v-if="false">
                   <p>实验数</p>
                   <p>0</p>
                 </div>
-                <div class="content-box">
+                <div class="content-box" v-if="false">
                   <p>预估时间</p>
                   <p>0</p>
                 </div>

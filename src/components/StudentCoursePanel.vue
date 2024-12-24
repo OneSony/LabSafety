@@ -38,7 +38,7 @@ import PaginationComponent from "./Pagination.vue";
 import { courseAPI } from "../utils/api";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
-import { userAPI, classAPI } from "../utils/api";
+import { userAPI, classAPI, labAPI } from "../utils/api";
 
 export default {
   name: "CoursePanel",
@@ -73,9 +73,23 @@ export default {
 
           // 获取课程的实验列表
           const classResponse = await classAPI.getClassList(courses[i].id);
-          console.log("dashBoardClassResponse", classResponse);
           if (classResponse.success) {
             courses[i].classList = classResponse.data;
+            for (let j = 0; j < courses[i].classList.length; j++) {
+              const locationResult = await classAPI.getLocations(
+                courses[i].classList[j].class_id
+              );
+              if (locationResult.success) {
+                courses[i].classList[j].lab_id = locationResult.data[0].lab_id;
+                const labNameResult = await labAPI.getLabs(
+                  courses[i].classList[j].lab_id
+                );
+                if (labNameResult.success) {
+                  courses[i].classList[j].lab_name = labNameResult.data[0].name;
+                }
+              }
+            }
+
             courses[i].isLoaded = true;
           } else {
             ElMessage.error("获取课程实验失败：" + classResponse.error);
