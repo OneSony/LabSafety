@@ -336,6 +336,23 @@ const courseAPI = {
       .catch(handleError);
   },
 
+  deleteClassToCourse(
+    class_id: number,
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    return server
+      .delete("/api/v1/courses/classes", {
+        params: {
+          class_id: class_id,
+          course_code: course_code,
+          course_sequence: course_sequence,
+        },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getEnroll(course_id: number): Promise<any> {
     const params = { course_id: course_id };
     return server
@@ -433,6 +450,13 @@ const classAPI = {
 
     return server
       .patch("/api/v1/classes/class", params)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteClass(class_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/classes/class", { params: { class_id: class_id } })
       .then(handleResponse)
       .catch(handleError);
   },
