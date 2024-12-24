@@ -4,7 +4,11 @@
       <el-button type="primary" class="go-back-btn" @click="goBack">
         返回
       </el-button>
-      <el-button type="primary" v-if="isTeacher" @click="openCopyDialog">
+      <el-button
+        type="primary"
+        v-if="isTeacher && false"
+        @click="openCopyDialog"
+      >
         复制课堂
       </el-button>
       <el-button type="primary" v-if="isTeacher" @click="openStudentDialog">
@@ -170,9 +174,14 @@
               <i class="el-icon-document"></i>
               概览
             </div>
-            <div class="info-content">
-              {{ this.basicInfo.overview || "这里是课程的概览" }}
-            </div>
+            <el-tag
+              v-for="(tag, i) in this.tagSummary"
+              :key="i"
+              type="danger"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
           </div>
         </div>
       </div>
@@ -542,6 +551,7 @@ export default {
       experimentLoaded: false,
       commentLoaded: false,
       myUserId: userAPI.getUserId(),
+      tagSummary: [],
     };
   },
   setup() {
@@ -841,6 +851,13 @@ export default {
       console.log("实验内容:", result);
       if (result.success) {
         this.experimentList = result.data;
+        //获取所有的safety_tags
+        this.tagSummary = [];
+        const tagSet = new Set();
+        for (let i = 0; i < this.experimentList.length; i++) {
+          this.experimentList[i].safety_tags.forEach((tag) => tagSet.add(tag));
+        }
+        this.tagSummary = Array.from(tagSet);
       } else {
         ElMessage.error("获取实验内容失败");
       }
