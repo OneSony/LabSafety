@@ -563,9 +563,9 @@ export default defineComponent({
         return;
       } else {
         const result = await courseAPI.postCourse(
-          this.courseData.course_name,
           this.courseData.course_code,
           this.courseData.course_sequence,
+          this.courseData.course_name,
           this.courseData.department
         );
         if (result.success === true) {
