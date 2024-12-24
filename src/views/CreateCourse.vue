@@ -80,7 +80,7 @@
       <div class="form-block-title">
         <span>已添加学生</span>
         <el-button
-          @click="openStudentDialog"
+          @click="studentDialogVisible = true"
           type="primary"
           size="small"
           :disabled="!isCourseSubmitted"
@@ -93,11 +93,11 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template v-slot="slotProps">
             <el-button
-              @click="handleStudentRowClick(slotProps.row)"
+              @click="handleStudentDelete(slotProps.row)"
               type="text"
               size="small"
               :disabled="!isCourseSubmitted"
-              >查看</el-button
+              >删除</el-button
             >
           </template>
         </el-table-column>
@@ -299,6 +299,8 @@ export default defineComponent({
       // 控制课堂对话框的显示
       studentDialogVisible: false,
       classDialogVisible: false,
+
+      isEditting: false,
     };
   },
   mounted() {
@@ -307,6 +309,7 @@ export default defineComponent({
     if (history.state.inputCourseData) {
       console.log("inputCourseData", history.state.inputCourseData);
       this.fetchCourseData(history.state.inputCourseData);
+      this.isEditting = true;
     }
   },
   methods: {
@@ -619,9 +622,16 @@ export default defineComponent({
     },
 
     async submitStudents() {
-      const studentIds = this.studentFormList.map(
-        (student) => student.student_id
-      );
+      //把formlist中不在list的留下
+      const studentIds = this.studentFormList
+        .filter(
+          (newStudent: Student) =>
+            !this.studentList.some(
+              (existingStudent: Student) =>
+                existingStudent.student_id === newStudent.student_id
+            )
+        )
+        .map((student: Student) => student.student_id);
       const result = await courseAPI.postEnroll(
         studentIds,
         this.courseData.course_code,
@@ -630,7 +640,17 @@ export default defineComponent({
       console.log("result", result);
       if (result.success) {
         ElMessage.success("提交成功");
-        this.studentList = this.studentFormList;
+        //把formlist不重复的加到list
+        this.studentList = [
+          ...this.studentList,
+          ...this.studentFormList.filter(
+            (newStudent) =>
+              !this.studentList.some(
+                (existingStudent) =>
+                  existingStudent.student_id === newStudent.student_id
+              )
+          ),
+        ];
         this.studentFormStr = "";
         this.studentDialogVisible = false;
       } else {
@@ -654,10 +674,6 @@ export default defineComponent({
       } as Class;
       this.teacherFormStr = "";
     },
-    openStudentDialog() {
-      // 打开添加学生的对话框
-      this.studentDialogVisible = true;
-    },
     handleClassRowClick(row: Class) {
       console.log("查看课堂", row);
       this.classFormData = row;
@@ -676,6 +692,21 @@ export default defineComponent({
       this.classFormData.teachers = this.classFormData.teachers.filter(
         (teacher: Teacher) => teacher.teacher_id !== row.teacher_id
       );
+    },
+    async handleStudentDelete(row: Student) {
+      //主菜单里删除
+      console.log("删除学生", row);
+      const result = await courseAPI.deleteEnroll(
+        row.student_id,
+        this.courseData.course_code,
+        this.courseData.course_sequence
+      );
+      console.log("result", result);
+      if (result.success) {
+        ElMessage.success("删除成功");
+      } else {
+        ElMessage.error("删除失败");
+      }
     },
     goBack() {
       this.$router.go(-1); // 返回上一页

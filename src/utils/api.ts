@@ -360,6 +360,23 @@ const courseAPI = {
       .catch(handleError);
   },
 
+  deleteEnroll(
+    student_id: string,
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    return server
+      .delete("/api/v1/courses/enroll", {
+        params: {
+          student_id: student_id,
+          course_code: course_code,
+          course_sequence: course_sequence,
+        },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getCourseFromClass(class_id: number): Promise<any> {
     const params = {
       class_id: class_id,
