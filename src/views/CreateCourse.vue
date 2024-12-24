@@ -1,140 +1,183 @@
 <template>
-  <div>
-    <el-button @click="goBack" type="primary"> 返回 </el-button>
-    <el-card class="form-block">
-      <div class="form-block-title">
-        <span>课程基本信息</span>
+  <div class="course-management p-6 max-w-7xl mx-auto">
+    <!-- Back Button -->
+    <el-button 
+      @click="goBack" 
+      type="primary" 
+      class="mb-6 flex items-center"
+    >
+      <i class="el-icon-arrow-left mr-2"></i> 返回
+    </el-button>
+
+    <!-- Course Info Card -->
+    <el-card class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300">
+      <div class="border-b pb-4 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800">课程基本信息</h2>
       </div>
-      <el-form-item label="课程号">
-        <el-input
-          v-model="courseData.course_code"
-          placeholder="请输入课程号"
-          :disabled="isCourseSubmitted"
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="课序号">
-        <el-input
-          v-model="courseData.course_sequence"
-          placeholder="请输入课序号"
-          :disabled="isCourseSubmitted"
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="课程名">
-        <el-input
-          v-model="courseData.course_name"
-          placeholder="请输入课程名"
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="开课院系">
-        <el-input
-          v-model="courseData.department"
-          placeholder="请输入开课院系"
-        ></el-input>
-      </el-form-item>
-      <div style="text-align: center">
-        <el-button @click="submitCourse" type="primary" size="small">
+      
+      <el-form label-position="right" label-width="100px" class="grid grid-cols-2 gap-6">
+        <el-form-item label="课程号" class="mb-4">
+          <el-input
+            v-model="courseData.course_code"
+            placeholder="请输入课程号"
+            :disabled="isCourseSubmitted"
+            class="w-full"
+          ></el-input>
+        </el-form-item>
+        
+        <el-form-item label="课序号" class="mb-4">
+          <el-input
+            v-model="courseData.course_sequence"
+            placeholder="请输入课序号"
+            :disabled="isCourseSubmitted"
+            class="w-full"
+          ></el-input>
+        </el-form-item>
+        
+        <el-form-item label="课程名" class="mb-4">
+          <el-input
+            v-model="courseData.course_name"
+            placeholder="请输入课程名"
+            class="w-full"
+          ></el-input>
+        </el-form-item>
+        
+        <el-form-item label="开课院系" class="mb-4">
+          <el-input
+            v-model="courseData.department"
+            placeholder="请输入开课院系"
+            class="w-full"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      
+      <div class="flex justify-end mt-6 mr-4">
+        <el-button 
+          @click="submitCourse" 
+          type="primary" 
+          class="w-32"
+        >
           提交
         </el-button>
       </div>
     </el-card>
 
-    <el-card class="form-block">
-      <div class="form-block-title">
-        <span>已添加课堂</span>
+    <!-- Class List Card -->
+    <el-card class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300">
+      <div class="flex justify-between items-center border-b pb-4 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800">已添加课堂</h2>
         <el-button
           @click="classDialogVisible = true"
           type="primary"
-          size="small"
           :disabled="!isCourseSubmitted"
-          >添加课堂</el-button
+          class="flex items-center"
         >
+          <i class="el-icon-plus justify-end mr-2 mb-6"></i> 添加课堂
+        </el-button>
       </div>
-      <el-table :data="classList" border style="width: 100%">
-        <el-table-column fixed prop="date" label="日期"></el-table-column>
-        <el-table-column prop="class_name" label="课堂名"></el-table-column>
-        <el-table-column prop="lab_name" label="位置"></el-table-column>
-        <el-table-column
-          prop="teachers_name"
-          label="授课教师"
-        ></el-table-column>
-        <el-table-column fixed="right" label="操作" width="200">
+      
+      <el-table 
+        :data="classList" 
+        border 
+        class="w-full"
+        :header-cell-style="{background:'#f5f7fa'}"
+      >
+        <el-table-column fixed prop="date" label="日期" width="180"></el-table-column>
+        <el-table-column prop="class_name" label="课堂名" min-width="120"></el-table-column>
+        <el-table-column prop="lab_name" label="位置" min-width="120"></el-table-column>
+        <el-table-column prop="teachers_name" label="授课教师" min-width="150"></el-table-column>
+        <el-table-column fixed="right" label="操作" width="150">
           <template v-slot="slotProps">
             <el-button
               @click="handleClassEdit(slotProps.row)"
-              type="text"
-              size="small"
+              type="primary"
+              text
               :disabled="!isCourseSubmitted"
-              >查看</el-button
+              class="mr-2"
             >
+              查看
+            </el-button>
             <el-button
               @click="handleClassDelete(slotProps.row)"
-              type="text"
-              size="small"
+              type="danger"
+              text
               :disabled="!isCourseSubmitted"
-              >删除</el-button
             >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <el-card class="form-block">
-      <div class="form-block-title">
-        <span>已添加学生</span>
+    <!-- Student List Card -->
+    <el-card class="mb-8 shadow-md hover:shadow-lg transition-shadow duration-300">
+      <div class="flex justify-between items-center border-b pb-4 mb-8">
+        <h2 class="text-xl font-semibold text-gray-800">已添加学生</h2>
         <el-button
           @click="studentDialogVisible = true"
           type="primary"
-          size="small"
           :disabled="!isCourseSubmitted"
-          >添加学生</el-button
+          class="flex items-center"
         >
+          <i class="el-icon-plus justify-end mr-2 mb-6"></i> 添加学生
+        </el-button>
       </div>
-      <el-table :data="studentList" border style="width: 100%">
-        <el-table-column prop="student_id" label="学号"></el-table-column>
-        <el-table-column prop="student_name" label="姓名"></el-table-column>
-        <el-table-column fixed="right" label="操作" width="100">
+      
+      <el-table 
+        :data="studentList" 
+        border 
+        class="w-full"
+        :header-cell-style="{background:'#f5f7fa'}"
+      >
+        <el-table-column prop="student_id" label="学号" width="180"></el-table-column>
+        <el-table-column prop="student_name" label="姓名" min-width="120"></el-table-column>
+        <el-table-column fixed="right" label="操作" width="120">
           <template v-slot="slotProps">
             <el-button
               @click="handleStudentDelete(slotProps.row)"
-              type="text"
-              size="small"
+              type="danger"
+              text
               :disabled="!isCourseSubmitted"
-              >删除</el-button
             >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <!-- 添加课堂的对话框 -->
+    <!-- Add Class Dialog -->
     <el-dialog
       title="添加课堂"
       v-model="classDialogVisible"
       width="800px"
       @close="closeClassDialog"
+      class="custom-dialog"
     >
-      <el-form :model="classFormData" ref="classForm">
-        <el-form-item label="课堂名">
+      <el-form :model="classFormData" ref="classForm" label-width="100px">
+        <el-form-item label="课堂名" class="mb-6">
           <el-input
             v-model="classFormData.class_name"
             placeholder="请输入课堂名"
+            class="w-full"
           ></el-input>
         </el-form-item>
 
-        <el-form-item label="时间">
+        <el-form-item label="时间" class="mb-6">
           <el-date-picker
             v-model="classFormData.date"
             type="datetime"
             placeholder="选择时间"
-            style="width: 100%"
+            class="w-full"
           ></el-date-picker>
         </el-form-item>
 
-        <el-form-item label="地点">
+        <el-form-item label="地点" class="mb-6">
           <el-select
             v-model="classFormData.lab_id"
             placeholder="选择地点"
-            style="width: 100%"
+            class="w-full"
           >
             <el-option
               v-for="lab in labList"
@@ -145,74 +188,94 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="授课教师">
-          <el-input
-            v-model="teacherFormStr"
-            placeholder="请输入工号，多个工号用逗号分隔"
-          ></el-input>
+        <el-form-item label="授课教师" class="mb-6">
+          <div class="flex gap-4">
+            <el-input
+              v-model="teacherFormStr"
+              placeholder="请输入工号，多个工号用逗号分隔"
+              class="flex-1"
+            ></el-input>
+            <el-button type="primary" @click="fetchTeacherData">查询教师</el-button>
+          </div>
         </el-form-item>
-        <el-table :data="classFormData.teachers" border style="width: 100%">
-          <el-table-column prop="teacher_id" label="工号"></el-table-column>
-          <el-table-column prop="teacher_name" label="姓名"></el-table-column>
-          <el-table-column fixed="right" label="操作" width="100">
+
+        <el-table 
+          :data="classFormData.teachers" 
+          border 
+          class="w-full mb-6"
+          :header-cell-style="{background:'#f5f7fa'}"
+        >
+          <el-table-column prop="teacher_id" label="工号" width="180"></el-table-column>
+          <el-table-column prop="teacher_name" label="姓名" min-width="120"></el-table-column>
+          <el-table-column fixed="right" label="操作" width="120">
             <template v-slot="slotProps">
               <el-button
                 @click="handleTeacherDialogRowClick(slotProps.row)"
-                type="text"
-                size="small"
-                >删除</el-button
+                type="danger"
+                text
               >
+                删除
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
-        <el-button type="primary" @click="fetchTeacherData">查询教师</el-button>
       </el-form>
 
       <template #footer>
-        <el-button @click="classDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitClass">确定</el-button>
+        <div class="flex justify-end gap-4">
+          <el-button @click="classDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitClass">确定</el-button>
+        </div>
       </template>
     </el-dialog>
 
-    <!-- 添加学生的对话框 -->
+    <!-- Add Student Dialog -->
     <el-dialog
       title="添加学生"
       v-model="studentDialogVisible"
       width="800px"
       @close="closeStudentDialog"
+      class="custom-dialog"
     >
-      <!-- 输入学号文本框 -->
-      <el-form>
-        <el-form-item label="学生">
-          <el-input
-            v-model="studentFormStr"
-            placeholder="请输入学号，多个学号用逗号分隔"
-          ></el-input>
+      <el-form class="mb-6">
+        <el-form-item label="学生" label-width="100px">
+          <div class="flex gap-4">
+            <el-input
+              v-model="studentFormStr"
+              placeholder="请输入学号，多个学号用逗号分隔"
+              class="flex-1"
+            ></el-input>
+            <el-button type="primary" @click="fetchStudentData">查询学生</el-button>
+          </div>
         </el-form-item>
-
-        <!-- 查询按钮 -->
-        <el-button type="primary" @click="fetchStudentData">查询学生</el-button>
       </el-form>
 
-      <!-- 显示学生信息的表格 -->
-      <el-table :data="studentFormList" border style="width: 100%">
-        <el-table-column prop="student_id" label="学号"></el-table-column>
-        <el-table-column prop="student_name" label="姓名"></el-table-column>
-        <el-table-column fixed="right" label="操作" width="100">
+      <el-table 
+        :data="studentFormList" 
+        border 
+        class="w-full"
+        :header-cell-style="{background:'#f5f7fa'}"
+      >
+        <el-table-column prop="student_id" label="学号" width="180"></el-table-column>
+        <el-table-column prop="student_name" label="姓名" min-width="120"></el-table-column>
+        <el-table-column fixed="right" label="操作" width="120">
           <template v-slot="slotProps">
             <el-button
               @click="handleStudentDialogRowClick(slotProps.row)"
-              type="text"
-              size="small"
-              >删除</el-button
+              type="danger"
+              text
             >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <template #footer>
-        <el-button @click="studentDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitStudents">确定</el-button>
+        <div class="flex justify-end gap-4">
+          <el-button @click="studentDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitStudents">确定</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -920,6 +983,37 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.course-management {
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+.custom-dialog :deep(.el-dialog__body) {
+  padding: 20px 30px;
+}
+
+.custom-dialog :deep(.el-dialog__header) {
+  padding: 20px 30px;
+  margin-right: 0;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.custom-dialog :deep(.el-dialog__footer) {
+  padding: 20px 30px;
+  border-top: 1px solid #e4e7ed;
+}
+
+:deep(.el-table th) {
+  font-weight: 600;
+}
+
+:deep(.el-button--text) {
+  padding: 4px 8px;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+}
 .form-block {
   margin-bottom: 20px;
   padding: 10px;
