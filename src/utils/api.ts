@@ -302,6 +302,42 @@ const courseAPI = {
     }
   },
 
+  patchCourse(
+    course_code: string,
+    course_sequence: string,
+    course_name?: string,
+    department?: string
+  ): Promise<any> {
+    const data: {
+      course_code: string;
+      course_sequence: string;
+      name?: string;
+      department?: string;
+    } = {
+      course_code: course_code,
+      course_sequence: course_sequence,
+    };
+
+    // 根据传入的参数构建不同的请求体
+    if (course_name) {
+      data["name"] = course_name;
+      console.log("发送请求：仅更新 course_name", data); // 调试信息
+    }
+    if (department) {
+      data["department"] = department;
+      console.log("发送请求：仅更新 department", data); // 调试信息
+    }
+    // 如果两个参数都没有传，返回默认的请求
+    if (!course_name && !department) {
+      console.log("发送请求：只包含 course_code 和 course_sequence", data); // 调试信息
+    }
+
+    return server
+      .patch("/api/v1/courses/course", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   postCourse(
     course_name: string,
     course_code: string,
@@ -336,6 +372,23 @@ const courseAPI = {
       .catch(handleError);
   },
 
+  deleteClassToCourse(
+    class_id: number,
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    return server
+      .delete("/api/v1/courses/classes", {
+        params: {
+          class_id: class_id,
+          course_code: course_code,
+          course_sequence: course_sequence,
+        },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   getEnroll(course_id: number): Promise<any> {
     const params = { course_id: course_id };
     return server
@@ -356,6 +409,23 @@ const courseAPI = {
     };
     return server
       .post("/api/v1/courses/enroll", data)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteEnroll(
+    student_id: string,
+    course_code: string,
+    course_sequence: string
+  ): Promise<any> {
+    return server
+      .delete("/api/v1/courses/enroll", {
+        params: {
+          student_id: student_id,
+          course_code: course_code,
+          course_sequence: course_sequence,
+        },
+      })
       .then(handleResponse)
       .catch(handleError);
   },
@@ -416,6 +486,13 @@ const classAPI = {
 
     return server
       .patch("/api/v1/classes/class", params)
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  deleteClass(class_id: number): Promise<any> {
+    return server
+      .delete("/api/v1/classes/class", { params: { class_id: class_id } })
       .then(handleResponse)
       .catch(handleError);
   },
