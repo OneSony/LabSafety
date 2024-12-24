@@ -44,7 +44,7 @@
               :class="{
                 'class-card': true,
                 'highlight-today': isToday(classItem.start_time),
-                'highlight-unset': classItem.isSet === false,
+                'highlight-unset': classItem.isUnset === true,
               }"
             >
               <div class="class-content">
@@ -107,9 +107,6 @@ export default {
       this.experiment = newExperiment;
       this.isVisible = false; // 默认初始化为 false
       console.log("new exp", newExperiment);
-      if (userAPI.getRole() == "teacher") {
-        this.markUnsetClass();
-      }
     },
   },
   methods: {
@@ -136,21 +133,6 @@ export default {
           this.$message.error("获取课程列表失败");
         }
         this.experiment.isLoaded = true; // 设置为 true，避免重复请求
-      }
-    },
-    async markUnsetClass() {
-      for (let i = 0; i < this.experiment.classList.length; i++) {
-        if (this.experiment.classList[i].lab_id == null) {
-          this.experiment.classList[i].isSet = false;
-        } else {
-          const experimentResult = await classAPI.getExperiments(
-            this.experiment.classList[i].class_id
-          );
-          if (experimentResult.success) {
-            this.experiment.classList[i].isSet =
-              experimentResult.data.length > 0;
-          }
-        }
       }
     },
     isToday(dateStr) {

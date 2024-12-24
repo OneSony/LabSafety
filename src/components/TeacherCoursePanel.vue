@@ -16,14 +16,14 @@
           </div>
         </div>
       </el-tab-pane>
-      <el-tab-pane label="未填充实验" name="unfinished">
+      <el-tab-pane label="未填充实验" name="unset">
         <el-skeleton :rows="5" animated v-if="isLoading"></el-skeleton>
         <el-empty
           description="没有实验"
-          v-if="unfinishedExperiments.length === 0 && !isLoading"
+          v-if="unsetExperiments.length === 0 && !isLoading"
         />
         <div v-else>
-          <div v-for="(item, index) in unfinishedExperiments" :key="index">
+          <div v-for="(item, index) in unsetExperiments" :key="index">
             <CourseCard :input_experiment="item" />
           </div>
         </div>
@@ -60,7 +60,7 @@ export default {
       activeTab: "today",
       allExperiments: [],
       todayExperiments: [],
-      unfinishedExperiments: [],
+      unsetExperiments: [],
       isLoading: true,
       todayClassNum: 0,
     };
@@ -99,9 +99,19 @@ export default {
                 if (labNameResult.success) {
                   courses[i].classList[j].lab_name = labNameResult.data[0].name;
                 }
+                const experimentResult = await classAPI.getExperiments(
+                  courses[i].classList[j].class_id
+                );
+                if (experimentResult.success) {
+                  courses[i].classList[j].isUnset =
+                    experimentResult.data.length === 0;
+                }
+              } else {
+                courses[i].classList[j].isUnset = true;
               }
             }
             courses[i].isLoaded = true;
+            console.log("classList!!!!", courses[i].classList);
           } else {
             ElMessage.error("获取课程实验失败：" + classResponse.error);
             console.error("Error fetching class list:", classResponse.error);
