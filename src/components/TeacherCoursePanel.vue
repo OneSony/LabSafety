@@ -1,6 +1,25 @@
 <template>
-  <el-row>
+  <!-- <el-row>
     <p>今天有{{ todayClassNum }}门课, 有{{ unsetClassNum }}门没有设置完成</p>
+  </el-row> -->
+  <el-row class="mb-4">
+    <el-col :span="24">
+      <el-card class="statistics-card" shadow="never">
+        <div class="statistics-container">
+          <div class="stat-group">
+            <span class="stat-label">今日课程</span>
+            <span class="stat-value">{{ todayClassNum }}</span>
+            <span class="stat-unit">门</span>
+          </div>
+          <el-divider direction="vertical" />
+          <div class="stat-group">
+            <span class="stat-label">待设置课程</span>
+            <span class="stat-value warning-text">{{ unsetClassNum }}</span>
+            <span class="stat-unit">门</span>
+          </div>
+        </div>
+      </el-card>
+    </el-col>
   </el-row>
   <div class="tabs">
     <el-tabs v-model="activeTab">
@@ -16,7 +35,7 @@
           </div>
         </div>
       </el-tab-pane>
-      <el-tab-pane label="未填充实验" name="unset">
+      <el-tab-pane label="未安排实验" name="unset">
         <el-skeleton :rows="5" animated v-if="isLoading"></el-skeleton>
         <el-empty
           description="没有实验"
@@ -181,6 +200,56 @@ export default {
 </script>
 
 <style scoped>
+.statistics-card {
+  margin: 16px 0;
+  background: transparent;
+  border: none;
+  box-shadow: none !important;
+}
+.statistics-card :deep(.el-card__body) {
+  padding: 0;
+  box-shadow: none !important;
+}
+.statistics-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 16px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 24px;
+}
+
+.stat-label {
+  font-size: 18px;
+  color: #4e525b;
+  margin-bottom: 14px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #409eff;
+}
+
+.warning-text {
+  color: #e6a23c;
+}
+
+.stat-unit {
+  font-size: 18px;
+  color: #4e525b;
+  margin-top: 4px;
+}
+
+.el-divider {
+  height: 40px;
+}
+
 .dashboard {
   display: flex;
 }
