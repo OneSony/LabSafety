@@ -1,17 +1,19 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import UserLogin from "../views/UserLogin.vue";
-import UserProfile from "../views/ProfilePage.vue";
-import LabManagerDashboard from "../views/LabManagerDashboard.vue";
-import CreateCourse from "../views/CreateCourse.vue";
-import ClassPage from "../views/ClassPage.vue";
-import LabDetail from "../views/LabDetail.vue";
+import UserLogin from "@/views/UserLogin.vue";
+import UserProfile from "@/views/ProfilePage.vue";
+import LabManagerDashboard from "@/views/LabManagerDashboard.vue";
+import CreateCourse from "@/views/CreateCourse.vue";
+import ClassPage from "@/views/ClassPage.vue";
+import LabDetail from "@/views/LabDetail.vue";
 import Dashboard from "@/views/Dashboard.vue";
+import ParentDashboard from "@/views/ParentDashboard.vue";
 import { userAPI } from "@/utils/api";
+import { ElMessage } from "element-plus";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    redirect: (to) => {
+    redirect: () => {
       const role = userAPI.getRole(); // 获取当前用户角色
       console.log("role", role);
 
@@ -29,26 +31,19 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: "/course/:courseId/class/:classId", // 动态路径，classId 作为参数
+    path: "/course/:courseId/class/:classId",
     name: "class-page",
     component: ClassPage,
     props: true, // 将 classId 作为 prop 传递到组件
   },
   {
-    path: "/profile",
-    name: "Profile",
-    component: UserProfile,
-  },
-  {
     path: "/login",
     component: UserLogin,
-    // component: TeachingAffairs,
   },
   {
     path: "/dashboard",
     name: "Dashboard",
-    // 通过守卫动态加载对应的组件，而不为其设置固定的 path
-    component: () => import("@/views/ParentDashboard.vue"), // 父组件
+    component: ParentDashboard,
     beforeEnter: (to, from, next) => {
       const role = userAPI.getRole(); // 获取当前用户角色
       console.log("role", role);
@@ -83,24 +78,22 @@ const routes: Array<RouteRecordRaw> = [
     },
     children: [
       {
-        path: "student",
+        path: "",
         name: "StudentDashboard",
         component: Dashboard,
       },
       {
-        path: "teacher",
+        path: "",
         name: "TeacherDashboard",
         component: Dashboard,
       },
       {
-        path: "labmanager",
+        path: "",
         name: "LabManagerDashboard",
         component: LabManagerDashboard,
-        // component: LabDetail,
-        // component: TeachingAffairs,
       },
       {
-        path: "teachingaffairs",
+        path: "",
         name: "TeachingAffairs",
         component: Dashboard,
       },
@@ -118,14 +111,15 @@ const routes: Array<RouteRecordRaw> = [
     path: "/create-course",
     name: "CreateCourse",
     component: CreateCourse,
+    meta: {
+      teachingAffairs: true,
+    },
   },
   {
-    // 使用实验室名称作为路由参数
     path: "/lab/:id",
     name: "LabPage",
     component: LabDetail,
     props: true, // 将路由参数作为 props 传递给组件
-    // props: (route) => ({ labId: Number(route.params.id) }),
   },
 ];
 
@@ -135,23 +129,32 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  // 如果访问的页面需要登录，且用户没有登录
-  if (to.matched.some((record) => record.meta.requiresAuth)) {
-    // 检查是否有登录状态
-    console.log("check login status", userAPI.isLoggedIn());
-    if (!userAPI.isLoggedIn()) {
-      next("/login");
-    } else {
-      next(); // 允许进入目标页面
-    }
-  } else if (to.path === "/login" && userAPI.isLoggedIn()) {
-    //是可以的，如果是refresh进来的，已经清空了accessToken，是notLoggedIn的
-    // 如果用户已经登录，且访问的是登录页面，跳转到上一个页面或主页
-    localStorage.clear();
-    next(from.fullPath || "/"); // 返回上一个页面或首页
-  } else {
-    next(); // 直接进入目标页面
+  console.log("to", to);
+  console.log("from", from);
+  console.log("login", userAPI.isLoggedIn());
+  //除了login页面，其他页面都需要登录
+  if (to.path !== "/login" && !userAPI.isLoggedIn()) {
+    ElMessage.error("请先登录");
+    next("/login");
+    return;
   }
+
+  if (to.path === "/login" && userAPI.isLoggedIn()) {
+    next(from.fullPath || "/");
+    return;
+  }
+
+  // 如果访问的页面需要登录，且用户没有登录
+  if (to.matched.some((record) => record.meta.teachingAffairs)) {
+    if (userAPI.getRole() !== "teachingAffairs") {
+      ElMessage.error("您没有权限访问该页面");
+      next(from.fullPath || "/");
+    } else {
+      next();
+    }
+  }
+
+  next();
 });
 
 export default router;
