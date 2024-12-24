@@ -116,9 +116,10 @@ export default {
       }
 
       const noticePromises = this.classList.map(async (classItem) => {
+        let classNoticeList = [];
         const result = await noticeAPI.getNotices(classItem.class_id);
         if (result.success) {
-          this.noticeList.push(...result.data);
+          classNoticeList.push(...result.data);
         } else {
           ElMessage.error("获取通知失败");
         }
@@ -132,7 +133,7 @@ export default {
               classItem.lab_id
             );
             if (labNoticeResult.success) {
-              this.noticeList.push(...labNoticeResult.data);
+              classNoticeList.push(...labNoticeResult.data);
             } else {
               ElMessage.error("获取通知失败");
             }
@@ -141,39 +142,47 @@ export default {
           ElMessage.error("获取实验室失败");
         }
 
-        const noticeDetailPromises = this.noticeList.map(async (notice) => {
+        for (const notice of classNoticeList) {
           notice.class_info = classItem;
+        }
 
-          const result2 = await courseAPI.getCourseFromClass(
-            notice.class_info.class_id
-          );
-          if (result2.success) {
-            if (result2.data.length === 0) {
-              ElMessage.error("获取课程失败");
-              return;
-            }
-            notice.class_info.course_code = result2.data[0].course_code;
-            notice.class_info.course_sequence = result2.data[0].course_sequence;
-          } else {
+        //会有一些重复的notice，因为他们在一样的实验室。但是我们这里根据课程来呈现，所以不需要去重
+        let courseInfo = {};
+        const result2 = await courseAPI.getCourseFromClass(classItem.class_id);
+        if (result2.success) {
+          if (result2.data.length === 0) {
             ElMessage.error("获取课程失败");
+            return;
           }
+          courseInfo = {
+            course_code: result2.data[0].course_code,
+            course_sequence: result2.data[0].course_sequence,
+          };
+        } else {
+          ElMessage.error("获取课程失败");
+        }
 
-          const result3 = await courseAPI.getCourse(
-            notice.class_info.course_code,
-            notice.class_info.course_sequence
-          );
-          if (result3.success) {
-            if (result3.data.length === 0) {
-              ElMessage.error("获取课程失败");
-              return;
-            }
-            notice.class_info.course_id = result3.data[0].id;
-          } else {
+        const result3 = await courseAPI.getCourse(
+          courseInfo.course_code,
+          courseInfo.course_sequence
+        );
+        if (result3.success) {
+          if (result3.data.length === 0) {
             ElMessage.error("获取课程失败");
+            return;
           }
-        });
+          courseInfo.course_id = result3.data[0].id;
+        } else {
+          ElMessage.error("获取课程失败");
+        }
 
-        await Promise.all(noticeDetailPromises);
+        for (const notice of classNoticeList) {
+          notice.class_info.course_code = courseInfo.course_code;
+          notice.class_info.course_sequence = courseInfo.course_sequence;
+          notice.class_info.course_id = courseInfo.course_id;
+        }
+
+        this.noticeList.push(...classNoticeList);
       });
 
       await Promise.all(noticePromises);
