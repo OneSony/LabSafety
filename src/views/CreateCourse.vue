@@ -203,7 +203,7 @@
           label="姓名"
           min-width="120"
         ></el-table-column>
-        <el-table-column fixed="right" label="操作" width="120">
+        <el-table-column fixed="right" label="操作" width="200">
           <template v-slot="slotProps">
             <el-button
               @click="handleStudentDelete(slotProps.row)"
@@ -307,6 +307,19 @@
         </el-table>
       </el-form>
 
+      <div>
+        <p v-if="wrongTeacherIds.length > 0" style="color: red">
+          错误数据:
+          {{
+            wrongTeacherIds
+              .map(
+                (teacher) => `${teacher.teacher_id} (${teacher.teacher_name})`
+              )
+              .join(", ")
+          }}
+        </p>
+      </div>
+
       <template #footer>
         <div class="flex justify-end gap-4">
           <el-button @click="classDialogVisible = false">取消</el-button>
@@ -366,6 +379,19 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <div>
+        <p v-if="wrongStudentIds.length > 0" style="color: red">
+          错误数据:
+          {{
+            wrongStudentIds
+              .map(
+                (student) => `${student.student_id} (${student.student_name})`
+              )
+              .join(", ")
+          }}
+        </p>
+      </div>
 
       <template #footer>
         <div class="flex justify-end gap-4">
@@ -494,6 +520,9 @@ export default defineComponent({
         date: [{ required: true, message: "请选择时间", trigger: "change" }],
         lab_id: [{ required: true, message: "请选择地点", trigger: "change" }],
       },
+
+      wrongStudentIds: [] as Student[], // 用来存储错误的学生数据
+      wrongTeacherIds: [] as Teacher[], // 用来存储错误的教师数据
     };
   },
   async mounted() {
@@ -660,13 +689,13 @@ export default defineComponent({
               student_name: result.data[0].real_name, // 假设返回数据中有 `username` 字段
             } as Student);
           } else {
-            students.push({
+            this.wrongStudentIds.push({
               student_id: studentId,
               student_name: "不是学生", // 如果没有找到学生，显示“未找到”
             } as Student);
           }
         } else {
-          students.push({
+          this.wrongStudentIds.push({
             student_id: studentId,
             student_name: "未找到", // 如果没有找到学生，显示“未找到”
           } as Student);
@@ -706,13 +735,13 @@ export default defineComponent({
               teacher_name: result.data[0].real_name, // 假设返回数据中有 `username` 字段
             } as Teacher);
           } else {
-            teachers.push({
+            this.wrongTeacherIds.push({
               teacher_id: teacherId,
               teacher_name: "不是教师", // 如果没有找到学生，显示“未找到”
             } as Teacher);
           }
         } else {
-          teachers.push({
+          this.wrongTeacherIds.push({
             teacher_id: teacherId,
             teacher_name: "未找到", // 如果没有找到学生，显示“未找到”
           } as Teacher);
@@ -1050,12 +1079,14 @@ export default defineComponent({
         teachers_name: "",
       } as Class;
       this.teacherFormStr = "";
+      this.wrongTeacherIds = [];
       await this.fetchClassList();
     },
     closeStudentDialog() {
       this.studentDialogVisible = false;
       this.studentFormStr = "";
       this.studentFormList = [];
+      this.wrongStudentIds = [];
       this.fetchEnroll();
     },
     handleClassEdit(row: Class) {
