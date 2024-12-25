@@ -169,7 +169,7 @@
             </div>
           </div>
 
-          <div class="info-item">
+          <div class="info-item" v-if="this.tagSummary.length > 0">
             <div class="info-label">
               <i class="el-icon-document"></i>
               概览
@@ -182,6 +182,13 @@
             >
               {{ tag }}
             </el-tag>
+          </div>
+          <div class="info-item" v-else>
+            <div class="info-label">
+              <i class="el-icon-document"></i>
+              概览
+            </div>
+            <el-tag type="info" class="tag">暂无</el-tag>
           </div>
         </div>
       </div>
@@ -207,16 +214,6 @@
       >
         <el-form-item label="课程名称" prop="name">
           <el-input v-model="basicForm.class_name"></el-input>
-        </el-form-item>
-        <el-form-item label="课程ID" prop="id">
-          <el-tooltip
-            class="item"
-            effect="dark"
-            content="不可修改"
-            placement="top"
-          >
-            <el-input v-model="basicForm.class_id" :disabled="true"></el-input>
-          </el-tooltip>
         </el-form-item>
         <el-form-item label="教师" prop="teachers">
           <el-tooltip
@@ -253,14 +250,17 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="标签" prop="tags">
+        <el-form-item label="概览" prop="tags">
           <el-tooltip
             class="item"
             effect="dark"
             content="根据实验内容自动生成"
             placement="top"
           >
-            <el-input v-model="basicForm.tags" :disabled="true"></el-input>
+            <el-input
+              :value="tagSummary.join(', ')"
+              :disabled="true"
+            ></el-input>
           </el-tooltip>
         </el-form-item>
       </el-form>
