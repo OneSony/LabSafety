@@ -347,9 +347,9 @@
       />
     </el-dialog>
 
-    <div class="experiment-container">
+    <div class="box">
       <div class="header">
-        <h3 class="title">实验内容</h3>
+        <h3>实验内容</h3>
         <el-button
           v-if="isTeacher"
           type="primary"
