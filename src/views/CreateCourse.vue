@@ -821,7 +821,7 @@ export default defineComponent({
           newClass.date
         );
         if (result.success) {
-          ElMessage.success("提交成功");
+          // ElMessage.success("提交成功");
           newClass.class_id = result.data.class.class_id;
           console.log("result", result);
         } else {
@@ -836,7 +836,7 @@ export default defineComponent({
           this.courseData.course_sequence
         );
         if (result2.success) {
-          ElMessage.success("提交成功");
+          //ElMessage.success("提交成功");
         } else {
           ElMessage.error("提交失败");
           // TODO remove class
@@ -853,7 +853,7 @@ export default defineComponent({
           );
 
           if (result3.success) {
-            ElMessage.success("提交成功");
+            // ElMessage.success("提交成功");
             newClass.teachers.push({
               teacher_id: teacher.teacher_id,
               teacher_name: teacher.teacher_name,
@@ -871,21 +871,15 @@ export default defineComponent({
         console.log("newClass", newClass);
 
         //绑定地点到课堂
-        //TODO
-        if (newClass.lab_id === null) {
-          ElMessage.error("提交失败");
-          return;
+        const result4 = await classAPI.postLocation(
+          newClass.class_id!,
+          newClass.lab_id!
+        );
+        if (result4.success) {
+          //ElMessage.success("提交成功");
         } else {
-          const result4 = await classAPI.postLocation(
-            newClass.class_id!,
-            newClass.lab_id
-          );
-          if (result4.success) {
-            ElMessage.success("提交成功");
-          } else {
-            ElMessage.error("提交失败");
-            newClass.lab_id = null;
-          }
+          ElMessage.error("地点绑定失败, 但不影响课堂创建");
+          newClass.lab_id = null;
         }
 
         ElMessage.success("课堂已添加");
@@ -894,7 +888,7 @@ export default defineComponent({
         this.fetchClassList(); // 重新获取课堂列表
         console.log("classList", this.classList);
       } else {
-        //TODO 修改课堂
+        //修改课堂
 
         const result = await classAPI.patchClass(
           this.classFormData.class_id!,
@@ -903,9 +897,10 @@ export default defineComponent({
         );
 
         if (result.success) {
-          ElMessage.success("提交成功");
+          // ElMessage.success("提交成功");
         } else {
           ElMessage.error("提交失败");
+          return;
         }
 
         console.log("this.classFormDataOrigin", this.classFormDataOrigin);
@@ -937,7 +932,7 @@ export default defineComponent({
             deleteTeacherList[i].teacher_id
           );
           if (result.success) {
-            ElMessage.success("提交成功");
+            // ElMessage.success("提交成功");
           } else {
             ElMessage.error("提交失败");
           }
@@ -949,7 +944,7 @@ export default defineComponent({
             addTeacherList[i].teacher_id
           );
           if (result.success) {
-            ElMessage.success("提交成功");
+            // ElMessage.success("提交成功");
           } else {
             ElMessage.error("提交失败");
           }
@@ -964,9 +959,10 @@ export default defineComponent({
               this.classFormDataOrigin.lab_id!
             );
             if (deleteLabResult.success) {
-              ElMessage.success("删除成功");
+              // ElMessage.success("删除成功");
             } else {
               ElMessage.error("删除失败");
+              return;
             }
           }
 
@@ -976,11 +972,12 @@ export default defineComponent({
           );
 
           if (postLabResult.success) {
-            ElMessage.success("提交成功");
+            // ElMessage.success("提交成功");
           } else {
-            ElMessage.error("提交失败");
+            ElMessage.error("新地点提交失败, 但不影响课堂其他信息修改");
           }
         }
+        ElMessage.success("课堂已修改");
       }
       this.classDialogVisible = false;
     },
