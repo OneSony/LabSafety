@@ -4,59 +4,473 @@
       <el-button type="primary" class="go-back-btn" @click="goBack">
         返回
       </el-button>
+      <el-button
+        type="primary"
+        v-if="isTeacher && false"
+        @click="openCopyDialog"
+      >
+        复制课堂
+      </el-button>
+      <el-button type="primary" v-if="isTeacher" @click="openStudentDialog">
+        查看学生
+      </el-button>
     </div>
 
-    <!-- 如果 classItem 存在，显示其详细信息 -->
-    <div class="class-header">
-      <h2>{{ name }}</h2>
-      <p><strong>课程ID:</strong> {{ class_id }}</p>
-      <p><strong>上课时间:</strong> {{ date }}</p>
-      <p><strong>教师:</strong> {{ teacherNamesStr }}</p>
-      <p><strong>地点:</strong> {{ location }}</p>
+    <el-dialog title="复制课堂" v-model="copyDialogVisible" width="40%">
+      <el-table :data="copyList" border style="width: 100%">
+        <el-table-column fixed prop="id" label="课程ID"></el-table-column>
+        <el-table-column prop="name" label="课程名"></el-table-column>
+        <el-table-column prop="date" label="开课时间"></el-table-column>
+        <el-table-column fixed="right" label="操作" width="100">
+          <template v-slot="slotProps">
+            <el-button
+              @click="handleRowClickView(slotProps.row)"
+              type="text"
+              size="small"
+              >查看</el-button
+            >
+            <el-button
+              @click="handleRowClickCopy(slotProps.row)"
+              type="text"
+              size="small"
+              >复制</el-button
+            >
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="dialog-footer">
+        <el-button @click="copyDialogVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
+
+    <el-dialog
+      v-model="studentDialogVisible"
+      width="50%"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <div class="flex items-center space-x-4 mb-4">
+        <div class="flex items-center">
+          <el-icon class="mr-2"><User /></el-icon>
+          <span class="text-lg font-medium">学生名单</span>
+        </div>
+        <el-button type="primary" @click="fetchEnrolledStudents" size="default">
+          刷新列表
+        </el-button>
+      </div>
+
+      <el-table
+        v-if="isEnrolledStudentsLoaded"
+        :data="studentList"
+        border
+        stripe
+        highlight-current-row
+        class="w-full"
+      >
+        <el-table-column
+          fixed
+          prop="student_id"
+          label="学号"
+          width="120"
+          align="center"
+        >
+          <template #default="{ row }">
+            <span class="font-mono">{{ row.student_id }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="name" label="姓名" width="100" align="center" />
+
+        <el-table-column prop="department" label="院系" align="center">
+        </el-table-column>
+      </el-table>
+
+      <div v-else class="p-4">
+        <el-skeleton :rows="5" animated :loading="true">
+          <template #template>
+            <div class="mb-2">
+              <el-skeleton-item
+                variant="image"
+                style="width: 100%; height: 40px"
+              />
+            </div>
+          </template>
+        </el-skeleton>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end">
+          <el-button size="default" @click="studentDialogVisible = false"
+            >关闭</el-button
+          >
+        </div>
+      </template>
+    </el-dialog>
+
+    <div class="header-box">
+      <div class="info-section">
+        <el-button
+          v-if="isTeacher"
+          type="primary"
+          class="edit-button"
+          @click="openBasicDialog"
+        >
+          编辑基本信息
+        </el-button>
+
+        <div class="class-title">
+          <h2>{{ this.basicInfo.class_name }}</h2>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-user"></i>
+              教师
+            </div>
+            <div class="info-content">
+              {{ this.basicInfo.teachers_str }}
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-time"></i>
+              上课时间
+            </div>
+            <div class="info-content">
+              <DateBox
+                :dateStr="this.basicInfo.date"
+                v-if="this.basicInfo.date"
+              />
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-location"></i>
+              地点
+            </div>
+            <div class="info-content">
+              <el-tooltip
+                effect="dark"
+                content="点击查看实验室详情"
+                placement="top"
+                v-if="basicInfo.lab_id"
+              >
+                <router-link
+                  :to="{ path: '/lab/' + this.basicInfo.lab_id }"
+                  style="cursor: pointer"
+                >
+                  {{ this.basicInfo.lab_name }}
+                </router-link>
+              </el-tooltip>
+              <span v-else>{{ basicInfo.lab_name }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <i class="el-icon-document"></i>
+              概览
+            </div>
+            <el-tag
+              v-for="(tag, i) in this.tagSummary"
+              :key="i"
+              type="danger"
+              class="tag"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+        </div>
+      </div>
+      <div class="map-section">
+        <p class="map-text" v-if="basicInfo.lab_id">实验室地图</p>
+        <el-image
+          v-if="basicInfo.map_image"
+          :src="basicInfo.map_image"
+          fit="contain"
+          class="lab-map-image"
+          :preview-src-list="[basicInfo.map_image]"
+        ></el-image>
+        <div v-else class="no-map">暂无地图</div>
+      </div>
     </div>
+    <!-- 编辑对话框 -->
+    <el-dialog title="编辑基本信息" v-model="basicDialogVisible" width="40%">
+      <el-form
+        :model="basicForm"
+        label-width="80px"
+        :rules="basicRules"
+        ref="basicForm"
+      >
+        <el-form-item label="课程名称" prop="name">
+          <el-input v-model="basicForm.class_name"></el-input>
+        </el-form-item>
+        <el-form-item label="课程ID" prop="id">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="不可修改"
+            placement="top"
+          >
+            <el-input v-model="basicForm.class_id" :disabled="true"></el-input>
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item label="教师" prop="teachers">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="联系教务修改"
+            placement="top"
+          >
+            <el-input
+              v-model="basicForm.teachers_str"
+              :disabled="true"
+            ></el-input>
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item label="上课时间" prop="date">
+          <el-date-picker
+            v-model="basicForm.date"
+            type="datetime"
+            placeholder="选择日期时间"
+            style="width: 100%"
+          ></el-date-picker>
+        </el-form-item>
+        <el-form-item label="地点" prop="location">
+          <el-select
+            v-model="basicForm.lab_id"
+            placeholder="选择地点"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="lab in labs"
+              :key="lab.id"
+              :label="lab.name"
+              :value="lab.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签" prop="tags">
+          <el-tooltip
+            class="item"
+            effect="dark"
+            content="根据实验内容自动生成"
+            placement="top"
+          >
+            <el-input v-model="basicForm.tags" :disabled="true"></el-input>
+          </el-tooltip>
+        </el-form-item>
+      </el-form>
+      <!-- 自定义底部按钮 -->
+      <div class="dialog-footer">
+        <el-button @click="basicDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitBasicForm">保存</el-button>
+      </div>
+    </el-dialog>
 
-    <!-- 课程详情部分 -->
-    <div class="class-details">
-      <h3>课程详情</h3>
-      <p>{{ description }}</p>
+    <div class="box">
+      <h3>通知</h3>
+      <el-button
+        v-if="isTeacher"
+        type="primary"
+        class="card-btn"
+        style="position: absolute; top: 20px; right: 20px"
+        @click="noticeDialogVisible = true"
+      >
+        <el-icon><Plus /></el-icon>
+        添加通知
+      </el-button>
+      <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
+      <p
+        v-if="noticeList.length === 0 && noticeLoaded"
+        style="text-align: center; color: #ccc; padding: 20px"
+      >
+        暂无通知
+      </p>
+      <el-row gutter="20">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="8"
+          v-for="notice in noticeList"
+          :key="notice.id"
+          :span="8"
+          style="
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+          "
+          class="notice-item"
+        >
+          <el-button
+            type="text"
+            @click="deleteNotification(notice)"
+            v-if="isTeacher && notice.sender === myUserId"
+            style="position: absolute; right: 25px; top: 15px; z-index: 1000"
+          >
+            删除
+          </el-button>
+          <el-button
+            type="text"
+            @click="notice.noticeEditDialogVisible = true"
+            v-if="isTeacher && notice.sender === myUserId"
+            style="position: absolute; right: 65px; top: 15px; z-index: 1000"
+          >
+            编辑
+          </el-button>
+          <NoticeCard :notice="notice" />
+          <el-dialog
+            title="编辑通知"
+            v-model="notice.noticeEditDialogVisible"
+            width="40%"
+            @close="fetchNotices"
+          >
+            <NoticeDialog
+              :class_id="class_id"
+              :notice="notice"
+              @close-dialog="closeEditNoticeDialog(notice)"
+              v-if="notice.noticeEditDialogVisible"
+            />
+          </el-dialog>
+        </el-col>
+      </el-row>
     </div>
+    <el-dialog title="添加通知" v-model="noticeDialogVisible" width="40%">
+      <NoticeDialog
+        :class_id="class_id"
+        @close-dialog="closeNoticeDialog"
+        v-if="noticeDialogVisible"
+      />
+    </el-dialog>
 
-    <!-- 评论区卡片 -->
-    <el-card class="comment-card">
-      <h4>评论区</h4>
+    <div class="experiment-container">
+      <div class="header">
+        <h3 class="title">实验内容</h3>
+        <el-button
+          v-if="isTeacher"
+          type="primary"
+          class="add-btn"
+          @click="openExperimentDialog(null, null)"
+        >
+          <el-icon><Plus /></el-icon>
+          添加内容
+        </el-button>
+      </div>
 
-      <div class="comment-list">
-        <!-- 使用 comment.content 来显示评论的内容 -->
+      <el-skeleton :rows="5" animated v-if="!experimentLoaded" />
+
+      <div
+        class="empty-state"
+        v-if="experimentList.length === 0 && experimentLoaded"
+      >
+        <el-icon><Document /></el-icon>
+        <span>暂无实验内容</span>
+      </div>
+
+      <div class="experiment-list">
         <div
-          v-for="(comment, index) in commentList"
-          :key="index"
+          v-for="(experiment, index) in experimentList"
+          :key="experiment.id"
+          class="experiment-item"
+        >
+          <div class="experiment-actions" v-if="isTeacher">
+            <el-button
+              type="primary"
+              link
+              @click="openExperimentDialog(index, experiment)"
+            >
+              <el-icon><Edit /></el-icon>
+            </el-button>
+            <el-button type="danger" link @click="deleteExperiment(experiment)">
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </div>
+          <ExperimentCard :experiment="experiment" :index="index" />
+        </div>
+      </div>
+    </div>
+
+    <el-dialog
+      title="添加实验内容"
+      v-model="experimentDialogVisible"
+      width="80%"
+      @close="fetchExperiments"
+    >
+      <ExperimentDialog
+        @close-dialog="experimentDialogVisible = false"
+        :input_experiment="experimentForm"
+        :class_id="basicInfo.class_id"
+        v-if="experimentDialogVisible"
+      />
+    </el-dialog>
+
+    <div class="header-box" style="display: flex; flex-direction: column">
+      <h3>评论区</h3>
+
+      <el-skeleton :rows="3" animated v-if="!commentLoaded" />
+      <p
+        v-if="commentList.length === 0 && commentLoaded"
+        style="text-align: center; color: #ccc"
+      >
+        暂无讨论
+      </p>
+
+      <div class="comment-list" v-if="commentLoaded">
+        <div
+          v-for="comment in commentList"
+          :key="comment.id"
           class="comment-item"
         >
-          <p>
-            <strong>评论者 {{ getUserName(comment.sender_id) }}:</strong>
+          <el-button
+            v-if="comment.sender_id === myUserId || isTeacher"
+            type="text"
+            @click="deleteComment(comment)"
+            style="position: absolute; right: 20px"
+            >删除</el-button
+          >
+          <UserCard :userId="comment.sender_id" />
+          <div class="comment-details">
             {{ comment.content }}
-            <br />
-            <span class="comment-time">{{ comment.sent_time }}</span>
-          </p>
+            <DateBox
+              :dateStr="comment.sent_time"
+              :textColor="'#666'"
+              :fontSize="'12px'"
+            />
+          </div>
         </div>
       </div>
 
-      <!-- 输入评论框 -->
-      <el-input
-        v-model="newComment"
-        placeholder="请输入评论"
-        class="comment-input"
-        @keyup.enter="submitComment"
-      ></el-input>
-      <el-button type="primary" @click="submitComment">提交评论</el-button>
-    </el-card>
+      <div style="display: flex; flex-direction: row; align-items: center">
+        <el-input
+          v-model="newComment"
+          placeholder="请输入评论"
+          class="comment-input"
+          type="textarea"
+          :autosize="{ minRows: 1, maxRows: 6 }"
+          @keyup.enter="submitComment"
+        ></el-input>
+        <el-button type="primary" @click="submitComment" style="margin: 10px"
+          >提交评论</el-button
+        >
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { classAPI, labAPI, userAPI } from "@/utils/api";
+import { classAPI, labAPI, userAPI, noticeAPI, courseAPI } from "@/utils/api";
 import { ElMessage } from "element-plus";
-import { useRouter } from "vue-router";
+import { stringifyQuery, useRouter } from "vue-router";
+import UserCard from "@/components/UserCard.vue";
+import NoticeCard from "@/components/NoticeCard.vue";
+import NoticeDialog from "@/components/NoticeDialog.vue";
+import DateBox from "@/components/DateBox.vue";
+import ExperimentDialog from "@/components/ExperimentDialog.vue";
+import ExperimentCard from "@/components/ExperimentCard.vue";
 
 export default {
   name: "ClassPage",
@@ -65,18 +479,83 @@ export default {
       type: Number,
       required: true,
     },
+    courseId: {
+      type: Number,
+      required: true,
+    },
+  },
+  components: {
+    UserCard,
+    NoticeCard,
+    NoticeDialog,
+    DateBox,
+    ExperimentDialog,
+    ExperimentCard,
   },
   data() {
     return {
-      class_id: this.classId,
+      labs: [],
+      basicInfo: {
+        class_name: "",
+        class_id: "",
+        teacher_ids: [],
+        teacher_names: [],
+        teachers_str: "",
+        date: "",
+        lab_id: "",
+        lab_name: "",
+        map_image: "",
+        tags: [],
+      },
+
+      basicForm: {
+        class_name: "",
+        class_id: Number,
+        teachers_str: "",
+        date: "",
+        lab_name: "",
+        lab_id: Number,
+        tags: [],
+      },
+
+      experimentForm: {
+        title: "",
+        estimated_time: "",
+        safety_tags: [],
+        experiment_method_tags: [],
+        submission_type_tags: [],
+        other_tags: [],
+        description: "",
+        images: [],
+        files: [],
+      },
+      experimentDialogVisible: false,
+      noticeDialogVisible: false,
+      basicDialogVisible: false,
+      studentDialogVisible: false,
+      copyDialogVisible: false,
+      isLocationEditing: false,
+      isEnrolledStudentsLoaded: false,
+      isTeacher: localStorage.getItem("role") === "teacher",
+      class_id: Number(this.classId),
+      course_id: Number(this.courseId),
       name: "",
       date: "",
-      newComment: "", // 存储新评论的内容
-      teacherNames: [], // 存储教师信息
-      teacherIds: [], // 存储教师ID
-      location: "", // 存储课程地点
-      userLookup: {}, // 缓存用户信息的对象
-      commentList: [], // 存储评论列表
+      newComment: "",
+      teacherNames: [],
+      teacherIds: [],
+      location: "",
+      userLookup: {},
+      commentList: [],
+      studentList: [],
+      experimentList: [],
+      copyList: [],
+      noticeList: [],
+      noticeLoaded: false,
+      experimentLoaded: false,
+      commentLoaded: false,
+      myUserId: userAPI.getUserId(),
+      tagSummary: [],
     };
   },
   setup() {
@@ -90,251 +569,718 @@ export default {
       goBack,
     };
   },
-  mounted() {
-    console.log("class id:", this.class_id);
-    this.fetchClassDetails(); // 组件加载后调用 API 获取课程信息
+  async mounted() {
+    console.log("classiid:", this.class_id, this.course_id);
+    await this.fetchClassBasicInfo();
+    await this.fetchComments();
+    await this.fetchNotices();
+    await this.fetchExperiments();
+    console.log("basic:", this.basicInfo);
+    //TODO
   },
   methods: {
-    // 获取课程详情数据
-    fetchClassDetails() {
-      this.getClassInfo();
-      this.getTeacher();
-      this.getLocation();
-      this.getComments();
+    async closeExperimentDialog() {
+      console.log("关闭通知对话框");
+      this.experimentDialogVisible = false;
+      //await this.
     },
-
-    getClassInfo() {
-      console.log("class id:", this.class_id);
-      classAPI.getClass(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            ElMessage.error("课程不存在");
-            this.$router.push("/");
-          } else {
-            console.log("课程信息:", response.data[0]);
-            this.name = response.data[0].name;
-            this.date = response.data[0].start_time;
-          }
-        } else {
-          ElMessage.error("获取课程信息失败");
-        }
-      });
-    },
-
-    // 获取教师信息
-    getTeacher() {
-      classAPI.getTeachers(this.class_id).then((response) => {
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.teacher = "未知";
-          } else {
-            this.teacherIds = response.data.map((item) => item.teacher_id);
-            for (let i = 0; i < this.teacherIds.length; i++) {
-              userAPI.getUserInfo(this.teacherIds[i]).then((response) => {
-                if (response.success) {
-                  console.log("教师信息:", response.data);
-                  this.teacherNames.push(response.data[0].username);
-                } else {
-                  ElMessage.error("获取教师信息失败");
-                }
-              });
-            }
-            console.log("教师们信息:", this.teacherNames);
-            this.teacherNamesStr = this.teacherNames.join(" ");
-          }
-        } else {
-          ElMessage.error("获取教师信息失败");
-        }
-      });
-    },
-
-    // 获取地点信息
-    getLocation() {
-      classAPI.getLocations(this.class_id).then((response) => {
-        console.log("地点信息:", response);
-        if (response.success) {
-          if (response.data.length === 0) {
-            this.location = "未知";
-          } else {
-            this.location = response.data[0].lab_id;
-            labAPI.getLabs(this.location).then((response) => {
-              if (response.success) {
-                console.log("地点信息:", response.data);
-                this.location =
-                  // response.data[0].name + " " + response.data[0].location;
-                  response.data[0].name;
-              } else {
-                ElMessage.error("获取地点信息失败");
-              }
-            });
-          }
-        } else {
-          ElMessage.error("获取地点信息失败");
-        }
-      });
-    },
-
-    // 获取评论列表
-    /*getComments() {
-      classAPI.getComments(this.class_id).then((response) => {
-        if (response.success) {
-          console.log("评论列表 get comments:", response.data);
-          this.commentList = response.data;
-          // 获取所有评论者的 user 信息，并存入 userLookup 缓存
-          const senderIds = response.data.map((comment) => comment.sender_id);
-          this.fetchUserNames(senderIds);
-        } else {
-          ElMessage.error("获取评论列表失败");
-        }
-      });
-    },*/
-
-    async getComments() {
-      const response = await classAPI.getComments(this.class_id);
-      if (response.success) {
-        console.log("评论列表 get comments:", response.data);
-        this.commentList = response.data;
-        // 获取所有评论者的 user 信息，并存入 userLookup 缓存
-        const senderIds = response.data.map((comment) => comment.sender_id);
-        this.fetchUserNames(senderIds);
+    async deleteExperiment(experiment) {
+      console.log("删除实验:", experiment);
+      const result = await classAPI.deleteExperiment(experiment.id);
+      if (result.success) {
+        console.log("删除成功");
+        await this.fetchExperiments();
       } else {
-        ElMessage.error("获取评论列表失败");
+        console.log("删除失败");
       }
     },
+    async closeNoticeDialog() {
+      console.log("关闭通知对话框");
+      this.noticeDialogVisible = false;
+      await this.fetchNotices();
+    },
+    closeEditNoticeDialog(notice) {
+      console.log("关闭通知对话框");
+      notice.noticeEditDialogVisible = false;
+      //this.fetchNotices();
+    },
+    async deleteNotification(notice) {
+      // 在这里添加删除通知的逻辑
+      console.log("删除通知:", notice);
+      const result = await noticeAPI.deleteNotice(notice.id);
+      console.log(result);
+      if (result.success) {
+        console.log("删除成功");
+        await this.fetchNotices();
+      } else {
+        console.log("删除失败");
+      }
+    },
+    handleRowClickView(row) {
+      console.log("查看", row);
+    },
+    handleRowClickCopy(row) {
+      console.log("复制", row);
+    },
+    openCopyDialog() {
+      this.copyDialogVisible = true;
+      this.copyList = [
+        {
+          id: "2021000000",
+          name: "计算机网络",
+          date: "2021-09-01",
+        },
+        {
+          id: "2021000001",
+          name: "软件工程",
+          date: "2021-09-01",
+        },
+        {
+          id: "2021000002",
+          name: "信息安全",
+          date: "2021-09-01",
+        },
+      ];
+      //copyList = [];
+      //TODO
+    },
+    openStudentDialog() {
+      this.studentDialogVisible = true;
+      if (this.isEnrolledStudentsLoaded === false) {
+        this.fetchEnrolledStudents();
+      }
+    },
+    openExperimentDialog(index, experiment) {
+      if (index == null && experiment == null) {
+        this.experimentForm = {
+          title: "",
+          estimated_time: "",
+          safety_tags: [],
+          experiment_method_tags: [],
+          submission_type_tags: [],
+          other_tags: [],
+          description: "",
+          images: [],
+          files: [],
+        };
+      } else {
+        this.experimentForm = { ...experiment };
+      }
+      console.log("open experiment dialog", index, experiment);
+      this.experimentDialogVisible = true;
+    },
+    async submitBasicForm() {
+      console.log("submit basic form");
+      console.log(this.basicForm);
+      this.basicDialogVisible = false;
+      classAPI
+        .patchClass(
+          this.class_id,
+          this.basicForm.class_name,
+          this.basicForm.date
+        )
+        .then((response) => {
+          if (response.success) {
+            ElMessage.success("修改成功");
+            this.fetchClassBasicInfo();
+          } else {
+            ElMessage.error("修改失败");
+          }
+        });
 
-    // 根据用户ID获取用户名，并缓存到 userLookup
-    fetchUserNames(senderIds) {
-      const uniqueIds = [...new Set(senderIds)]; // 去重
-      uniqueIds.forEach((userId) => {
-        if (!this.userLookup[userId]) {
-          console.log("fetch user info for:", userId);
-          userAPI.getUserInfo(userId).then((response) => {
-            console.log("user info:", response);
-            if (response.success) {
-              this.userLookup[userId] = response.data[0].username;
+      if (this.basicForm.lab_id != this.basicInfo.lab_id) {
+        if (this.basicInfo.lab_id != "") {
+          const deleteResult = await classAPI.deleteLocation(
+            this.class_id,
+            this.basicInfo.lab_id
+          );
+          if (deleteResult.success) {
+            console.log("删除地点成功");
+          } else {
+            ElMessage.error("删除地点失败");
+            return;
+          }
+        }
+        if (this.basicForm.lab_id != "") {
+          const addResult = await classAPI.postLocation(
+            this.class_id,
+            this.basicForm.lab_id
+          );
+          if (addResult.success) {
+            ElMessage.success("成功");
+            console.log("添加地点成功");
+          } else {
+            ElMessage.error("添加地点失败");
+          }
+        }
+      }
+    },
+    async fetchLabs() {
+      const result = await labAPI.getLabs(); // 获取地点的 API
+      if (result.success) {
+        this.labs = result.data; // 假设返回的数据结构是 { success: true, data: [...] }
+      } else {
+        ElMessage.error("加载地点失败");
+      }
+    },
+    async openBasicDialog() {
+      await this.fetchLabs();
+      this.basicForm = { ...this.basicInfo };
+      this.basicDialogVisible = true;
+    },
+
+    async fetchClassBasicInfo() {
+      this.basicInfo.class_id = Number(this.class_id);
+      const result1 = await classAPI.getClass(this.class_id); // 获取课程信息的 API
+      if (result1.success) {
+        if (result1.data.length === 0) {
+          ElMessage.error("课程不存在");
+          this.$router.push("/");
+        } else {
+          this.basicInfo.class_name = result1.data[0].name;
+          this.basicInfo.date = result1.data[0].start_time;
+        }
+      } else {
+        ElMessage.error("获取课程信息失败");
+      }
+
+      this.basicInfo.teacher_ids = [];
+      this.basicInfo.teacher_names = [];
+      const result2 = await classAPI.getTeachers(this.class_id); // 获取教师信息的 API
+      console.log("教师信息:", result2);
+      if (result2.success) {
+        if (result2.data.length === 0) {
+          this.basicInfo.teachers_str = "未知";
+        } else {
+          this.basicInfo.teacher_ids = result2.data.map(
+            (item) => item.teacher_id
+          );
+          for (let i = 0; i < this.basicInfo.teacher_ids.length; i++) {
+            const result = await userAPI.getUserInfo(
+              this.basicInfo.teacher_ids[i]
+            );
+            if (result.success) {
+              console.log("教师信息:", result.data[0]);
+              this.basicInfo.teacher_names.push(result.data[0].real_name);
             } else {
-              this.userLookup[userId] = "未知";
+              ElMessage.error("获取教师信息失败");
             }
-          });
+          }
+          console.log("教师们信息:", this.basicInfo.teacher_names);
+          this.basicInfo.teachers_str = this.basicInfo.teacher_names.join(" ");
+        }
+      } else {
+        ElMessage.error("获取教师信息失败");
+      }
+
+      const result3 = await classAPI.getLocations(this.class_id); // 获取地点信息的 API
+      if (result3.success) {
+        if (result3.data.length === 0) {
+          this.basicInfo.lab_name = "未知";
+        } else {
+          this.basicInfo.lab_id = result3.data[0].lab_id;
+          const result = await labAPI.getLabs(this.basicInfo.lab_id);
+          console.log("地点信息!!!:", result);
+          if (result.success) {
+            this.basicInfo.lab_name = result.data[0].name;
+            this.basicInfo.map_image = result.data[0].map_image;
+          } else {
+            ElMessage.error("获取地点信息失败");
+          }
+        }
+      } else {
+        ElMessage.error("获取地点信息失败");
+      }
+
+      console.log("basic info:", this.basicInfo);
+    },
+
+    async fetchComments() {
+      this.commentLoaded = false;
+      this.commentList = [];
+      const result = await classAPI.getComments(this.class_id);
+      console.log("评论内容:", result);
+      if (result.success) {
+        this.commentList = result.data;
+      } else {
+        ElMessage.error("获取评论失败");
+      }
+      this.commentLoaded = true;
+    },
+
+    submitComment() {
+      if (this.newComment.trim() === "") return;
+
+      classAPI.postComment(this.class_id, this.newComment).then((response) => {
+        if (response.success) {
+          this.newComment = "";
+          ElMessage.success("评论成功");
+          this.fetchComments();
+        } else {
+          ElMessage.error("评论失败");
         }
       });
     },
 
-    // 获取用户姓名，如果已缓存，则直接返回
-    getUserName(userId) {
-      return this.userLookup[userId] || "加载中...";
-    },
-
-    // 提交评论的方法
-    async submitComment() {
-      if (this.newComment.trim() === "") {
-        this.$message.warning("评论内容不能为空");
-        return;
-      }
-
-      console.log("提交评论:", this.newComment);
-      console.log("my class_id:", this.class_id);
-
-      const response = await classAPI.postComment(
-        this.class_id,
-        this.newComment
-      );
-      if (response.success) {
-        ElMessage.success("提交评论成功");
+    async fetchNotices() {
+      this.noticeLoaded = false;
+      this.noticeList = [];
+      const result = await noticeAPI.getNotices(this.class_id);
+      if (result.success) {
+        this.noticeList = result.data;
+        console.log("通知??!!:", this.noticeList);
       } else {
-        ElMessage.error("提交评论失败");
+        ElMessage.error("获取通知失败");
       }
 
-      // 清空评论输入框
-      this.newComment = "";
-
-      // 重新获取评论列表
-      // TODO
-
-      // get comments is a async function, so we need to wait for it to finish
-      await this.getComments();
-      console.log("comments:", this.commentList);
+      if (this.basicInfo.lab_id) {
+        const result2 = await noticeAPI.getNotices(
+          undefined,
+          this.basicInfo.lab_id
+        );
+        if (result2.success) {
+          this.noticeList.push(...result2.data);
+          console.log("lab 通知??!!:", this.noticeList);
+        } else {
+          ElMessage.error("获取通知失败");
+        }
+      }
+      this.noticeLoaded = true;
     },
-  },
-  computed: {
-    teacherNamesStr() {
-      return this.teacherNames.join(", ");
+
+    async fetchExperiments() {
+      this.experimentLoaded = false;
+      this.experimentList = [];
+      const result = await classAPI.getExperiments(this.class_id);
+      console.log("实验内容:", result);
+      if (result.success) {
+        this.experimentList = result.data;
+        //获取所有的safety_tags
+        this.tagSummary = [];
+        const tagSet = new Set();
+        for (let i = 0; i < this.experimentList.length; i++) {
+          this.experimentList[i].safety_tags.forEach((tag) => tagSet.add(tag));
+        }
+        this.tagSummary = Array.from(tagSet);
+      } else {
+        ElMessage.error("获取实验内容失败");
+      }
+      this.experimentLoaded = true;
+    },
+
+    async fetchEnrolledStudents() {
+      this.isEnrolledStudentsLoaded = false;
+      const result = await courseAPI.getEnroll(this.course_id);
+      if (result.success) {
+        console.log("students!!", result.data);
+        this.studentList = result.data;
+        for (let i = 0; i < this.studentList.length; i++) {
+          const result = await userAPI.getUserInfo(
+            this.studentList[i].student_id
+          );
+          if (result.success) {
+            console.log("学生信息:", result.data[0]);
+            this.studentList[i].name = result.data[0].real_name;
+            this.studentList[i].department = result.data[0].department;
+          } else {
+            ElMessage.error("获取学生信息失败");
+          }
+        }
+      } else {
+        ElMessage.error("获取学生失败");
+      }
+      this.isEnrolledStudentsLoaded = true;
+    },
+    async deleteComment(comment) {
+      console.log("删除评论:", comment);
+      const result = await classAPI.deleteComment(comment.id);
+      if (result.success) {
+        console.log("删除成功");
+        await this.fetchComments();
+      } else {
+        console.log("删除失败");
+      }
     },
   },
 };
 </script>
 
 <style scoped>
-.class-panel {
+.experiment-container {
+  background: var(--el-bg-color);
+  border-radius: 8px;
   padding: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.empty-state {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  align-items: center;
+  padding: 40px;
+  color: var(--el-text-color-secondary);
+  gap: 12px;
+}
+
+.empty-state .el-icon {
+  font-size: 48px;
+}
+
+.experiment-list {
+  display: grid;
+  gap: 20px;
+}
+
+.experiment-item {
+  position: relative;
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.experiment-item:hover {
+  transform: translateY(-2px);
+}
+
+.experiment-actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 1;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.space-x-4 > * + * {
+  margin-left: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+.el-dialog {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.el-table {
+  --el-table-border-color: #ebeef5;
+  --el-table-header-background-color: #f5f7fa;
+}
+
+:deep(.el-table__header) {
+  background-color: #f5f7fa;
+}
+
+:deep(.el-table__header-wrapper th) {
+  background-color: #f5f7fa !important;
+}
+
+:deep(.el-dialog__footer) {
+  padding: 20px;
+  border-top: 1px solid #e4e7ed;
+}
+:deep(.el-table__body tr:hover > td) {
+  background-color: #f0f7ff !important; /* 浅蓝色 */
+}
+:deep(.el-button--default) {
+  padding: 8px 20px;
+}
+
+.dialog-header {
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 1rem;
+}
+.el-button {
+  font-size: 15px;
+  padding: 10px 20px;
+}
+
+.el-icon {
+  font-size: 20px;
+}
+.map-section {
+  width: 300px;
+  padding: 20px;
+}
+
+.map-text {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.lab-map-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.no-map {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  color: #909399;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.header-box {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 24px;
+}
+
+.info-section {
+  position: relative;
+  flex: 1;
+  min-width: 0; /* 防止flex子项溢出 */
+}
+
+.map-section {
+  width: 500px;
+  padding-left: 24px;
+  border-left: 1px solid #dcdfe6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.map-text {
+  font-size: 16px;
+  color: #606266;
+  margin-bottom: 20px;
+}
+.map-section h4 {
+  align-self: flex-start;
+  margin: 0 0 16px 0;
+  color: #606266;
+  font-size: 16px;
+}
+
+.lab-map {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  border-radius: 4px;
+}
+.edit-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.class-title {
+  margin-bottom: 24px;
+  padding-right: 120px;
+}
+
+.class-title h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.info-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.info-item:hover {
+  background-color: #f2f6fc;
+}
+
+.info-label {
+  width: 100px;
+  color: #606266;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-content {
+  flex: 1;
+  color: #303133;
+}
+
+.lab-link {
+  cursor: pointer;
+  color: #409eff;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.lab-link:hover {
+  color: #66b1ff;
+}
+
+@media (max-width: 768px) {
+  .header-box {
+    flex-direction: column;
+  }
+
+  .map-section {
+    width: 100%;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #dcdfe6;
+    padding-top: 24px;
+  }
+
+  .info-grid {
+    gap: 12px;
+  }
+
+  .info-item {
+    flex-direction: column;
+  }
+
+  .info-label {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}
+.class-panel {
+  padding: 20px;
+}
+
+.class-buttoms {
+  margin-bottom: 20px;
+}
+
+.box {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
   position: relative;
 }
 
-.go-back-btn {
-  top: 20px;
-  left: 20px;
-  z-index: 10;
+.header-box {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
-.class-header h2 {
-  font-size: 24px;
-  font-weight: bold;
+.experiment-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  position: relative;
 }
 
-.class-header p {
-  font-size: 16px;
-  color: #555;
-}
-
-.class-details {
-  margin-top: 20px;
-}
-
-.class-details h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-.class-details p {
-  font-size: 16px;
+.experiment-item:last-child {
+  margin-bottom: 0;
 }
 
 .comment-card {
-  margin-top: 30px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  background-color: #f9f9f9;
-}
-
-.comment-card h4 {
-  font-size: 20px;
-  font-weight: bold;
+  background-color: #f3f3f3;
+  padding: 20px;
+  margin-top: 20px;
 }
 
 .comment-list {
-  margin-top: 15px;
-  max-height: 200px;
-  overflow-y: auto;
+  margin-top: 20px;
 }
 
 .comment-item {
-  margin-bottom: 10px;
-  font-size: 14px;
+  display: flex;
+  direction: row;
+  align-items: center;
+  padding-left: 3%;
+  padding-right: 3%;
+}
+
+.comment-item:not(:last-child) {
+  border-bottom: 1px solid #ccc; /* 给每个评论项添加分割线，除了最后一个 */
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.comment-details {
+  display: flex;
+  flex-direction: column;
+  margin-left: 3%;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .comment-time {
   font-size: 12px;
-  color: #888;
+  color: #777;
+  margin-top: 10px;
 }
 
 .comment-input {
-  margin-top: 15px;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
-.el-button {
-  margin-top: 10px;
+.tag {
+  margin-right: 5px;
+}
+
+.experiment-photo {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: cover;
 }
 </style>
