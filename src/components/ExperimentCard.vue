@@ -42,7 +42,7 @@
         >
       </div>
 
-      <div class="tag-group">
+      <div class="tag-group" v-if="experiment.other_tags.length">
         <span class="label">其他标签:</span>
         <el-tag v-for="tag in experiment.other_tags" :key="tag" type="info">{{
           tag

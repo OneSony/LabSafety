@@ -260,7 +260,7 @@
           <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
           <p
             v-if="noticeList.length === 0 && noticeLoaded"
-            style="text-align: center; color: #ccc"
+            style="text-align: center; color: #909399; padding: 20px"
           >
             暂无通知
           </p>
