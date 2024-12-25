@@ -53,7 +53,12 @@
         </el-form-item>
 
         <el-form-item label="开课院系" class="mb-4" prop="department">
-          ></el-input>
+          <el-input
+            v-model="courseData.department"
+            placeholder="请输入开课院系"
+            class="w-full"
+          >
+          </el-input>
         </el-form-item>
       </el-form>
 
@@ -104,22 +109,27 @@
         class="w-full"
         :header-cell-style="{ background: '#f5f7fa' }"
       >
+        <el-table-column fixed prop="date" label="日期" width="180">
+          <template v-slot="scope">
+            <DateBox
+              :dateStr="scope.row.date"
+              :textColor="'#666'"
+              :fontSize="'12px'"
+            />
+          </template>
         </el-table-column>
         <el-table-column
           prop="class_name"
           label="课堂名"
           min-width="120"
         ></el-table-column>
-        <el-table-column
-          prop="lab_name"
-          min-width="120"
-        ></el-table-column>
+        <el-table-column prop="lab_name" min-width="120"></el-table-column>
         <el-table-column
           prop="teachers_name"
           label="授课教师"
           min-width="150"
         ></el-table-column>
-        <el-table-column fixed="right" label="操作" width="150">
+        <el-table-column fixed="right" label="操作" width="200">
           <template v-slot="slotProps">
             <el-button
               @click="handleClassEdit(slotProps.row)"
