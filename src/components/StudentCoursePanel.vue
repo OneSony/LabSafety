@@ -7,7 +7,7 @@
       <el-card class="statistics-card" shadow="never">
         <div class="statistics-container">
           <div class="stat-group">
-            <span class="stat-label">今日课程</span>
+            <span class="stat-label">今日实验</span>
             <span class="stat-value">{{ todayClassNum }}</span>
             <span class="stat-unit">门</span>
           </div>
