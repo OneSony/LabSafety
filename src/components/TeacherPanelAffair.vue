@@ -548,11 +548,13 @@ export default {
 }
 
 .el-table .warning-row {
-  background-color: var(--el-color-warning-light-9);
+  --el-table-row-hover-bg-color: var(--el-color-warning-light-8);
+  --el-table-row-bg-color: var(--el-color-warning-light-9);
 }
 
 .el-table .success-row {
-  background-color: var(--el-color-success-light-9);
+  --el-table-row-hover-bg-color: var(--el-color-success-light-8);
+  --el-table-row-bg-color: var(--el-color-success-light-9);
 }
 
 .el-input.el-input--small {

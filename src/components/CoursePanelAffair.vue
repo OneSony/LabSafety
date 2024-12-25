@@ -105,6 +105,14 @@
               <el-icon><Edit /></el-icon>
               编辑
             </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              @click="handleDeleteClick(scope.row)"
+            >
+              <el-icon><Delete /></el-icon>
+              删除
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -113,6 +121,7 @@
 </template>
 
 <script>
+import { ElMessageBox, ElMessage } from 'element-plus';
 import { courseAPI, classAPI } from "@/utils/api";
 import {
   Reading,
@@ -125,6 +134,7 @@ import {
   Collection,
   User,
   Setting,
+  Delete,
   Edit,
 } from "@element-plus/icons-vue";
 
@@ -136,6 +146,7 @@ export default {
     Refresh,
     Notebook,
     DocumentCopy,
+    Delete,
     List,
     School,
     Collection,
@@ -171,6 +182,21 @@ export default {
         this.$router.push({ name: "CreateCourse", state: { inputCourseData } });
       } else {
         console.error("Router instance is not available.");
+      }
+    },
+    async handleDeleteClick(row) {
+      try {
+        await ElMessageBox.confirm("确认删除该课程?", "提示", {
+          type: "warning",
+        });
+
+        await courseAPI.deleteCourse(row.course_code, row.course_sequence);
+        ElMessage.success("删除成功");
+        await this.fetchCourseList();
+      } catch (error) {
+        if (error !== "cancel") {
+          ElMessage.error("删除失败");
+        }
       }
     },
 
@@ -322,14 +348,6 @@ export default {
 
 .el-table th {
   background-color: var(--el-color-primary-light-9) !important;
-}
-
-.el-table .warning-row {
-  background-color: var(--el-color-warning-light-9);
-}
-
-.el-table .success-row {
-  background-color: var(--el-color-success-light-9);
 }
 
 /* 添加过渡动画 */

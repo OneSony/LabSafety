@@ -450,6 +450,17 @@ const courseAPI = {
       .then(handleResponse)
       .catch(handleError);
   },
+  deleteCourse(course_code: string, course_sequence: string): Promise<any> {
+    return server
+      .delete("/api/v1/courses/course", {
+        params: {
+          course_code: course_code,
+          course_sequence: course_sequence,
+        },
+      })
+      .then(handleResponse)
+      .catch(handleError);
+  },
 };
 
 const classAPI = {
