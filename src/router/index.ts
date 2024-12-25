@@ -39,6 +39,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/login",
     component: UserLogin,
+    meta: { title: "登录" },
   },
   {
     path: "/dashboard",
@@ -113,12 +114,14 @@ const routes: Array<RouteRecordRaw> = [
     component: CreateCourse,
     meta: {
       teachingAffairs: true,
+      title: "创建课程",
     },
   },
   {
     path: "/lab/:id",
     name: "LabPage",
     component: LabDetail,
+    meta: {title: "实验室详情"},
     props: true, // 将路由参数作为 props 传递给组件
   },
 ];
@@ -132,6 +135,7 @@ router.beforeEach((to, from, next) => {
   console.log("to", to);
   console.log("from", from);
   console.log("login", userAPI.isLoggedIn());
+  document.title = (to.meta.title as string) || "清华大学实验室安全助手";
   //除了login页面，其他页面都需要登录
   if (to.path !== "/login" && !userAPI.isLoggedIn()) {
     ElMessage.error("请先登录");
