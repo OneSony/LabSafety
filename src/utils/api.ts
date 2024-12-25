@@ -276,6 +276,31 @@ const userAPI = {
         return handleError(error);
       });
   },
+  async getUserInfoWithCache(user_id: string): Promise<ApiResponse<UserInfo>> {
+    const cacheKey = `userInfo_${user_id}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    const cacheExpiryKey = `${cacheKey}_expiry`;
+    const cachedExpiry = localStorage.getItem(cacheExpiryKey);
+    const now = new Date().getTime();
+
+    if (cachedData && cachedExpiry && now < parseInt(cachedExpiry)) {
+      return {
+        success: true,
+        data: JSON.parse(cachedData),
+      };
+    }
+
+    const response = await this.getUserInfo(user_id);
+    if (response.success && response.data) {
+      localStorage.setItem(cacheKey, JSON.stringify(response.data));
+      localStorage.setItem(
+        cacheExpiryKey,
+        (now + 24 * 60 * 60 * 1000).toString()
+      ); // 1 day expiry
+    }
+
+    return response;
+  },
 
   patchUserInfo(formData: FormData): Promise<any> {
     console.log("发送请求：更新用户信息", formData); // 调试信息

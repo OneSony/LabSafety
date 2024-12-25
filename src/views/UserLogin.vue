@@ -47,6 +47,7 @@
               type="password"
               v-model="loginForm.password"
               placeholder="密码"
+              @keyup.enter="handleLogin"
               class="custom-input"
             ></el-input>
           </el-form-item>
@@ -147,12 +148,6 @@ export default {
     onMounted(() => {
       loadHistoryAccounts();
       document.addEventListener("click", handleClickOutside);
-
-      if (!userAPI.isLoggedIn()) {
-        ElMessage.warning("请登录以查看更多内容");
-      } else {
-        ElMessage.success("已经登陆");
-      }
     });
 
     onBeforeUnmount(() => {

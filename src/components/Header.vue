@@ -4,11 +4,12 @@
       <router-link to="/" class="logo-link">
         <img src="@/assets/tlsa.png" alt="Logo" class="logo" />
       </router-link>
-      <el-tag type="success">{{ roleText }}</el-tag>
+      <el-tag type="success" v-if="isUserInfoVisible">{{ roleText }}</el-tag>
     </div>
 
     <!-- 用户信息部分，加入下拉菜单 -->
     <el-dropdown
+      v-if="isUserInfoVisible"
       v-model:visible="isDropdownVisible"
       trigger="hover"
       class="user-info-dropdown"
@@ -46,10 +47,7 @@ export default {
   },
   setup() {
     const route = useRoute();
-    const isUserInfoVisible = userAPI.isLoggedIn();
-
-    console.log("login status??", isUserInfoVisible);
-    console.log("api??", userAPI.isLoggedIn());
+    const isUserInfoVisible = ref(userAPI.isLoggedIn());
 
     const userName = ref("");
 
@@ -71,6 +69,7 @@ export default {
     };
 
     watch(route, async () => {
+      isUserInfoVisible.value = userAPI.isLoggedIn();
       userPhoto.value = (await userAPI.getAvatar()) || "";
       userName.value = (await userAPI.getUsername()) || "未知";
       const role = userAPI.getRole();

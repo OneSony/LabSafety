@@ -1,7 +1,12 @@
 <template>
   <div class="course-management p-6 max-w-7xl mx-auto">
     <!-- Back Button -->
-    <el-button @click="goBack" type="primary" class="mb-6 flex items-center">
+    <el-button
+      @click="goBack"
+      type="primary"
+      class="mb-6 flex items-center"
+      style="margin-bottom: 10px"
+    >
       <i class="el-icon-arrow-left mr-2"></i> 返回
     </el-button>
 
@@ -17,8 +22,11 @@
         label-position="right"
         label-width="100px"
         class="grid grid-cols-2 gap-6"
+        :model="courseData"
+        :rules="courseRules"
+        ref="courseForm"
       >
-        <el-form-item label="课程号" class="mb-4">
+        <el-form-item label="课程号" class="mb-4" prop="course_code">
           <el-input
             v-model="courseData.course_code"
             placeholder="请输入课程号"
@@ -27,7 +35,7 @@
           ></el-input>
         </el-form-item>
 
-        <el-form-item label="课序号" class="mb-4">
+        <el-form-item label="课序号" class="mb-4" prop="course_sequence">
           <el-input
             v-model="courseData.course_sequence"
             placeholder="请输入课序号"
@@ -36,7 +44,7 @@
           ></el-input>
         </el-form-item>
 
-        <el-form-item label="课程名" class="mb-4">
+        <el-form-item label="课程名" class="mb-4" prop="course_name">
           <el-input
             v-model="courseData.course_name"
             placeholder="请输入课程名"
@@ -44,11 +52,7 @@
           ></el-input>
         </el-form-item>
 
-        <el-form-item label="开课院系" class="mb-4">
-          <el-input
-            v-model="courseData.department"
-            placeholder="请输入开课院系"
-            class="w-full"
+        <el-form-item label="开课院系" class="mb-4" prop="department">
           ></el-input>
         </el-form-item>
       </el-form>
@@ -67,13 +71,31 @@
       <div class="flex justify-between items-center border-b pb-4 mb-8">
         <h2 class="text-xl font-semibold text-gray-800">已添加课堂</h2>
         <el-button
+          v-if="isCourseSubmitted"
           @click="classDialogVisible = true"
           type="primary"
           :disabled="!isCourseSubmitted"
           class="flex items-center"
+          style="margin-bottom: 10px"
         >
           <i class="el-icon-plus justify-end mr-2 mb-6"></i> 添加课堂
         </el-button>
+        <el-tooltip
+          content="请先创建课程"
+          placement="top"
+          effect="dark"
+          v-if="!isCourseSubmitted"
+        >
+          <el-button
+            @click="classDialogVisible = true"
+            type="primary"
+            :disabled="!isCourseSubmitted"
+            class="flex items-center"
+            style="margin-bottom: 10px"
+          >
+            <i class="el-icon-plus justify-end mr-2 mb-6"></i> 添加课堂
+          </el-button>
+        </el-tooltip>
       </div>
 
       <el-table
@@ -82,12 +104,7 @@
         class="w-full"
         :header-cell-style="{ background: '#f5f7fa' }"
       >
-        <el-table-column
-          fixed
-          prop="date"
-          label="日期"
-          width="180"
-        ></el-table-column>
+        </el-table-column>
         <el-table-column
           prop="class_name"
           label="课堂名"
@@ -95,7 +112,6 @@
         ></el-table-column>
         <el-table-column
           prop="lab_name"
-          label="位置"
           min-width="120"
         ></el-table-column>
         <el-table-column
@@ -134,13 +150,31 @@
       <div class="flex justify-between items-center border-b pb-4 mb-8">
         <h2 class="text-xl font-semibold text-gray-800">已添加学生</h2>
         <el-button
+          v-if="isCourseSubmitted"
           @click="studentDialogVisible = true"
           type="primary"
           :disabled="!isCourseSubmitted"
           class="flex items-center"
+          style="margin-bottom: 10px"
         >
           <i class="el-icon-plus justify-end mr-2 mb-6"></i> 添加学生
         </el-button>
+        <el-tooltip
+          content="请先创建课程"
+          placement="top"
+          effect="dark"
+          v-if="!isCourseSubmitted"
+        >
+          <el-button
+            @click="studentDialogVisible = true"
+            type="primary"
+            :disabled="!isCourseSubmitted"
+            class="flex items-center"
+            style="margin-bottom: 10px"
+          >
+            <i class="el-icon-plus justify-end mr-2 mb-6"></i> 添加学生
+          </el-button>
+        </el-tooltip>
       </div>
 
       <el-table
@@ -182,8 +216,13 @@
       @close="closeClassDialog"
       class="custom-dialog"
     >
-      <el-form :model="classFormData" ref="classForm" label-width="100px">
-        <el-form-item label="课堂名" class="mb-6">
+      <el-form
+        :model="classFormData"
+        ref="classForm"
+        label-width="100px"
+        :rules="classRules"
+      >
+        <el-form-item label="课堂名" class="mb-6" prop="class_name">
           <el-input
             v-model="classFormData.class_name"
             placeholder="请输入课堂名"
@@ -191,7 +230,7 @@
           ></el-input>
         </el-form-item>
 
-        <el-form-item label="时间" class="mb-6">
+        <el-form-item label="时间" class="mb-6" prop="date">
           <el-date-picker
             v-model="classFormData.date"
             type="datetime"
@@ -200,7 +239,7 @@
           ></el-date-picker>
         </el-form-item>
 
-        <el-form-item label="地点" class="mb-6">
+        <el-form-item label="地点" class="mb-6" prop="lab_id">
           <el-select
             v-model="classFormData.lab_id"
             placeholder="选择地点"
@@ -334,6 +373,7 @@ import { ElMessage, inputEmits, rowProps } from "element-plus";
 import { defineComponent, onMounted } from "vue";
 import { stringifyQuery } from "vue-router";
 import { useRoute } from "vue-router";
+import DateBox from "@/components/DateBox.vue";
 
 interface Teacher {
   teacher_id: string;
@@ -370,6 +410,9 @@ interface Lab {
 }
 
 export default defineComponent({
+  components: {
+    DateBox,
+  },
   data() {
     return {
       courseData: {
@@ -416,6 +459,31 @@ export default defineComponent({
       // 控制课堂对话框的显示
       studentDialogVisible: false,
       classDialogVisible: false,
+
+      courseRules: {
+        course_code: [
+          { required: true, message: "请输入课程号", trigger: "blur" },
+          { pattern: /^\d+$/, message: "课程号只能填写数字", trigger: "blur" },
+        ],
+        course_sequence: [
+          { required: true, message: "请输入课序号", trigger: "blur" },
+          { pattern: /^\d+$/, message: "课序号只能填写数字", trigger: "blur" },
+        ],
+        course_name: [
+          { required: true, message: "请输入课程名", trigger: "blur" },
+        ],
+        department: [
+          { required: true, message: "请输入开课院系", trigger: "blur" },
+        ],
+      },
+
+      classRules: {
+        class_name: [
+          { required: true, message: "请输入课堂名", trigger: "blur" },
+        ],
+        date: [{ required: true, message: "请选择时间", trigger: "change" }],
+        lab_id: [{ required: true, message: "请选择地点", trigger: "change" }],
+      },
     };
   },
   mounted() {
@@ -657,6 +725,18 @@ export default defineComponent({
     },
 
     async submitCourse() {
+      //rule检查
+      const valid = await new Promise<boolean>((resolve) => {
+        (this.$refs.courseForm as any).validate((valid: boolean) => {
+          resolve(valid);
+        });
+      });
+
+      if (!valid) {
+        ElMessage.error("请填写完整的课程信息");
+        return;
+      }
+
       console.log("here!", this.courseData);
       if (this.courseData.course_id != null) {
         const result = await courseAPI.patchCourse(
@@ -690,12 +770,29 @@ export default defineComponent({
     },
 
     async submitClass() {
+      //rule
+      const valid = await new Promise<boolean>((resolve) => {
+        (this.$refs.classForm as any).validate((valid: boolean) => {
+          resolve(valid);
+        });
+      });
+
+      if (!valid) {
+        ElMessage.error("请填写完整的课堂信息");
+        return;
+      }
+
       if (
         this.courseData.course_id == null ||
         this.courseData.course_code == "" ||
         this.courseData.course_sequence == ""
       ) {
-        ElMessage.error("课堂名不能为空");
+        ElMessage.error("请先提交课程");
+        return;
+      }
+
+      if (this.classFormData.teachers.length === 0) {
+        ElMessage.error("请添加教师");
         return;
       }
       console.log("课堂信息：", this.classFormData);
@@ -879,6 +976,19 @@ export default defineComponent({
     },
 
     async submitStudents() {
+      if (
+        this.courseData.course_id == null ||
+        this.courseData.course_code == "" ||
+        this.courseData.course_sequence == ""
+      ) {
+        ElMessage.error("请先提交课程");
+        return;
+      }
+
+      if (this.studentFormList.length === 0) {
+        ElMessage.error("请添加学生");
+        return;
+      }
       //把formlist中不在list的留下
       const studentIds = this.studentFormList
         .filter(
@@ -1031,7 +1141,6 @@ export default defineComponent({
 
 <style scoped>
 .course-management {
-  background-color: #f5f7fa;
   min-height: 100vh;
 }
 

@@ -164,8 +164,7 @@ export default {
     async loadData() {
       this.isLoaded = false;
       await this.fetchCourseList();
-      await this.fetchEnollmentCount();
-      await this.fetchClassLists();
+      await Promise.all([this.fetchEnollmentCount(), this.fetchClassLists()]);
       this.isLoaded = true;
     },
 
