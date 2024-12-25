@@ -24,6 +24,7 @@
       style="width: 100%"
       :row-class-name="tableRowClassName"
       border
+      fit
       highlight-current-row
     >
       <el-table-column prop="name" label="课程名" min-width="150">
@@ -307,6 +308,13 @@ export default {
 }
 .el-table .success-row {
   --el-table-tr-bg-color: #d2f1ff;
+}
+::v-deep .warning-row {
+  background-color: #e9f8f6 !important; /* 自定义交替背景色 */
+}
+
+::v-deep .success-row {
+  background-color: #fcf9f3 !important; /* 自定义交替背景色 */
 }
 .header-section {
   display: flex;

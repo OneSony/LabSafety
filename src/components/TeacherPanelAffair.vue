@@ -583,7 +583,13 @@ export default {
   --el-table-row-hover-bg-color: var(--el-color-success-light-8);
   --el-table-row-bg-color: var(--el-color-success-light-9);
 }
+::v-deep .warning-row {
+  background-color: #e9f8f6 !important; /* 自定义交替背景色 */
+}
 
+::v-deep .success-row {
+  background-color: #fcf9f3 !important; /* 自定义交替背景色 */
+}
 .el-input.el-input--small {
   width: 100%;
 }
