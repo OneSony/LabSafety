@@ -17,28 +17,30 @@
   </div>
 </template>
 
-<script setup>
-import { ref, defineProps } from "vue";
-
-const props = defineProps({
-  src: {
-    type: String,
-    required: true,
+<script>
+export default {
+  name: "ImageBox",
+  props: {
+    src: {
+      type: String,
+      required: true,
+    },
   },
-});
-
-const showImageViewer = ref(false);
-
-const openDialog = () => {
-  console.log("点击查看图片", props.src); // 调试时可以输出图片路径
-  showImageViewer.value = true; // 打开对话框
-  console.log("dialogVisible", showImageViewer.value); // 调试时可以输出对话框状态
-  document.body.style.overflow = "hidden"; // 禁止滚动
-};
-
-const closeDialog = () => {
-  showImageViewer.value = false; // 关闭对话框
-  document.body.style.overflow = "auto";
+  data() {
+    return {
+      showImageViewer: false,
+    };
+  },
+  methods: {
+    openDialog() {
+      this.showImageViewer = true;
+      document.body.style.overflow = "hidden";
+    },
+    closeDialog() {
+      this.showImageViewer = false;
+      document.body.style.overflow = "auto";
+    },
+  },
 };
 </script>
 
