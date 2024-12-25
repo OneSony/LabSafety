@@ -639,7 +639,7 @@ export default defineComponent({
 
     async fetchStudentData() {
       const studentIds = this.studentFormStr
-        .split(",") // 按逗号分割
+        .split(/[,，]/) // 按逗号和中文逗号分割
         .map((id) => id.trim()) // 去掉空格
         .filter((id) => id && /^\d+$/.test(id)) // 过滤掉空的值和非数字的值
         .filter((value, index, self) => self.indexOf(value) === index); // 过滤掉重复值
