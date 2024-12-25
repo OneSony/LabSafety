@@ -1,10 +1,19 @@
 <template>
-  <el-form :model="experimentForm" label-width="80px" ref="experimentForm">
+  <el-form
+    :model="experimentForm"
+    :rules="rules"
+    label-width="80px"
+    ref="experimentForm"
+  >
     <el-form-item label="实验名称" prop="title">
       <el-input v-model="experimentForm.title"></el-input>
     </el-form-item>
     <el-form-item label="预估时间" prop="estimatedTime">
-      <el-input v-model="experimentForm.estimatedTime"></el-input>
+      <el-input-number
+        v-model="experimentForm.estimatedTime"
+        :min="0"
+      ></el-input-number>
+      &nbsp;小时
     </el-form-item>
     <el-form-item label="安全标签" prop="safetyTags">
       <div class="tags-container">
@@ -188,6 +197,24 @@ export default {
       newSubmissionTag: "",
       newOtherTag: "",
       experimentDialogVisible: false,
+      rules: {
+        title: [{ required: true, message: "请输入实验名称", trigger: "blur" }],
+        estimatedTime: [
+          { required: true, message: "请输入预估时间", trigger: "blur" },
+        ],
+        safetyTags: [
+          { required: true, message: "请选择安全标签", trigger: "blur" },
+        ],
+        experimentTags: [
+          { required: true, message: "请选择实验方式", trigger: "blur" },
+        ],
+        submissionTags: [
+          { required: true, message: "请选择作业形式", trigger: "blur" },
+        ],
+        description: [
+          { required: true, message: "请输入实验描述", trigger: "blur" },
+        ],
+      },
     };
   },
   methods: {
@@ -217,12 +244,20 @@ export default {
       this.experimentForm.images = fileList; // 删除图片
     },
     async submitExperimentForm() {
-      this.$refs.experimentForm.validate((valid) => {
-        if (valid) {
-          this.$emit("submit", this.experimentForm);
-          this.experimentDialogVisible = false;
-        }
+      const valid = await new Promise((resolve) => {
+        this.$refs.experimentForm.validate((valid) => {
+          resolve(valid); // 结果返回
+        });
       });
+      console.log("valid", valid);
+      if (!valid) {
+        console.log("请检查表单是否填写正确");
+        ElMessage.error("请检查表单是否填写正确");
+        return;
+      }
+
+      // 验证通过后继续执行的代码
+      console.log("表单验证通过，可以继续执行");
       console.log("exp!", this.experimentForm, this.class_id);
       // 在这里打包成 FormData
 
