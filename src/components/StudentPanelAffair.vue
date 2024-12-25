@@ -10,6 +10,33 @@
           <el-icon><Plus /></el-icon>
           创建账号
         </el-button>
+        <el-dialog
+          v-model="dialogVisible"
+          title="创建学生账号"
+          width="30%"
+          @close="handleClose"
+        >
+          <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+            <el-form-item label="学号" prop="user_id">
+              <el-input v-model="form.user_id" />
+            </el-form-item>
+            <el-form-item label="姓名" prop="real_name">
+              <el-input v-model="form.real_name" />
+            </el-form-item>
+            <el-form-item label="院系">
+              <el-input v-model="form.department" />
+            </el-form-item>
+            <el-form-item label="密码">
+              <el-input v-model="form.password" disabled />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span>
+              <el-button @click="handleClose">取消</el-button>
+              <el-button type="primary" @click="handleCreate">创建</el-button>
+            </span>
+          </template>
+        </el-dialog>
         <el-button type="info" @click="loadData">
           <el-icon><Refresh /></el-icon>
           刷新列表
