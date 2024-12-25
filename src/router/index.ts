@@ -121,7 +121,7 @@ const routes: Array<RouteRecordRaw> = [
     path: "/lab/:id",
     name: "LabPage",
     component: LabDetail,
-    meta: {title: "实验室详情"},
+    meta: { title: "实验室详情" },
     props: true, // 将路由参数作为 props 传递给组件
   },
 ];
