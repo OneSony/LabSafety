@@ -496,15 +496,15 @@ export default defineComponent({
       },
     };
   },
-  mounted() {
-    this.fetchLabs();
+  async mounted() {
+    await this.fetchLabs();
     console.log("inputCourseData", history.state.inputCourseData);
     if (history.state.inputCourseData) {
       console.log("inputCourseData", history.state.inputCourseData);
       this.transformData(history.state.inputCourseData);
-      this.fetchCourse();
-      this.fetchEnroll();
-      this.fetchClassList();
+      await this.fetchCourse();
+      await this.fetchEnroll();
+      await this.fetchClassList();
     }
   },
   methods: {
@@ -594,47 +594,51 @@ export default defineComponent({
         ElMessage.error("加载课堂失败");
       }
 
-      for (let i = 0; i < this.classList.length; i++) {
-        const result3 = await classAPI.getLocations(
-          this.classList[i].class_id!
-        );
-        console.log("result3", result3);
-        if (result3.success && result3.data.length > 0) {
-          this.classList[i].lab_id = result3.data[0].lab_id;
-          this.classList[i].lab_name =
-            this.labList.find((lab) => lab.lab_id === result3.data[0].lab_id)
-              ?.lab_name || "";
-        } else {
-          ElMessage.error("加载地点失败");
-        }
-
-        const result4 = await classAPI.getTeachers(this.classList[i].class_id!);
-        console.log("result4", result4);
-        if (result4.success) {
-          this.classList[i].teachers = [] as Teacher[];
-          for (let j = 0; j < result4.data.length; j++) {
-            //每一份teacher
-            const result5 = await userAPI.getUserInfo(
-              result4.data[j].teacher_id
-            );
-            console.log("result5", result5);
-            if (result5.success) {
-              this.classList[i].teachers.push({
-                teacher_id: result5.data[0].user_id,
-                teacher_name: result5.data[0].real_name,
-              } as Teacher);
-            } else {
-              ElMessage.error("加载教师失败");
-            }
+      await Promise.all(
+        this.classList.map(async (classItem) => {
+          const result3 = await classAPI.getLocations(classItem.class_id!);
+          console.log("result3", result3);
+          if (result3.success && result3.data.length > 0) {
+            classItem.lab_id = result3.data[0].lab_id;
+            classItem.lab_name =
+              this.labList.find((lab) => lab.lab_id === result3.data[0].lab_id)
+                ?.lab_name || "";
+          } else {
+            ElMessage.error("加载地点失败");
           }
-          this.classList[i].teachers_name = this.classList[i].teachers
-            .map((teacher) => teacher.teacher_name)
-            .join(", ");
-        } else {
-          ElMessage.error("加载教师失败");
-        }
-        console.log("classList!!", this.classList);
-      }
+
+          const result4 = await classAPI.getTeachers(classItem.class_id!);
+          console.log("result4", result4);
+          if (result4.success) {
+            classItem.teachers = await Promise.all(
+              result4.data.map(async (teacherData: Teacher) => {
+                const result5 = await userAPI.getUserInfo(
+                  teacherData.teacher_id
+                );
+                console.log("result5", result5);
+                if (result5.success) {
+                  return {
+                    teacher_id: result5.data[0].user_id,
+                    teacher_name: result5.data[0].real_name,
+                  } as Teacher;
+                } else {
+                  ElMessage.error("加载教师失败");
+                  return null;
+                }
+              })
+            ).then(
+              (teachers) =>
+                teachers.filter((teacher) => teacher !== null) as Teacher[]
+            );
+            classItem.teachers_name = classItem.teachers
+              .map((teacher) => teacher.teacher_name)
+              .join(", ");
+          } else {
+            ElMessage.error("加载教师失败");
+          }
+          console.log("classList!!", this.classList);
+        })
+      );
     },
 
     async fetchStudentData() {
@@ -885,7 +889,7 @@ export default defineComponent({
         ElMessage.success("课堂已添加");
         this.classDialogVisible = false;
 
-        this.fetchClassList(); // 重新获取课堂列表
+        //关闭时会获取，不需要在这里fetch新的数据
         console.log("classList", this.classList);
       } else {
         //修改课堂
@@ -1024,7 +1028,7 @@ export default defineComponent({
       this.studentDialogVisible = false;
     },
 
-    closeClassDialog() {
+    async closeClassDialog() {
       this.classDialogVisible = false;
       this.classFormData = {
         class_name: "",
@@ -1046,7 +1050,7 @@ export default defineComponent({
         teachers_name: "",
       } as Class;
       this.teacherFormStr = "";
-      this.fetchClassList();
+      await this.fetchClassList();
     },
     closeStudentDialog() {
       this.studentDialogVisible = false;
@@ -1124,7 +1128,7 @@ export default defineComponent({
         } else {
           ElMessage.error("删除失败");
         }
-        this.fetchClassList();
+        await this.fetchClassList();
       } else {
         ElMessage.error("删除失败");
       }
