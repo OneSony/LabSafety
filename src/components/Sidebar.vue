@@ -91,6 +91,8 @@ export default {
 :deep(.el-sub-menu__title) {
   background-color: transparent !important;
   color: #2c3e50 !important;
+  font-weight: bold; /* 设置文本加粗 */
+  font-size: 18px; /* 放大字体 */
   transition: all 0.3s ease;
 }
 
@@ -108,6 +110,8 @@ export default {
 :deep(.el-menu-item) {
   background-color: transparent !important;
   color: #2c3e50 !important;
+  font-weight: bold; /* 设置文本加粗 */
+  font-size: 16px; /* 放大字体 */
   transition: all 0.3s ease;
 }
 
@@ -136,11 +140,6 @@ export default {
   right: 0;
   height: 100%;
   width: 1px;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.5),
-    rgba(255, 255, 255, 0.1)
-  );
 }
 
 /* 响应式设计 */
