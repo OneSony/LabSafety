@@ -121,7 +121,7 @@
 </template>
 
 <script>
-import { ElMessageBox, ElMessage } from 'element-plus';
+import { ElMessageBox, ElMessage } from "element-plus";
 import { courseAPI, classAPI } from "@/utils/api";
 import {
   Reading,
@@ -303,7 +303,12 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
-
+.el-table .warning-row {
+  --el-table-tr-bg-color: #e3ffc9;
+}
+.el-table .success-row {
+  --el-table-tr-bg-color: #d2f1ff;
+}
 .header-section {
   display: flex;
   justify-content: space-between;
@@ -368,11 +373,5 @@ export default {
 
 .el-tag:hover {
   transform: scale(1.05);
-}
-.el-table .warning-row {
-  --el-table-tr-bg-color: var(--el-color-warning-light-9);
-}
-.el-table .success-row {
-  --el-table-tr-bg-color: var(--el-color-success-light-9);
 }
 </style>

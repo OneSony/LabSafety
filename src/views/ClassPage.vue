@@ -271,6 +271,7 @@
         style="position: absolute; top: 20px; right: 20px"
         @click="noticeDialogVisible = true"
       >
+        <el-icon><Plus /></el-icon>
         添加通知
       </el-button>
       <el-skeleton :rows="3" animated v-if="!noticeLoaded" />
@@ -337,50 +338,53 @@
       />
     </el-dialog>
 
-    <div class="box">
-      <h3>实验内容</h3>
-
-      <el-skeleton :rows="5" animated v-if="!experimentLoaded" />
-      <p
-        v-if="experimentList.length === 0 && experimentLoaded"
-        style="text-align: center; color: #ccc; padding: 20px"
-      >
-        暂无实验
-      </p>
-
-      <el-button
-        v-if="isTeacher"
-        type="primary"
-        class="card-btn"
-        style="position: absolute; top: 20px; right: 20px"
-        @click="openExperimentDialog(null, null)"
-      >
-        添加内容
-      </el-button>
-      <div
-        v-for="(experiment, index) in experimentList"
-        :key="experiment.id"
-        class="experiment-item"
-      >
+    <div class="experiment-container">
+      <div class="header">
+        <h3 class="title">实验内容</h3>
         <el-button
           v-if="isTeacher"
           type="primary"
-          class="edit-btn"
-          style="position: absolute; top: 20px; right: 20px; z-index: 1000"
-          @click="openExperimentDialog(index, experiment)"
-          >编辑</el-button
+          class="add-btn"
+          @click="openExperimentDialog(null, null)"
         >
-        <el-button
-          v-if="isTeacher"
-          type="danger"
-          class="edit-btn"
-          style="position: absolute; top: 70px; right: 20px; z-index: 1000"
-          @click="deleteExperiment(experiment)"
-          >删除</el-button
+          <el-icon><Plus /></el-icon>
+          添加内容
+        </el-button>
+      </div>
+
+      <el-skeleton :rows="5" animated v-if="!experimentLoaded" />
+
+      <div
+        class="empty-state"
+        v-if="experimentList.length === 0 && experimentLoaded"
+      >
+        <el-icon><Document /></el-icon>
+        <span>暂无实验内容</span>
+      </div>
+
+      <div class="experiment-list">
+        <div
+          v-for="(experiment, index) in experimentList"
+          :key="experiment.id"
+          class="experiment-item"
         >
-        <ExperimentCard :experiment="experiment" :index="index" />
+          <div class="experiment-actions" v-if="isTeacher">
+            <el-button
+              type="primary"
+              link
+              @click="openExperimentDialog(index, experiment)"
+            >
+              <el-icon><Edit /></el-icon>
+            </el-button>
+            <el-button type="danger" link @click="deleteExperiment(experiment)">
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </div>
+          <ExperimentCard :experiment="experiment" :index="index" />
+        </div>
       </div>
     </div>
+
     <el-dialog
       title="添加实验内容"
       v-model="experimentDialogVisible"
@@ -885,6 +889,64 @@ export default {
 </script>
 
 <style scoped>
+.experiment-container {
+  background: var(--el-bg-color);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  color: var(--el-text-color-secondary);
+  gap: 12px;
+}
+
+.empty-state .el-icon {
+  font-size: 48px;
+}
+
+.experiment-list {
+  display: grid;
+  gap: 20px;
+}
+
+.experiment-item {
+  position: relative;
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.experiment-item:hover {
+  transform: translateY(-2px);
+}
+
+.experiment-actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 1;
+}
+
 .flex {
   display: flex;
 }
