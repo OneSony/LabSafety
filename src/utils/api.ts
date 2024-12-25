@@ -34,7 +34,8 @@ server.interceptors.response.use(
       error.response &&
       error.response.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes("/api/v1/refresh-token/")
+      !originalRequest.url.includes("/api/v1/refresh-token/") &&
+      !originalRequest.url.includes("/api/v1/users/login/")
     ) {
       originalRequest._retry = true;
 
@@ -99,7 +100,7 @@ const handleResponse = (response: any) => {
 const handleError = (error: any) => {
   return {
     success: false,
-    error: error.response?.data.detail || "Unknown error",
+    error: error.response.data.error || "Unknown error",
   };
 };
 
@@ -202,7 +203,7 @@ const userAPI = {
       .catch((error) => {
         return {
           success: false,
-          error: error.response?.data.detail || "Unknown error",
+          error: error.response.data.error || "Unknown error",
         };
       });
   },

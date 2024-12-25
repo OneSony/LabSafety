@@ -203,7 +203,7 @@
           label="姓名"
           min-width="120"
         ></el-table-column>
-        <el-table-column fixed="right" label="操作" width="120">
+        <el-table-column fixed="right" label="操作" width="200">
           <template v-slot="slotProps">
             <el-button
               @click="handleStudentDelete(slotProps.row)"
@@ -307,6 +307,19 @@
         </el-table>
       </el-form>
 
+      <div>
+        <p v-if="wrongTeacherIds.length > 0" style="color: red">
+          错误数据:
+          {{
+            wrongTeacherIds
+              .map(
+                (teacher) => `${teacher.teacher_id} (${teacher.teacher_name})`
+              )
+              .join(", ")
+          }}
+        </p>
+      </div>
+
       <template #footer>
         <div class="flex justify-end gap-4">
           <el-button @click="classDialogVisible = false">取消</el-button>
@@ -366,6 +379,19 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <div>
+        <p v-if="wrongStudentIds.length > 0" style="color: red">
+          错误数据:
+          {{
+            wrongStudentIds
+              .map(
+                (student) => `${student.student_id} (${student.student_name})`
+              )
+              .join(", ")
+          }}
+        </p>
+      </div>
 
       <template #footer>
         <div class="flex justify-end gap-4">
@@ -494,17 +520,20 @@ export default defineComponent({
         date: [{ required: true, message: "请选择时间", trigger: "change" }],
         lab_id: [{ required: true, message: "请选择地点", trigger: "change" }],
       },
+
+      wrongStudentIds: [] as Student[], // 用来存储错误的学生数据
+      wrongTeacherIds: [] as Teacher[], // 用来存储错误的教师数据
     };
   },
-  mounted() {
-    this.fetchLabs();
+  async mounted() {
+    await this.fetchLabs();
     console.log("inputCourseData", history.state.inputCourseData);
     if (history.state.inputCourseData) {
       console.log("inputCourseData", history.state.inputCourseData);
       this.transformData(history.state.inputCourseData);
-      this.fetchCourse();
-      this.fetchEnroll();
-      this.fetchClassList();
+      await this.fetchCourse();
+      await this.fetchEnroll();
+      await this.fetchClassList();
     }
   },
   methods: {
@@ -594,52 +623,56 @@ export default defineComponent({
         ElMessage.error("加载课堂失败");
       }
 
-      for (let i = 0; i < this.classList.length; i++) {
-        const result3 = await classAPI.getLocations(
-          this.classList[i].class_id!
-        );
-        console.log("result3", result3);
-        if (result3.success && result3.data.length > 0) {
-          this.classList[i].lab_id = result3.data[0].lab_id;
-          this.classList[i].lab_name =
-            this.labList.find((lab) => lab.lab_id === result3.data[0].lab_id)
-              ?.lab_name || "";
-        } else {
-          ElMessage.error("加载地点失败");
-        }
-
-        const result4 = await classAPI.getTeachers(this.classList[i].class_id!);
-        console.log("result4", result4);
-        if (result4.success) {
-          this.classList[i].teachers = [] as Teacher[];
-          for (let j = 0; j < result4.data.length; j++) {
-            //每一份teacher
-            const result5 = await userAPI.getUserInfo(
-              result4.data[j].teacher_id
-            );
-            console.log("result5", result5);
-            if (result5.success) {
-              this.classList[i].teachers.push({
-                teacher_id: result5.data[0].user_id,
-                teacher_name: result5.data[0].real_name,
-              } as Teacher);
-            } else {
-              ElMessage.error("加载教师失败");
-            }
+      await Promise.all(
+        this.classList.map(async (classItem) => {
+          const result3 = await classAPI.getLocations(classItem.class_id!);
+          console.log("result3", result3);
+          if (result3.success && result3.data.length > 0) {
+            classItem.lab_id = result3.data[0].lab_id;
+            classItem.lab_name =
+              this.labList.find((lab) => lab.lab_id === result3.data[0].lab_id)
+                ?.lab_name || "";
+          } else {
+            ElMessage.error("加载地点失败");
           }
-          this.classList[i].teachers_name = this.classList[i].teachers
-            .map((teacher) => teacher.teacher_name)
-            .join(", ");
-        } else {
-          ElMessage.error("加载教师失败");
-        }
-        console.log("classList!!", this.classList);
-      }
+
+          const result4 = await classAPI.getTeachers(classItem.class_id!);
+          console.log("result4", result4);
+          if (result4.success) {
+            classItem.teachers = await Promise.all(
+              result4.data.map(async (teacherData: Teacher) => {
+                const result5 = await userAPI.getUserInfo(
+                  teacherData.teacher_id
+                );
+                console.log("result5", result5);
+                if (result5.success) {
+                  return {
+                    teacher_id: result5.data[0].user_id,
+                    teacher_name: result5.data[0].real_name,
+                  } as Teacher;
+                } else {
+                  ElMessage.error("加载教师失败");
+                  return null;
+                }
+              })
+            ).then(
+              (teachers) =>
+                teachers.filter((teacher) => teacher !== null) as Teacher[]
+            );
+            classItem.teachers_name = classItem.teachers
+              .map((teacher) => teacher.teacher_name)
+              .join(", ");
+          } else {
+            ElMessage.error("加载教师失败");
+          }
+          console.log("classList!!", this.classList);
+        })
+      );
     },
 
     async fetchStudentData() {
       const studentIds = this.studentFormStr
-        .split(",") // 按逗号分割
+        .split(/[,，]/) // 按逗号和中文逗号分割
         .map((id) => id.trim()) // 去掉空格
         .filter((id) => id && /^\d+$/.test(id)) // 过滤掉空的值和非数字的值
         .filter((value, index, self) => self.indexOf(value) === index); // 过滤掉重复值
@@ -656,13 +689,13 @@ export default defineComponent({
               student_name: result.data[0].real_name, // 假设返回数据中有 `username` 字段
             } as Student);
           } else {
-            students.push({
+            this.wrongStudentIds.push({
               student_id: studentId,
               student_name: "不是学生", // 如果没有找到学生，显示“未找到”
             } as Student);
           }
         } else {
-          students.push({
+          this.wrongStudentIds.push({
             student_id: studentId,
             student_name: "未找到", // 如果没有找到学生，显示“未找到”
           } as Student);
@@ -702,13 +735,13 @@ export default defineComponent({
               teacher_name: result.data[0].real_name, // 假设返回数据中有 `username` 字段
             } as Teacher);
           } else {
-            teachers.push({
+            this.wrongTeacherIds.push({
               teacher_id: teacherId,
               teacher_name: "不是教师", // 如果没有找到学生，显示“未找到”
             } as Teacher);
           }
         } else {
-          teachers.push({
+          this.wrongTeacherIds.push({
             teacher_id: teacherId,
             teacher_name: "未找到", // 如果没有找到学生，显示“未找到”
           } as Teacher);
@@ -821,7 +854,7 @@ export default defineComponent({
           newClass.date
         );
         if (result.success) {
-          ElMessage.success("提交成功");
+          // ElMessage.success("提交成功");
           newClass.class_id = result.data.class.class_id;
           console.log("result", result);
         } else {
@@ -836,7 +869,7 @@ export default defineComponent({
           this.courseData.course_sequence
         );
         if (result2.success) {
-          ElMessage.success("提交成功");
+          //ElMessage.success("提交成功");
         } else {
           ElMessage.error("提交失败");
           // TODO remove class
@@ -853,7 +886,7 @@ export default defineComponent({
           );
 
           if (result3.success) {
-            ElMessage.success("提交成功");
+            // ElMessage.success("提交成功");
             newClass.teachers.push({
               teacher_id: teacher.teacher_id,
               teacher_name: teacher.teacher_name,
@@ -871,30 +904,24 @@ export default defineComponent({
         console.log("newClass", newClass);
 
         //绑定地点到课堂
-        //TODO
-        if (newClass.lab_id === null) {
-          ElMessage.error("提交失败");
-          return;
+        const result4 = await classAPI.postLocation(
+          newClass.class_id!,
+          newClass.lab_id!
+        );
+        if (result4.success) {
+          //ElMessage.success("提交成功");
         } else {
-          const result4 = await classAPI.postLocation(
-            newClass.class_id!,
-            newClass.lab_id
-          );
-          if (result4.success) {
-            ElMessage.success("提交成功");
-          } else {
-            ElMessage.error("提交失败");
-            newClass.lab_id = null;
-          }
+          ElMessage.error("地点绑定失败, 但不影响课堂创建");
+          newClass.lab_id = null;
         }
 
         ElMessage.success("课堂已添加");
         this.classDialogVisible = false;
 
-        this.fetchClassList(); // 重新获取课堂列表
+        //关闭时会获取，不需要在这里fetch新的数据
         console.log("classList", this.classList);
       } else {
-        //TODO 修改课堂
+        //修改课堂
 
         const result = await classAPI.patchClass(
           this.classFormData.class_id!,
@@ -903,9 +930,10 @@ export default defineComponent({
         );
 
         if (result.success) {
-          ElMessage.success("提交成功");
+          // ElMessage.success("提交成功");
         } else {
           ElMessage.error("提交失败");
+          return;
         }
 
         console.log("this.classFormDataOrigin", this.classFormDataOrigin);
@@ -937,7 +965,7 @@ export default defineComponent({
             deleteTeacherList[i].teacher_id
           );
           if (result.success) {
-            ElMessage.success("提交成功");
+            // ElMessage.success("提交成功");
           } else {
             ElMessage.error("提交失败");
           }
@@ -949,7 +977,7 @@ export default defineComponent({
             addTeacherList[i].teacher_id
           );
           if (result.success) {
-            ElMessage.success("提交成功");
+            // ElMessage.success("提交成功");
           } else {
             ElMessage.error("提交失败");
           }
@@ -964,9 +992,10 @@ export default defineComponent({
               this.classFormDataOrigin.lab_id!
             );
             if (deleteLabResult.success) {
-              ElMessage.success("删除成功");
+              // ElMessage.success("删除成功");
             } else {
               ElMessage.error("删除失败");
+              return;
             }
           }
 
@@ -976,11 +1005,12 @@ export default defineComponent({
           );
 
           if (postLabResult.success) {
-            ElMessage.success("提交成功");
+            // ElMessage.success("提交成功");
           } else {
-            ElMessage.error("提交失败");
+            ElMessage.error("新地点提交失败, 但不影响课堂其他信息修改");
           }
         }
+        ElMessage.success("课堂已修改");
       }
       this.classDialogVisible = false;
     },
@@ -1027,7 +1057,7 @@ export default defineComponent({
       this.studentDialogVisible = false;
     },
 
-    closeClassDialog() {
+    async closeClassDialog() {
       this.classDialogVisible = false;
       this.classFormData = {
         class_name: "",
@@ -1049,12 +1079,14 @@ export default defineComponent({
         teachers_name: "",
       } as Class;
       this.teacherFormStr = "";
-      this.fetchClassList();
+      this.wrongTeacherIds = [];
+      await this.fetchClassList();
     },
     closeStudentDialog() {
       this.studentDialogVisible = false;
       this.studentFormStr = "";
       this.studentFormList = [];
+      this.wrongStudentIds = [];
       this.fetchEnroll();
     },
     handleClassEdit(row: Class) {
@@ -1127,7 +1159,7 @@ export default defineComponent({
         } else {
           ElMessage.error("删除失败");
         }
-        this.fetchClassList();
+        await this.fetchClassList();
       } else {
         ElMessage.error("删除失败");
       }

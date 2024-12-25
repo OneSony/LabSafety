@@ -168,6 +168,7 @@ export default {
         router.push("/");
       } else {
         ElMessage.error(`错误：${result.error || "登录失败"}`);
+        loginForm.value.password = "";
       }
     };
 
