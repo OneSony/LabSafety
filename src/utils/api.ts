@@ -732,6 +732,25 @@ const labAPI = {
       })
       .catch(handleError);
   },
+
+  getLabsSimple(lab_id?: number, personal?: boolean): Promise<any> {
+    //返回id, 不是lab_id
+
+    const params: { lab_id?: number; personal?: boolean } = lab_id
+      ? { lab_id }
+      : {};
+    if (personal) {
+      params["personal"] = true;
+    }
+    return server
+      .get("/api/v1/labs/lab-simple", { params })
+      .then((response) => {
+        console.log("Labs response:", response); // 添加这行来查看返回的数据结构
+        return handleResponse(response);
+      })
+      .catch(handleError);
+  },
+
   // 获取单个实验室信息通过ID
   getLabById(lab_id: number): Promise<any> {
     return server

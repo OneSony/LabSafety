@@ -114,7 +114,7 @@ export default {
               );
               if (locationResult.success && locationResult.data.length > 0) {
                 courses[i].classList[j].lab_id = locationResult.data[0].lab_id;
-                const labNameResult = await labAPI.getLabs(
+                const labNameResult = await labAPI.getLabsSimple(
                   courses[i].classList[j].lab_id
                 );
                 if (labNameResult.success) {
