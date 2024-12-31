@@ -164,8 +164,9 @@ export default {
   methods: {
     async loadData() {
       this.isLoaded = false;
-      await this.fetchCourseList();
-      await Promise.all([this.fetchEnollmentCount(), this.fetchClassLists()]);
+      //await this.fetchCourseList();
+      //await Promise.all([this.fetchEnollmentCount(), this.fetchClassLists()]);
+      await this.fetchCourseSummay();
       this.isLoaded = true;
     },
 
@@ -185,19 +186,14 @@ export default {
       }
     },
     async handleDeleteClick(row) {
-      try {
-        await ElMessageBox.confirm("确认删除该课程?", "提示", {
-          type: "warning",
-        });
+      await ElMessageBox.confirm("确认删除该课程?", "提示", {
+        type: "warning",
+      });
 
-        await courseAPI.deleteCourse(row.course_code, row.course_sequence);
-        ElMessage.success("删除成功");
-        await this.fetchCourseList();
-      } catch (error) {
-        if (error !== "cancel") {
-          ElMessage.error("删除失败");
-        }
-      }
+      await courseAPI.deleteCourse(row.course_code, row.course_sequence);
+      ElMessage.success("删除成功");
+      //await this.fetchCourseList();
+      await this.loadData();
     },
 
     tableRowClassName({ row, rowIndex }) {
@@ -217,7 +213,20 @@ export default {
       }
     },
 
-    async fetchCourseList() {
+    async fetchCourseSummay() {
+      const result = await courseAPI.getCourseListWithSummay();
+      if (result.success) {
+        console.log("Fetched course list with summary:", result.data);
+        this.tableData = result.data.results;
+      } else {
+        console.error(
+          "Failed to fetch course list with summary:",
+          result.message
+        );
+      }
+    },
+
+    /*async fetchCourseList() {
       const result = await courseAPI.getCourseList(false);
       if (result.success) {
         console.log("Fetched course list:", result.data);
@@ -249,7 +258,7 @@ export default {
           console.error("Failed to fetch class list:", result.message);
         }
       }
-    },
+    },*/
     handleView(row) {
       const inputCourseData = {
         course_id: row.id,
