@@ -129,7 +129,18 @@ const userAPI = {
   //登陆时存储role和id, realname(usernname)和avatar是在获取用户信息时存储的
   isLoggedIn(): boolean {
     const token = localStorage.getItem("accessToken");
-    return !!token;
+    const lastLoginTime = localStorage.getItem("lastLoginTime");
+    const now = new Date().getTime();
+
+    if (
+      token &&
+      lastLoginTime &&
+      now - parseInt(lastLoginTime) <= 24 * 60 * 60 * 1000
+    ) {
+      return true;
+    }
+
+    return false;
   },
 
   async getAvatar(): Promise<string> {
@@ -190,6 +201,10 @@ const userAPI = {
           localStorage.setItem("refreshToken", refresh);
           localStorage.setItem("role", role);
           localStorage.setItem("userId", user_id);
+          localStorage.setItem(
+            "lastLoginTime",
+            new Date().getTime().toString()
+          );
           return {
             success: true,
             role,
@@ -230,6 +245,7 @@ const userAPI = {
     localStorage.removeItem("role");
     localStorage.removeItem("userId");
     localStorage.removeItem("avatar");
+    localStorage.removeItem("lastLoginTime");
     window.location.href = "/login"; //todo
   },
 
