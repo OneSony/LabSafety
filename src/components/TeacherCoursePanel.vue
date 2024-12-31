@@ -197,9 +197,13 @@ export default {
       }
     },
     selectUnsetExperiments() {
+      //把allexperiment里面class中experiment count为0的选出来
       const unsetExperiments = this.allExperiments.filter((course) => {
         return course.classList.some((experiment) => {
-          return experiment.isUnset;
+          if (experiment.experiment_count === 0) {
+            experiment.isUnset = true;
+            return true;
+          }
         });
       });
       this.unsetExperiments = unsetExperiments;
