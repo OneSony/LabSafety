@@ -153,6 +153,7 @@ export default {
 }
 .dashboard {
   display: flex;
+  width: 100%;
 }
 .content {
   margin: 20px;

@@ -128,7 +128,6 @@ export default defineComponent({
 
 <style scoped>
 .user-card {
-  width: 150px;
   display: flex;
   align-items: center;
   gap: 10px;

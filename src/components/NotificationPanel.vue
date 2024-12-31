@@ -19,13 +19,18 @@
   <el-row v-if="isLoaded" gutter="20">
     <el-col
       :xs="24"
-      :sm="12"
+      :sm="16"
       :md="8"
       v-for="notice in noticeList"
       :key="notice.id"
-      :span="8"
-      style="position: relative; display: flex; flex-direction: column"
+      style="
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+      "
     >
+      <NoticeCard :notice="notice" :class="notice" />
       <el-button
         type="text"
         @click="deleteNotification(notice)"
@@ -42,7 +47,6 @@
       >
         编辑
       </el-button>
-      <NoticeCard :notice="notice" :class="notice" />
       <el-dialog
         title="编辑通知"
         v-model="notice.noticeEditDialogVisible"
@@ -211,12 +215,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-.card {
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  position: relative;
-}
-</style>

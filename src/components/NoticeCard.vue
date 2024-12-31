@@ -1,5 +1,5 @@
 <template>
-  <el-card :body-style="{ padding: '20px' }" class="card">
+  <el-card :body-style="{ padding: '20px' }" class="card" style="width: 100%">
     <DateBox :dateStr="notice.updated_at" textColor="#666" font-size="12px" />
     <router-link
       v-if="needToShowClass"
@@ -14,22 +14,32 @@
     <el-row>
       <UserCard :userId="notice.sender" />
     </el-row>
-    <el-row v-for="(content, index) in notice.rows" :key="index">
+    <el-row
+      v-for="(content, index) in notice.rows"
+      :key="index"
+      style="width: 100%"
+    >
       <ImageBox
         v-if="content.notice_content.content_type === 'image'"
         :src="content.notice_content.image_content"
       />
-      <p
-        v-if="content.notice_content.content_type === 'text'"
-        style="
-          margin-left: 0px;
-          margin-right: 0px;
-          margin-top: 5px;
-          margin-bottom: 5px;
-        "
-      >
-        {{ content.notice_content.text_content }}
-      </p>
+      <el-col :span="24">
+        <p
+          v-if="content.notice_content.content_type === 'text'"
+          style="
+            margin: 5px 0;
+            word-wrap: break-word; /* 强制长单词换行 */
+            word-break: break-all; /* 强制所有文本换行，包含标点 */
+            white-space: normal; /* 确保文本换行 */
+            display: inline-block; /* 或者 display: flex; */
+            max-width: 600px;
+            width: 100%; /* 确保 p 标签宽度与父容器一致 */
+            box-sizing: border-box; /* 包含 padding 和 border */
+          "
+        >
+          {{ content.notice_content.text_content }}
+        </p>
+      </el-col>
       <DownloadLink
         v-if="content.notice_content.content_type === 'file'"
         :url="content.notice_content.file_content"
@@ -82,6 +92,6 @@ export default {
 .card {
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: relative;
+  width: 100%;
 }
 </style>
