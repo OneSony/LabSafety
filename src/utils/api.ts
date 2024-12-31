@@ -129,7 +129,18 @@ const userAPI = {
   //登陆时存储role和id, realname(usernname)和avatar是在获取用户信息时存储的
   isLoggedIn(): boolean {
     const token = localStorage.getItem("accessToken");
-    return !!token;
+    const lastLoginTime = localStorage.getItem("lastLoginTime");
+    const now = new Date().getTime();
+
+    if (
+      token &&
+      lastLoginTime &&
+      now - parseInt(lastLoginTime) <= 24 * 60 * 60 * 1000
+    ) {
+      return true;
+    }
+
+    return false;
   },
 
   async getAvatar(): Promise<string> {
@@ -190,6 +201,10 @@ const userAPI = {
           localStorage.setItem("refreshToken", refresh);
           localStorage.setItem("role", role);
           localStorage.setItem("userId", user_id);
+          localStorage.setItem(
+            "lastLoginTime",
+            new Date().getTime().toString()
+          );
           return {
             success: true,
             role,
@@ -230,6 +245,7 @@ const userAPI = {
     localStorage.removeItem("role");
     localStorage.removeItem("userId");
     localStorage.removeItem("avatar");
+    localStorage.removeItem("lastLoginTime");
     window.location.href = "/login"; //todo
   },
 
@@ -326,6 +342,34 @@ const courseAPI = {
         .then(handleResponse)
         .catch(handleError);
     }
+  },
+
+  getCourseListAndClassList(page?: number, pageSize?: number): Promise<any> {
+    const params: { [key: string]: number } = {};
+    if (page) {
+      params["page"] = page;
+    }
+    if (pageSize) {
+      params["page_size"] = pageSize;
+    }
+    return server
+      .get("/api/v1/courses/course-list", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getCourseListWithSummay(page?: number, pageSize?: number): Promise<any> {
+    const params: { [key: string]: number } = {};
+    if (page) {
+      params["page"] = page;
+    }
+    if (pageSize) {
+      params["page_size"] = pageSize;
+    }
+    return server
+      .get("/api/v1/courses/course-summary", { params })
+      .then(handleResponse)
+      .catch(handleError);
   },
 
   patchCourse(
@@ -490,8 +534,13 @@ const courseAPI = {
 };
 
 const classAPI = {
-  getClass(class_id: number): Promise<any> {
-    const params = { class_id: class_id, personal: true };
+  getClass(class_id: number, personal?: boolean): Promise<any> {
+    let params;
+    if (personal === undefined) {
+      params = { class_id: class_id, personal: true };
+    } else {
+      params = { class_id: class_id, personal: personal };
+    }
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)
@@ -732,6 +781,25 @@ const labAPI = {
       })
       .catch(handleError);
   },
+
+  getLabsSimple(lab_id?: number, personal?: boolean): Promise<any> {
+    //返回id, 不是lab_id
+
+    const params: { lab_id?: number; personal?: boolean } = lab_id
+      ? { lab_id }
+      : {};
+    if (personal) {
+      params["personal"] = true;
+    }
+    return server
+      .get("/api/v1/labs/lab-simple", { params })
+      .then((response) => {
+        console.log("Labs response:", response); // 添加这行来查看返回的数据结构
+        return handleResponse(response);
+      })
+      .catch(handleError);
+  },
+
   // 获取单个实验室信息通过ID
   getLabById(lab_id: number): Promise<any> {
     return server
@@ -1005,6 +1073,20 @@ const noticeAPI = {
     }
     return server
       .get("/api/v1/notices/notices", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getNoticesPage(page?: number, pageSize?: number): Promise<any> {
+    const params: { [key: string]: number } = {};
+    if (page) {
+      params["page"] = page;
+    }
+    if (pageSize) {
+      params["page_size"] = pageSize;
+    }
+    return server
+      .get("/api/v1/notices/notice-page", { params })
       .then(handleResponse)
       .catch(handleError);
   },

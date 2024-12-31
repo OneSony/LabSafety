@@ -432,9 +432,24 @@
             style="position: absolute; right: 20px"
             >删除</el-button
           >
-          <UserCard :userId="comment.sender_id" />
+          <div style="width: 200px">
+            <UserCard :userId="comment.sender_id" />
+          </div>
           <div class="comment-details">
-            {{ comment.content }}
+            <p
+              style="
+                margin: 5px 0;
+                word-wrap: break-word; /* 强制长单词换行 */
+                word-break: break-all; /* 强制所有文本换行，包含标点 */
+                white-space: normal; /* 确保文本换行 */
+                display: inline-block; /* 或者 display: flex; */
+                max-width: 600px;
+                width: 100%; /* 确保 p 标签宽度与父容器一致 */
+                box-sizing: border-box; /* 包含 padding 和 border */
+              "
+            >
+              {{ comment.content }}
+            </p>
             <DateBox
               :dateStr="comment.sent_time"
               :textColor="'#666'"
@@ -731,7 +746,7 @@ export default {
 
     async fetchClassBasicInfo() {
       this.basicInfo.class_id = Number(this.class_id);
-      const result1 = await classAPI.getClass(this.class_id); // 获取课程信息的 API
+      const result1 = await classAPI.getClass(this.class_id, false); // 获取课程信息的 API
       if (result1.success) {
         if (result1.data.length === 0) {
           ElMessage.error("课程不存在");

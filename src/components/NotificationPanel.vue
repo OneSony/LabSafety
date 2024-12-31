@@ -12,20 +12,25 @@
 
   <el-skeleton :rows="3" animated v-if="isLoaded === false" />
   <el-empty
-    description="没有课程"
+    description="没有通知"
     :image-size="100"
     v-if="noticeList.length === 0 && isLoaded === true"
   />
   <el-row v-if="isLoaded" gutter="20">
     <el-col
       :xs="24"
-      :sm="12"
+      :sm="16"
       :md="8"
       v-for="notice in noticeList"
       :key="notice.id"
-      :span="8"
-      style="position: relative; display: flex; flex-direction: column"
+      style="
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+      "
     >
+      <NoticeCard :notice="notice" :class="notice" />
       <el-button
         type="text"
         @click="deleteNotification(notice)"
@@ -42,7 +47,6 @@
       >
         编辑
       </el-button>
-      <NoticeCard :notice="notice" :class="notice" />
       <el-dialog
         title="编辑通知"
         v-model="notice.noticeEditDialogVisible"
@@ -95,14 +99,26 @@ export default {
     return {
       noticeDialogVisible: false,
       isTeacher: userAPI.getRole() === "teacher",
-      classList: [],
       noticeList: [],
       myUserId: userAPI.getUserId(),
       isLoaded: false,
     };
   },
   methods: {
-    async fetchNotices() {
+    async fetchNoticesPage() {
+      this.isLoaded = false;
+      this.noticeList = [];
+      const result = await noticeAPI.getNoticesPage();
+      this.noticeList = result.data.results;
+      //sort by time
+      this.noticeList.sort((a, b) => {
+        return new Date(b.post_time) - new Date(a.post_time);
+      });
+      console.log("通知列表??:", this.noticeList, this.noticeList.length);
+      this.isLoaded = true;
+    },
+
+    /*async fetchNotices() {
       this.isLoaded = false;
       this.classList = [];
       this.noticeList = [];
@@ -192,7 +208,9 @@ export default {
         return new Date(b.post_time) - new Date(a.post_time);
       });
       this.isLoaded = true;
-    },
+
+      console.log("通知列表??:", this.noticeList);
+    },*/
     async deleteNotification(notice) {
       // 在这里添加删除通知的逻辑
       console.log("删除通知:", notice);
@@ -207,16 +225,7 @@ export default {
     },
   },
   async mounted() {
-    await this.fetchNotices();
+    await this.fetchNoticesPage();
   },
 };
 </script>
-
-<style scoped>
-.card {
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  position: relative;
-}
-</style>

@@ -86,12 +86,29 @@ export default {
     };
   },
   async mounted() {
-    await this.fetchCourses(); // 组件挂载时调用 API 获取课程列表
+    await this.fetchCoursesPage(); // 组件挂载时调用 API 获取课程列表
     this.selectTodayExperiments();
     this.selectUnsetExperiments();
   },
   methods: {
-    async fetchCourses() {
+    async fetchCoursesPage() {
+      this.isLoading = true;
+      const response = await courseAPI.getCourseListAndClassList(); // 调用 API 获取课程数据
+      this.allExperiments = response.data.results; // 假设 API 返回的数据存储在 `data` 字段中
+      //把classes这个字段改成classList
+      for (let i = 0; i < this.allExperiments.length; i++) {
+        this.allExperiments[i].classList = this.allExperiments[i].classes;
+        //sort classes by start_time
+        this.allExperiments[i].classList.sort((a, b) => {
+          return new Date(a.start_time) - new Date(b.start_time);
+        });
+        delete this.allExperiments[i].classes;
+      }
+      console.log("allExperiments:", this.allExperiments);
+      this.isLoading = false;
+    },
+
+    /*async fetchCourses() {
       const response = await courseAPI.getCourseList(); // 调用 API 获取课程数据
       console.log("course list:", response);
       if (response.success === false) {
@@ -114,7 +131,7 @@ export default {
               );
               if (locationResult.success && locationResult.data.length > 0) {
                 courses[i].classList[j].lab_id = locationResult.data[0].lab_id;
-                const labNameResult = await labAPI.getLabs(
+                const labNameResult = await labAPI.getLabsSimple(
                   courses[i].classList[j].lab_id
                 );
                 if (labNameResult.success) {
@@ -150,7 +167,7 @@ export default {
         }
       }
       this.isLoading = false;
-    },
+    },*/
 
     selectTodayExperiments() {
       const today = new Date();
@@ -180,9 +197,13 @@ export default {
       }
     },
     selectUnsetExperiments() {
+      //把allexperiment里面class中experiment count为0的选出来
       const unsetExperiments = this.allExperiments.filter((course) => {
         return course.classList.some((experiment) => {
-          return experiment.isUnset;
+          if (experiment.experiment_count === 0) {
+            experiment.isUnset = true;
+            return true;
+          }
         });
       });
       this.unsetExperiments = unsetExperiments;

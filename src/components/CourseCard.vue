@@ -32,7 +32,7 @@
           <router-link
             :to="{
               name: 'class-page',
-              params: { classId: classItem.class_id, courseId: experiment.id },
+              params: { classId: classItem.id, courseId: experiment.id },
             }"
             style="text-decoration: none; width: 100%"
           >
@@ -48,17 +48,17 @@
               }"
             >
               <div class="class-content">
-                <div class="class-title">
+                <div class="class-title" style="width: 50%">
                   <h4>{{ classItem.name }}</h4>
                   <p>{{ classItem.lab_name }}</p>
                 </div>
-                <div class="content-box" v-if="false">
+                <div class="content-box">
                   <p>通知</p>
-                  <p>0</p>
+                  <p>{{ classItem.notice_count }}</p>
                 </div>
-                <div class="content-box" v-if="false">
+                <div class="content-box">
                   <p>实验数</p>
-                  <p>0</p>
+                  <p>{{ classItem.experiment_count }}</p>
                 </div>
                 <div class="content-box" v-if="false">
                   <p>预估时间</p>
