@@ -1,16 +1,44 @@
 <template>
   <el-card :body-style="{ padding: '20px' }" class="card" style="width: 100%">
-    <DateBox :dateStr="notice.updated_at" textColor="#666" font-size="12px" />
-    <router-link
-      v-if="needToShowClass"
-      :to="{
-        path: `/course/${this.notice.class_info.course_id}/class/${this.notice.class_info.class_id}`,
-      }"
-    >
-      <h3 v-if="needToShowClass" style="margin-top: 10px; margin-bottom: 10px">
-        {{ this.notice.class_info.name }}
-      </h3>
-    </router-link>
+    <el-row>
+      <el-col :span="18">
+        <DateBox
+          :dateStr="notice.post_time"
+          textColor="#666"
+          font-size="12px"
+        />
+      </el-col>
+      <el-col :span="6">
+        <div v-if="needToShowClass">
+          <router-link
+            v-if="this.notice.notice_type == 'class'"
+            :to="{
+              path: `/course/${this.notice.course_id}/class/${this.notice.class_id}`,
+            }"
+          >
+            <p
+              v-if="needToShowClass"
+              style="margin-top: 10px; margin-bottom: 10px"
+            >
+              前往课堂
+            </p>
+          </router-link>
+          <router-link
+            v-if="this.notice.notice_type == 'lab'"
+            :to="{
+              path: `/lab/${this.notice.class_or_lab_id}`,
+            }"
+          >
+            <p
+              v-if="needToShowClass"
+              style="margin-top: 10px; margin-bottom: 10px"
+            >
+              前往实验室
+            </p>
+          </router-link>
+        </div>
+      </el-col>
+    </el-row>
     <el-row>
       <UserCard :userId="notice.sender" />
     </el-row>
@@ -55,6 +83,7 @@ import UserCard from "./UserCard.vue";
 import ImageBox from "./ImageBox.vue";
 import DownloadLink from "@/components/DownloadLink.vue";
 import DateBox from "./DateBox.vue";
+import router from "@/router";
 export default {
   name: "NoticeCard",
   components: {

@@ -328,6 +328,34 @@ const courseAPI = {
     }
   },
 
+  getCourseListAndClassList(page?: number, pageSize?: number): Promise<any> {
+    const params: { [key: string]: number } = {};
+    if (page) {
+      params["page"] = page;
+    }
+    if (pageSize) {
+      params["page_size"] = pageSize;
+    }
+    return server
+      .get("/api/v1/courses/course-list", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getCourseListWithSummay(page?: number, pageSize?: number): Promise<any> {
+    const params: { [key: string]: number } = {};
+    if (page) {
+      params["page"] = page;
+    }
+    if (pageSize) {
+      params["page_size"] = pageSize;
+    }
+    return server
+      .get("/api/v1/courses/course-summary", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
   patchCourse(
     course_code: string,
     course_sequence: string,
@@ -1024,6 +1052,20 @@ const noticeAPI = {
     }
     return server
       .get("/api/v1/notices/notices", { params })
+      .then(handleResponse)
+      .catch(handleError);
+  },
+
+  getNoticesPage(page?: number, pageSize?: number): Promise<any> {
+    const params: { [key: string]: number } = {};
+    if (page) {
+      params["page"] = page;
+    }
+    if (pageSize) {
+      params["page_size"] = pageSize;
+    }
+    return server
+      .get("/api/v1/notices/notice-page", { params })
       .then(handleResponse)
       .catch(handleError);
   },
