@@ -518,8 +518,13 @@ const courseAPI = {
 };
 
 const classAPI = {
-  getClass(class_id: number): Promise<any> {
-    const params = { class_id: class_id, personal: true };
+  getClass(class_id: number, personal?: boolean): Promise<any> {
+    let params;
+    if (personal === undefined) {
+      params = { class_id: class_id, personal: true };
+    } else {
+      params = { class_id: class_id, personal: personal };
+    }
     return server
       .get("/api/v1/classes/class", { params })
       .then(handleResponse)

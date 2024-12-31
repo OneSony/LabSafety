@@ -731,7 +731,7 @@ export default {
 
     async fetchClassBasicInfo() {
       this.basicInfo.class_id = Number(this.class_id);
-      const result1 = await classAPI.getClass(this.class_id); // 获取课程信息的 API
+      const result1 = await classAPI.getClass(this.class_id, false); // 获取课程信息的 API
       if (result1.success) {
         if (result1.data.length === 0) {
           ElMessage.error("课程不存在");
